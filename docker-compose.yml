@@ -12,9 +12,9 @@ services:
     environment:
       # Connect to the existing thaari-postgres container on the shared network
       DATABASE_URL: postgresql://${POSTGRES_USER:-security_admin}:${POSTGRES_PASSWORD:-thaari_password}@thaari-postgres:5432/${POSTGRES_DB:-horizon_db}
-    # NOT exposed externally — Caddy reaches it inside app-network
-    expose:
-      - "8000"
+    # Mapped to host so your Flutter app on local Wi-Fi can connect
+    ports:
+      - "8000:8000"
     networks:
       - app-network   # joins the shared Caddy network
     healthcheck:
