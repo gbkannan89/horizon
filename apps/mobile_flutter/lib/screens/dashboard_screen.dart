@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
+import '../providers/auth_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -35,6 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FinancialProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final userName = authProvider.user?['name'] ?? 'Guest';
+    final userInitial = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'G';
     final loaded = !provider.isLoading;
 
     return Scaffold(
@@ -45,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: CustomScrollView(
           slivers: [
             // ── Hero gradient header ──────────────────────────────────────────
-            SliverToBoxAdapter(child: _buildHeroHeader(provider, loaded)),
+            SliverToBoxAdapter(child: _buildHeroHeader(provider, userName, userInitial, loaded)),
 
             // ── Body cards ───────────────────────────────────────────────────
             SliverPadding(
@@ -70,7 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── HERO HEADER ────────────────────────────────────────────────────────────
-  Widget _buildHeroHeader(FinancialProvider p, bool loaded) {
+  Widget _buildHeroHeader(FinancialProvider p, String userName, String userInitial, bool loaded) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -87,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(_greeting(), style: const TextStyle(color: Color(0xFF93C5FD), fontSize: 14, fontWeight: FontWeight.w500)),
             const SizedBox(height: 2),
-            const Text('Kannan 👋', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+            Text('$userName 👋', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
           ]),
           Row(children: [
             Container(
@@ -102,9 +106,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
               ),
-              child: const CircleAvatar(
-                radius: 18, backgroundColor: Color(0xFF3B82F6),
-                child: Text('K', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: CircleAvatar(
+                radius: 18, backgroundColor: const Color(0xFF3B82F6),
+                child: Text(userInitial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ]),

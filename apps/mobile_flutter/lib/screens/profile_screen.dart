@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
 import '../models/financial_models.dart';
+import '../providers/auth_provider.dart';
+import '../screens/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -369,6 +371,13 @@ class ProfileScreen extends StatelessWidget {
   // ─── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+    final userName = user?['name'] ?? 'Guest';
+    final userEmail = user?['email'] ?? 'guest@horizon.com';
+    final userInitials = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'G';
+    final userType = user?['user_type'] ?? 'Standard';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -382,20 +391,20 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             // ── Avatar & Header ─────────────────────────────────────────────
-            const Center(
+            Center(
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: Color(0xFF1E3A8A),
-                    child: Text('KA', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    child: Text(userInitials, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
                   ),
-                  SizedBox(height: 16),
-                  Text('Kannan', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text('kannan@email.com', style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w500)),
-                  SizedBox(height: 8),
-                  Text('Salaried', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  Text(userName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(userEmail, style: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  Text(userType[0].toUpperCase() + userType.substring(1), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
             ),
@@ -408,7 +417,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: TextEditingController(text: 'Kannan'),
+              controller: TextEditingController(text: userName),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.grey.withOpacity(0.1),
@@ -423,7 +432,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: TextEditingController(text: 'kannan@email.com'),
+              controller: TextEditingController(text: userEmail),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.grey.withOpacity(0.1),
@@ -438,8 +447,9 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: TextEditingController(text: '+91 95781 76161'),
+              controller: TextEditingController(text: ''),
               decoration: InputDecoration(
+                hintText: 'Add your phone number',
                 filled: true,
                 fillColor: Colors.grey.withOpacity(0.1),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -760,6 +770,29 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: const Text('Save Changes',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // ── Logout Button ────────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
+                onPressed: () async {
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent, width: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Log Out',
+                    style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 40),

@@ -19,7 +19,7 @@ class _Config {
   static const String production = 'https://horizon.thaari.in';
 
   // ── ACTIVE ENVIRONMENT ── switch this line only ───────────────────────────
-  static const String active = nucLocal; // ← change to production when ready
+  static const String active = production; // ← change to production when ready
 }
 
 class ApiService {
