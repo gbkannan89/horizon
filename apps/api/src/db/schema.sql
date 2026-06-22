@@ -1,0 +1,138 @@
+-- PostgreSQL Schema for FinScore
+
+CREATE TABLE IF NOT EXISTS households (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    invite_code VARCHAR(10) UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
+    user_type VARCHAR(50) DEFAULT 'salaried' NOT NULL, -- 'salaried' or 'self-employed'
+    risk_profile VARCHAR(50) DEFAULT 'moderate' NOT NULL, -- 'conservative', 'moderate', 'aggressive'
+    household_id INTEGER REFERENCES households(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS contributing_members (
+    id SERIAL PRIMARY KEY,
+    household_id INTEGER REFERENCES households(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    monthly_income NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    contribution_to_household NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    relationship VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS incomes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    label VARCHAR(255),                 -- user-friendly name e.g. 'My Salary', 'Partner Income'
+    type VARCHAR(50) NOT NULL,          -- 'salary', 'business', 'passive'
+    amount NUMERIC(20, 2) NOT NULL,
+    frequency VARCHAR(50) NOT NULL,     -- 'monthly', 'annual'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS assets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    type VARCHAR(50) NOT NULL, -- 'bank', 'fd', 'rd', 'physical'
+    subtype VARCHAR(50), -- 'property', 'gold', 'vehicle', etc.
+    name VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    interest_rate NUMERIC(5, 2) DEFAULT 0.00 NOT NULL,
+    start_date DATE,
+    maturity_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS liabilities (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    type VARCHAR(50) NOT NULL, -- 'home_loan', 'car_loan', 'personal_loan', 'credit_card'
+    name VARCHAR(255) NOT NULL,
+    outstanding NUMERIC(20, 2) NOT NULL,
+    emi NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    interest_rate NUMERIC(5, 2) DEFAULT 0.00 NOT NULL,
+    tenure_months INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS recurring_bills (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    frequency VARCHAR(50) NOT NULL, -- 'monthly', 'quarterly', 'half-yearly', 'yearly'
+    category VARCHAR(100) NOT NULL, -- 'rent', 'utilities', 'insurance', 'education', etc.
+    bucket VARCHAR(50) NOT NULL, -- 'Needs', 'Wants', 'Savings'
+    due_day INTEGER DEFAULT 1 NOT NULL,
+    monthly_equivalent NUMERIC(20, 2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    is_subscription BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS health_scores (
+    id SERIAL PRIMARY KEY,
+    household_id INTEGER REFERENCES households(id) ON DELETE CASCADE NOT NULL,
+    score INTEGER NOT NULL,
+    max_possible_score INTEGER NOT NULL,
+    pillar_scores JSONB NOT NULL,
+    adherence_history JSONB,
+    calculated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token_hash VARCHAR(255) PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Schema updates / migrations
+ALTER TABLE households ADD COLUMN IF NOT EXISTS invite_code VARCHAR(10) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(50) DEFAULT 'salaried';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS risk_profile VARCHAR(50) DEFAULT 'moderate';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS household_id INTEGER REFERENCES households(id) ON DELETE SET NULL;
+ALTER TABLE incomes ADD COLUMN IF NOT EXISTS label VARCHAR(255);
+
+CREATE TABLE IF NOT EXISTS goals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    target_amount NUMERIC(20, 2) NOT NULL,
+    current_amount NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    status VARCHAR(50) DEFAULT 'On Track' NOT NULL, -- 'On Track', 'Behind', 'Ahead'
+    color VARCHAR(20) DEFAULT '#059669',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS expenses (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    category VARCHAR(100) NOT NULL, -- 'Rent', 'Food', 'SIP', etc.
+    bucket VARCHAR(50) NOT NULL, -- 'Needs', 'Wants', 'Savings'
+    icon VARCHAR(50),
+    date DATE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS wishlist_items (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    added_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    unlock_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    status VARCHAR(50) DEFAULT 'locked', -- 'locked', 'unlocked', 'bought_early', 'bought', 'discarded'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

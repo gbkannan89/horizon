@@ -1,0 +1,52 @@
+# ── Secrets (NEVER commit these) ─────────────────────────────────────────────
+.env
+*.pem
+*.key
+
+# ── Python ────────────────────────────────────────────────────────────────────
+apps/api/.venv/
+apps/api/__pycache__/
+apps/api/**/__pycache__/
+apps/api/**/*.pyc
+apps/api/**/*.pyo
+apps/api/*.egg-info/
+apps/api/dist/
+apps/api/build/
+
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
+apps/mobile_flutter/.dart_tool/
+apps/mobile_flutter/.flutter-plugins
+apps/mobile_flutter/.flutter-plugins-dependencies
+apps/mobile_flutter/build/
+apps/mobile_flutter/.packages
+apps/mobile_flutter/pubspec.lock
+
+# ── Android ───────────────────────────────────────────────────────────────────
+apps/mobile_flutter/android/.gradle/
+apps/mobile_flutter/android/local.properties
+apps/mobile_flutter/android/key.properties
+apps/mobile_flutter/android/app/debug/
+apps/mobile_flutter/android/app/release/
+*.jks
+*.keystore
+
+# ── Node / JS ─────────────────────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+.nuxt/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDEs ──────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+# Keep docker-compose.yml but ignore override files with secrets
+docker-compose.override.yml

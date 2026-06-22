@@ -1,0 +1,472 @@
+import 'package:flutter/material.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+import 'package:provider/provider.dart';
+import '../providers/financial_provider.dart';
+
+class PortfolioScreen extends StatelessWidget {
+  const PortfolioScreen({super.key});
+
+  // ── Shared input decoration ────────────────────────────────────────────────
+  static InputDecoration _inputDec(String label, {String? prefix, String? hint}) =>
+    InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixText: prefix,
+      prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
+      labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+      filled: true,
+      fillColor: Colors.white,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+
+  // ── Shared modal bottom sheet chrome ──────────────────────────────────────
+  static BoxDecoration _sheetDec() => const BoxDecoration(
+    color: Color(0xFFF8F9FA),
+    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+  );
+
+  static Widget _handle() => Center(
+    child: Container(
+      width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 20),
+      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+    ),
+  );
+
+  // ── ADD ASSET MODAL ────────────────────────────────────────────────────────
+  void _showAddAssetModal(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String selectedType = 'bank';
+    bool isLoading = false;
+
+    final types = [
+      {'value': 'bank',     'label': 'Bank/FD',   'icon': Icons.account_balance_outlined},
+      {'value': 'physical', 'label': 'Gold/Property', 'icon': Icons.diamond_outlined},
+      {'value': 'equity',   'label': 'Stocks/MF', 'icon': Icons.trending_up_rounded},
+    ];
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Add Asset', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Asset Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: nameCtrl, textCapitalization: TextCapitalization.words,
+              decoration: _inputDec('e.g. SBI Savings, HDFC FD, Gold')),
+            const SizedBox(height: 20),
+            const Text('Asset Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 10),
+            Row(children: types.map((t) {
+              final sel = selectedType == t['value'];
+              return Expanded(child: GestureDetector(
+                onTap: () => setState(() => selectedType = t['value'] as String),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: sel ? const Color(0xFF059669) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: sel ? const Color(0xFF059669) : Colors.grey.shade200),
+                  ),
+                  child: Column(children: [
+                    Icon(t['icon'] as IconData, color: sel ? Colors.white : Colors.grey, size: 22),
+                    const SizedBox(height: 6),
+                    Text(t['label'] as String, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sel ? Colors.white : Colors.grey.shade600)),
+                  ]),
+                ),
+              ));
+            }).toList()),
+            const SizedBox(height: 20),
+            const Text('Current Value', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: amountCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('Amount', prefix: '₹ ', hint: '100000')),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final amount = double.tryParse(amountCtrl.text.trim());
+                if (name.isEmpty || amount == null || amount <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Asset', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── ADD LIABILITY MODAL ────────────────────────────────────────────────────
+  void _showAddLiabilityModal(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final outstandingCtrl = TextEditingController();
+    final emiCtrl = TextEditingController();
+    final rateCtrl = TextEditingController();
+    String selectedType = 'home_loan';
+    bool isLoading = false;
+
+    final types = [
+      {'value': 'home_loan',     'label': 'Home\nLoan',     'icon': Icons.home_outlined},
+      {'value': 'car_loan',      'label': 'Car\nLoan',      'icon': Icons.directions_car_outlined},
+      {'value': 'personal_loan', 'label': 'Personal\nLoan', 'icon': Icons.person_outline},
+      {'value': 'credit_card',   'label': 'Credit\nCard',   'icon': Icons.credit_card_outlined},
+    ];
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Add Liability', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Loan / Debt Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: nameCtrl, textCapitalization: TextCapitalization.words,
+              decoration: _inputDec('e.g. SBI Home Loan, HDFC Credit Card')),
+            const SizedBox(height: 20),
+            const Text('Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 10),
+            Row(children: types.map((t) {
+              final sel = selectedType == t['value'];
+              return Expanded(child: GestureDetector(
+                onTap: () => setState(() => selectedType = t['value'] as String),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: sel ? const Color(0xFFDC2626) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: sel ? const Color(0xFFDC2626) : Colors.grey.shade200),
+                  ),
+                  child: Column(children: [
+                    Icon(t['icon'] as IconData, color: sel ? Colors.white : Colors.grey, size: 20),
+                    const SizedBox(height: 4),
+                    Text(t['label'] as String, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: sel ? Colors.white : Colors.grey.shade600)),
+                  ]),
+                ),
+              ));
+            }).toList()),
+            const SizedBox(height: 20),
+            const Text('Outstanding Amount', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: outstandingCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('Total remaining balance', prefix: '₹ ')),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Monthly EMI', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextField(controller: emiCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _inputDec('EMI', prefix: '₹ ')),
+              ])),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Interest Rate', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextField(controller: rateCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _inputDec('Rate', hint: '8.5')),
+              ])),
+            ]),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final outstanding = double.tryParse(outstandingCtrl.text.trim());
+                if (name.isEmpty || outstanding == null || outstanding <= 0) return;
+                final emi = double.tryParse(emiCtrl.text.trim()) ?? 0.0;
+                final rate = double.tryParse(rateCtrl.text.trim()) ?? 0.0;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addLiability(name, selectedType, outstanding, emi, rate);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Liability', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── ADD INCOME MODAL ───────────────────────────────────────────────────────
+  void _showAddIncomeModal(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String selectedType = 'salary';
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Add Income', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Label', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: nameCtrl, textCapitalization: TextCapitalization.words,
+              decoration: _inputDec("e.g. My Salary, Partner Income")),
+            const SizedBox(height: 20),
+            const Text('Monthly Amount', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: amountCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('Amount', prefix: '₹ ', hint: '50000')),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final amount = double.tryParse(amountCtrl.text.trim());
+                if (name.isEmpty || amount == null || amount <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addIncome(name, selectedType, amount, 'monthly');
+                  if (ctx.mounted) Navigator.pop(ctx);
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Income', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── Section Header ─────────────────────────────────────────────────────────
+  Widget _buildSectionHeader(String title, List<Color> gradient, VoidCallback onAdd) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Color(0xFF1E293B))),
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: gradient),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+              ),
+              child: const Row(children: [
+                Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                SizedBox(width: 4),
+                Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Item card with delete swipe ────────────────────────────────────────────
+  Widget _buildListItem(String title, double amount, String subtitle, List<Color> gradient, IconData icon, VoidCallback onDelete) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 6))],
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(gradient: LinearGradient(colors: gradient), shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF1E293B))),
+            const SizedBox(height: 3),
+            Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
+          ]),
+        ]),
+        Row(children: [
+          Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF1E293B))),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onDelete,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: Colors.red.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+            ),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  // ── BUILD ──────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<FinancialProvider>();
+    double totalAssets = provider.assets.fold(0, (s, a) => s + a.amount);
+    double totalLiabilities = provider.liabilities.fold(0, (s, l) => s + l.amount);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Portfolio & Net Worth', style: TextStyle(fontWeight: FontWeight.w900)),
+        backgroundColor: Colors.transparent, elevation: 0,
+      ),
+      body: provider.isLoading
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+        : RefreshIndicator(
+            onRefresh: provider.loadAllData,
+            color: const Color(0xFF1E3A8A),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              children: [
+                // Net Worth card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(28),
+                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 15))],
+                  ),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('Total Net Worth', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('₹${provider.netWorth.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        _pill('Assets ₹${_fmt(totalAssets)}', Colors.green),
+                        const SizedBox(width: 8),
+                        _pill('Debt ₹${_fmt(totalLiabilities)}', Colors.red),
+                      ]),
+                    ]),
+                    CircularPercentIndicator(
+                      radius: 44, lineWidth: 8,
+                      percent: totalAssets > 0 ? (totalAssets / (totalAssets + totalLiabilities)).clamp(0.0, 1.0) : 0,
+                      progressColor: const Color(0xFF059669),
+                      backgroundColor: const Color(0xFFDC2626).withOpacity(0.2),
+                      circularStrokeCap: CircularStrokeCap.round,
+                      center: const Text('NW', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
+                    ),
+                  ]),
+                ),
+
+                // Assets
+                _buildSectionHeader('Assets', const [Color(0xFF059669), Color(0xFF34D399)], () => _showAddAssetModal(context)),
+                if (provider.assets.isEmpty)
+                  _emptyState('No assets yet', 'Tap Add to add your savings,\nFDs, gold, property etc.', Icons.account_balance_wallet_outlined, Colors.green),
+                ...provider.assets.map((a) => _buildListItem(
+                  a.name, a.amount, 'Asset',
+                  const [Color(0xFF059669), Color(0xFF34D399)],
+                  Icons.account_balance_wallet_rounded,
+                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteAsset(a.id); },
+                )),
+
+                // Liabilities
+                _buildSectionHeader('Liabilities', const [Color(0xFFDC2626), Color(0xFFF87171)], () => _showAddLiabilityModal(context)),
+                if (provider.liabilities.isEmpty)
+                  _emptyState('No liabilities', 'Tap Add to track loans,\ncredit cards, EMIs etc.', Icons.credit_card_outlined, Colors.red),
+                ...provider.liabilities.map((l) => _buildListItem(
+                  l.name, l.amount, '${l.interestRate.toStringAsFixed(1)}% interest',
+                  const [Color(0xFFDC2626), Color(0xFFF87171)],
+                  Icons.credit_card_rounded,
+                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteLiability(l.id); },
+                )),
+
+                // Incomes
+                _buildSectionHeader('Income Sources', const [Color(0xFF1E3A8A), Color(0xFF3B82F6)], () => _showAddIncomeModal(context)),
+                if (provider.incomes.isEmpty)
+                  _emptyState('No income sources', 'Tap Add to record your salary\nand other income.', Icons.trending_up_outlined, Colors.blue),
+                ...provider.incomes.map((i) => _buildListItem(
+                  i.label, i.amount, '${i.frequency} income',
+                  const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                  Icons.trending_up_rounded,
+                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id); },
+                )),
+
+                const SizedBox(height: 60),
+              ],
+            ),
+          ),
+    );
+  }
+
+  String _fmt(double v) => v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}K' : v.toStringAsFixed(0);
+
+  Widget _pill(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+    child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+  );
+
+  Widget _emptyState(String title, String sub, IconData icon, Color color) => Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.grey.shade100)),
+    child: Column(children: [
+      Icon(icon, color: color.withOpacity(0.4), size: 36),
+      const SizedBox(height: 12),
+      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      const SizedBox(height: 4),
+      Text(sub, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+    ]),
+  );
+}

@@ -1,0 +1,60 @@
+services:
+
+  # ── PostgreSQL Database ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: horizon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-horizon_db_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-horizon}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # NOT exposed externally — only accessible within app-network
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network   # joins the shared Caddy network
+
+  # ── FastAPI Application ───────────────────────────────────────────────────
+  horizon-api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: horizon-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-horizon_db_pass_2026}@postgres:5432/${POSTGRES_DB:-horizon}
+    # NOT exposed externally — Caddy reaches it inside app-network
+    expose:
+      - "8000"
+    networks:
+      - app-network   # joins the shared Caddy network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  pgdata:
+    driver: local
+
+# Reference the EXTERNAL network created by security-service-management
+# Both compose stacks share this network so Caddy can reach horizon-api
+networks:
+  app-network:
+    external: true
+    name: app-network
