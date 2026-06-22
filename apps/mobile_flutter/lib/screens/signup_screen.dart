@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'main_shell.dart';
-import 'signup_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
+  final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
@@ -32,14 +32,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _animCtrl.dispose();
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleSignup() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final ok   = await auth.login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    final ok   = await auth.register(_nameCtrl.text.trim(), _emailCtrl.text.trim(), _passwordCtrl.text);
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pushReplacement(
@@ -56,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           content: const Row(children: [
             Icon(Icons.error_outline, color: Colors.white, size: 18),
             SizedBox(width: 10),
-            Text('Invalid email or password', style: TextStyle(fontWeight: FontWeight.w600)),
+            Text('Registration failed or email already exists', style: TextStyle(fontWeight: FontWeight.w600)),
           ]),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
@@ -145,19 +146,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Welcome back', style: TextStyle(
+                          const Text('Create an account', style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF1E293B),
                             letterSpacing: -0.5,
                           )),
                           const SizedBox(height: 4),
-                          const Text('Sign in to continue', style: TextStyle(
+                          const Text('Sign up to get started', style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF94A3B8),
                             fontWeight: FontWeight.w500,
                           )),
                           const SizedBox(height: 28),
+
+                          // Name
+                          TextField(
+                            controller: _nameCtrl,
+                            keyboardType: TextInputType.name,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            decoration: const InputDecoration(
+                              labelText: 'Full name',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
                           // Email
                           TextField(
@@ -177,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             controller: _passwordCtrl,
                             obscureText: _obscurePassword,
                             textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => isLoading ? null : _handleLogin(),
+                            onSubmitted: (_) => isLoading ? null : _handleSignup(),
                             style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                             decoration: InputDecoration(
                               labelText: 'Password',
@@ -191,28 +205,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               ),
                             ),
                           ),
-
-                          // Forgot password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF1E3A8A),
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                              ),
-                              child: const Text('Forgot password?',
-                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 24),
 
                           // Sign in button
                           SizedBox(
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: isLoading ? null : _handleLogin,
+                              onPressed: isLoading ? null : _handleSignup,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       child: CircularProgressIndicator(
                                         color: Colors.white, strokeWidth: 2.5),
                                     )
-                                  : const Text('Sign In', style: TextStyle(
+                                  : const Text('Create Account', style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.3,
@@ -238,21 +238,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                     const SizedBox(height: 28),
 
+                    // Create account
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text("Don't have an account? ", style: TextStyle(
+                      Text("Already have an account? ", style: TextStyle(
                         color: Colors.white.withOpacity(0.6), fontSize: 14)),
                       GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => const SignupScreen(),
-                              transitionsBuilder: (_, anim, __, child) =>
-                                  FadeTransition(opacity: anim, child: child),
-                              transitionDuration: const Duration(milliseconds: 300),
-                            ),
-                          );
+                          Navigator.of(context).pop();
                         },
-                        child: const Text('Sign Up', style: TextStyle(
+                        child: const Text('Sign In', style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,

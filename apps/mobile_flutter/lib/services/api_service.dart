@@ -62,6 +62,32 @@ class ApiService {
       return false;
     }
   }
+  Future<bool> register(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'user_type': 'primary',
+          'risk_profile': 'moderate'
+        }),
+      );
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', data['access_token']);
+        return true;
+      }
+      print('Register failed: ${response.statusCode} ${response.body}');
+      return false;
+    } catch (e) {
+      print('Register error: $e');
+      return false;
+    }
+  }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
