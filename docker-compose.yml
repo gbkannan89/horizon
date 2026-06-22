@@ -11,7 +11,7 @@ services:
       - .env
     environment:
       # Connect to the existing thaari-postgres container on the shared network
-      DATABASE_URL: postgresql://${POSTGRES_USER:-thaari}:${POSTGRES_PASSWORD:-thaari_password}@thaari-postgres:5432/${POSTGRES_DB:-horizon_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-security_admin}:${POSTGRES_PASSWORD:-thaari_password}@thaari-postgres:5432/${POSTGRES_DB:-horizon_db}
     # NOT exposed externally — Caddy reaches it inside app-network
     expose:
       - "8000"
