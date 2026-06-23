@@ -2,6 +2,7 @@ import time
 import logging
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from . import database as db
 from .database import init_db, close_pool, get_db
 from .routes.auth import router as auth_router
 from .routes.household import router as household_router
@@ -57,13 +58,20 @@ async def shutdown_event():
     logger.info("Shutdown complete.")
 
 @app.get("/health")
-def health_check(conn = Depends(get_db)):
+def health_check():
     start_time = time.time()
+    db_status = "disconnected"
     try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1;")
-            cur.fetchone()
-        db_status = "connected"
+        if db.pool is None:
+            init_db()
+        if db.pool is None:
+            db_status = "unavailable"
+        else:
+            with db.pool.connection(timeout=5) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1;")
+                    cur.fetchone()
+            db_status = "connected"
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
         db_status = f"error: {str(e)}"
