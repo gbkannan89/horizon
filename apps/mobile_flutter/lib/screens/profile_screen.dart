@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/financial_provider.dart';
 import '../models/financial_models.dart';
 import '../providers/auth_provider.dart';
+import '../utils/ui_utils.dart';
 import '../screens/login_screen.dart';
+import '../screens/insurance_hub_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -379,80 +382,115 @@ class ProfileScreen extends StatelessWidget {
     final userType = user?['user_type'] ?? 'Standard';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFF8F9FA),
-        elevation: 0,
-        leading: const Icon(Icons.chevron_left),
-      ),
+      backgroundColor: const Color(0xFFF1F5F9),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // ── Avatar & Header ─────────────────────────────────────────────
-            Center(
+            // Background Gradient Header & Avatar
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 24, 24, 40),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0F2057), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                ),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+              ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    child: Text(userInitials, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                    ),
+                    child: CircleAvatar(
+                      radius: 46,
+                      backgroundColor: const Color(0xFF3B82F6),
+                      child: Text(userInitials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  Text(userName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text(userName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(userEmail, style: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 8),
-                  Text(userType[0].toUpperCase() + userType.substring(1), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(userEmail, style: TextStyle(color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(userType[0].toUpperCase() + userType.substring(1), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
-
-            // ── Edit Form ───────────────────────────────────────────────────
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Full Name', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: TextEditingController(text: userName),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey.withOpacity(0.1),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Email', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: TextEditingController(text: userEmail),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey.withOpacity(0.1),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Phone', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: TextEditingController(text: ''),
-              decoration: InputDecoration(
-                hintText: 'Add your phone number',
-                filled: true,
-                fillColor: Colors.grey.withOpacity(0.1),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            
+            // Rest of Body
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Personal Information Card ──────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                  const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 24),
+                  const Text('Full Name', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: TextEditingController(text: userName),
+                    decoration: InputDecoration(
+                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Email', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: TextEditingController(text: userEmail),
+                    decoration: InputDecoration(
+                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Phone', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: TextEditingController(text: ''),
+                    decoration: InputDecoration(
+                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 40),
@@ -643,32 +681,11 @@ class ProfileScreen extends StatelessWidget {
                               const SizedBox(width: 4),
                               GestureDetector(
                                 onTap: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (dCtx) => AlertDialog(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                      title: const Text('Remove Income Source?'),
-                                      content: Text('Are you sure you want to remove "${income.label}"?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(dCtx, false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.pop(dCtx, true),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red.shade400,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          ),
-                                          child: const Text('Remove', style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true && context.mounted) {
+                                  UiUtils.showDeleteBottomSheet(context, income.label, () async {
                                     await Provider.of<FinancialProvider>(context, listen: false)
                                         .deleteIncome(income.id);
-                                  }
+                                    if (context.mounted) UiUtils.showSnack(context, 'Income removed');
+                                  });
                                 },
                                 child: Container(
                                   width: 32, height: 32,
@@ -758,21 +775,26 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // ── Save Button ──────────────────────────────────────────────────
+
+            // ── Insurance Hub Button ─────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
-                onPressed: () {},
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const InsuranceHubScreen()));
+                },
+                icon: const Icon(Icons.shield_rounded),
+                label: const Text('Insurance Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Save Changes',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+
             // ── Logout Button ────────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
@@ -798,6 +820,9 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+      ),
+      ],
       ),
     );
   }

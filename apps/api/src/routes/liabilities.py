@@ -30,6 +30,18 @@ def add_liability(liability_in: LiabilityCreate, current_user: UserOut = Depends
                 )
             )
             row = cur.fetchone()
+            
+            # If EMI > 0, auto-add a recurring bill (Need/EMI)
+            if liability_in.emi > 0:
+                bill_name = f"{liability_in.name} EMI"
+                cur.execute(
+                    """
+                    INSERT INTO recurring_bills (user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription)
+                    VALUES (%s, %s, %s, 'monthly', 'EMI', 'Needs', 1, %s, TRUE, FALSE)
+                    """,
+                    (current_user.id, bill_name, liability_in.emi, liability_in.emi)
+                )
+
             db.commit()
             return LiabilityOut(
                 id=row[0],

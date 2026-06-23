@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'providers/financial_provider.dart';
 import 'providers/auth_provider.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   runApp(
@@ -23,6 +26,7 @@ class HorizonApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Horizon',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -111,7 +115,7 @@ class HorizonApp extends StatelessWidget {
         ),
 
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

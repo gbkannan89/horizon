@@ -3,6 +3,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import '../models/wishlist_item.dart';
 import '../models/discipline_aggregates.dart';
 import '../services/discipline_service.dart';
+import '../utils/ui_utils.dart';
 
 class DisciplineDashboardScreen extends StatefulWidget {
   final DisciplineService disciplineService;
@@ -46,7 +47,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
         _debtStrategy = futures[4] as DebtRepaymentStrategy;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading discipline data: $e')));
+      if (mounted) UiUtils.showSnack(context, 'Error loading discipline data: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -55,34 +56,44 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
   Widget _buildGamifiedCard({required String title, required Widget child, required IconData icon, required List<Color> gradient}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: gradient[0].withOpacity(0.2), width: 1.5),
         boxShadow: [
-          BoxShadow(color: gradient[0].withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 10))
+          BoxShadow(color: gradient[0].withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 12))
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: gradient[0], width: 6)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: gradient),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: Colors.white, size: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradient),
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))],
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+              const SizedBox(height: 24),
+              child,
             ],
           ),
-          const SizedBox(height: 20),
-          child,
-        ],
+        ),
       ),
     );
   }
@@ -98,25 +109,24 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Discipline HUD', style: TextStyle(fontWeight: FontWeight.w900)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: ListView(
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             _buildPayYourselfFirstCard(),
             _buildZeroBasedBudgetCard(),
-            _buildGuardrailsCard(),
             _buildDebtStrategyCard(),
+            _buildGuardrailsCard(),
+            const SizedBox(height: 16),
+            _buildEmergencyFundCard(),
+            const SizedBox(height: 16),
             _buildWishlistCard(),
             const SizedBox(height: 60),
           ],
         ),
+      ),
       ),
     );
   }
@@ -218,7 +228,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
       gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
       child: Column(
         children: [
-          _buildGuardrailRow('Emergency Runway', '${g.emergencyFundRatio.toStringAsFixed(1)} months', g.runwayStatus),
+          _buildGuardrailRow('Emergency Runway', '${g.emergencyFundRatio.toStringAsFixed(1)} months\nTarget: ₹${g.emergencyTargetAmount.toStringAsFixed(0)}', g.runwayStatus),
           const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)),
           _buildGuardrailRow('Housing Cost', '${g.housingCostRatio.toStringAsFixed(1)}%', g.housingStatus),
         ],
@@ -277,9 +287,53 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
     );
   }
 
+  Widget _buildEmergencyFundCard() {
+    if (_guardrails == null) return const SizedBox.shrink();
+    final targetAmount = _guardrails!.emergencyTargetAmount;
+    // Just a placeholder calculation using liquid assets (bank/fd). We don't have direct access here, 
+    // but the guardrails object usually computes it or we can pass it from FinancialProvider.
+    // For now, we'll prompt the user they can add Bank/FD assets in Portfolio to build this up.
+    
+    return _buildGamifiedCard(
+      title: 'Emergency Fund',
+      icon: Icons.health_and_safety_rounded,
+      gradient: const [Color(0xFFEAB308), Color(0xFFFACC15)],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Target Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('₹${targetAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFFEAB308))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text('Your emergency fund is automatically calculated from your highly liquid assets (Bank Accounts and Fixed Deposits) added in your Portfolio.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                // Navigate to Portfolio or show Add Asset dialog
+              },
+              icon: const Icon(Icons.account_balance_rounded, size: 18),
+              label: const Text('Manage Liquid Assets'),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                foregroundColor: const Color(0xFFEAB308),
+                side: const BorderSide(color: Color(0xFFFDE047)),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget _buildWishlistCard() {
     return _buildGamifiedCard(
-      title: 'Cooling-off Wishlist',
+      title: 'Wishlist Lockbox',
       icon: Icons.ac_unit_rounded,
       gradient: const [Color(0xFF0891B2), Color(0xFF22D3EE)],
       child: Column(
@@ -320,7 +374,14 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                       children: [
                         const Icon(Icons.lock_rounded, color: Colors.orange, size: 20),
                         const SizedBox(height: 4),
-                        Text('${item.unlockDate.difference(DateTime.now()).inDays}d left', style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: item.unlockDate.difference(DateTime.now()).inDays.toDouble()),
+                          duration: const Duration(milliseconds: 1500),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Text('${value.toInt()}d left', style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold));
+                          },
+                        ),
                       ],
                     )
                 ],
@@ -344,35 +405,63 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
   void _addWishlistItemDialog() {
     final nameCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
+    int lockDays = 30;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Wishlist Item', style: TextStyle(fontWeight: FontWeight.bold)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'Item Name', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-            const SizedBox(height: 12),
-            TextField(controller: amountCtrl, decoration: InputDecoration(labelText: 'Amount (₹)', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), keyboardType: TextInputType.number),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add Wishlist Item', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'Item Name', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+              const SizedBox(height: 12),
+              TextField(controller: amountCtrl, decoration: InputDecoration(labelText: 'Amount (₹)', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), keyboardType: TextInputType.number),
+              const SizedBox(height: 16),
+              const Align(alignment: Alignment.centerLeft, child: Text('Lock Duration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey))),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [7, 15, 30].map((days) {
+                  final sel = lockDays == days;
+                  return ChoiceChip(
+                    label: Text('${days}d'),
+                    selected: sel,
+                    onSelected: (v) {
+                      if (v) setState(() => lockDays = days);
+                    },
+                    selectedColor: const Color(0xFF0891B2).withOpacity(0.2),
+                    labelStyle: TextStyle(color: sel ? const Color(0xFF0891B2) : Colors.grey.shade700, fontWeight: sel ? FontWeight.bold : FontWeight.normal),
+                    backgroundColor: Colors.grey.shade100,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await widget.disciplineService.addWishlistItem(nameCtrl.text, double.parse(amountCtrl.text), lockDays);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    UiUtils.showSnack(context, 'Wishlist item added!');
+                  }
+                  _loadData();
+                } catch(e) {
+                  if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: Text('Lock for $lockDays Days', style: const TextStyle(color: Colors.white)),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await widget.disciplineService.addWishlistItem(nameCtrl.text, double.parse(amountCtrl.text), 30);
-                if (context.mounted) Navigator.pop(context);
-                _loadData();
-              } catch(e) {
-                print(e);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Lock for 30 Days', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -381,8 +470,9 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
     try {
       await widget.disciplineService.updateWishlistItemStatus(id, status);
       _loadData();
+      if (mounted) UiUtils.showSnack(context, 'Wishlist item purchased!');
     } catch(e) {
-      print(e);
+      if (mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
     }
   }
 }

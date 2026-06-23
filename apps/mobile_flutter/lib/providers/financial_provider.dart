@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/financial_models.dart';
+import '../models/wishlist_item.dart';
 import '../services/api_service.dart';
 
 class FinancialProvider extends ChangeNotifier {
@@ -12,10 +13,15 @@ class FinancialProvider extends ChangeNotifier {
 
   List<LocalBill> bills = [];
   List<LocalHouseholdMember> householdMembers = [];
+  List<LocalVehicle> vehicles = [];
+  List<dynamic> insurances = [];
 
   // Dashboard Fields
   double netWorth = 0;
+  double netWorthChange = 0;
+  String netWorthChangePeriod = '';
   int finScoreVal = 0;
+  List<dynamic> scoreHistory = [];
   double totalIncomeAgg = 0;
   double totalSpent = 0;
   double totalLeft = 0;
@@ -28,16 +34,43 @@ class FinancialProvider extends ChangeNotifier {
 
   List<dynamic> goals = [];
   List<dynamic> recentExpenses = [];
+  List<dynamic> upcomingBills = [];
+  List<WishlistItem> wishlist = [];
+
+  int selectedMonth = DateTime.now().month;
+  int selectedYear = DateTime.now().year;
 
   bool get isLoading => _isLoading;
+
+  void nextMonth() {
+    if (selectedMonth == 12) {
+      selectedMonth = 1;
+      selectedYear++;
+    } else {
+      selectedMonth++;
+    }
+    loadAllData();
+  }
+
+  void previousMonth() {
+    if (selectedMonth == 1) {
+      selectedMonth = 12;
+      selectedYear--;
+    } else {
+      selectedMonth--;
+    }
+    loadAllData();
+  }
 
   Future<void> loadAllData() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final dashboardData = await _apiService.get('/api/v1/dashboard/overview');
+      final dashboardData = await _apiService.get('/api/v1/dashboard/overview?month=$selectedMonth&year=$selectedYear');
       netWorth = (dashboardData['net_worth'] ?? 0).toDouble();
+      netWorthChange = (dashboardData['net_worth_change'] ?? 0).toDouble();
+      netWorthChangePeriod = dashboardData['net_worth_change_period'] ?? '';
       finScoreVal = dashboardData['fin_score'] ?? 0;
       totalIncomeAgg = (dashboardData['total_income'] ?? 0).toDouble();
       totalSpent = (dashboardData['total_spent'] ?? 0).toDouble();
@@ -50,6 +83,7 @@ class FinancialProvider extends ChangeNotifier {
       savingsBudget = (dashboardData['savings_budget'] ?? 1).toDouble();
       goals = dashboardData['goals'] ?? [];
       recentExpenses = dashboardData['recent_expenses'] ?? [];
+      upcomingBills = dashboardData['upcoming_bills'] ?? [];
     } catch (e) {
       print('Dashboard load error: $e');
     }
@@ -58,10 +92,43 @@ class FinancialProvider extends ChangeNotifier {
       final assetsData = await _apiService.get('/api/assets');
       if (assetsData is List) {
         assets = assetsData.map((a) => LocalAsset(
-          id: a['id'].toString(), name: a['name'], amount: (a['amount'] ?? 0).toDouble()
+          id: a['id'].toString(), 
+          name: a['name'], 
+          amount: (a['amount'] ?? 0).toDouble(),
+          interestRate: (a['interest_rate'] ?? 0).toDouble(),
+          isLiability: a['is_liability'] ?? false,
+          generatesIncome: a['generates_income'] ?? false,
         )).toList();
       }
     } catch (e) { print('Assets load error: $e'); }
+
+    try {
+      final vehiclesData = await _apiService.get('/api/assets/vehicles');
+      if (vehiclesData is List) {
+        vehicles = vehiclesData.map((v) => LocalVehicle(
+          id: v['id'].toString(),
+          makeModel: v['make_model'],
+          purchaseCost: (v['purchase_cost'] ?? 0).toDouble(),
+          insuranceRenewalDate: v['insurance_renewal_date'] != null ? DateTime.parse(v['insurance_renewal_date']) : null,
+        )).toList();
+      }
+    } catch (e) { print('Vehicles load error: $e'); }
+
+    try {
+      final billsData = await _apiService.get('/api/bills');
+      if (billsData is List) {
+        bills = billsData.map((b) => LocalBill(
+          id: b['id'].toString(),
+          name: b['name'],
+          amount: (b['amount'] ?? 0).toDouble(),
+          frequency: b['frequency'] ?? 'monthly',
+          dueDate: DateTime.now(), // Fallback since due_day is an int, ideally construct full date
+          isEmi: b['is_emi'] ?? false,
+          emiTotalMonths: b['emi_total_months'] ?? 0,
+          emiMonthsPaid: b['emi_months_paid'] ?? 0,
+        )).toList();
+      }
+    } catch (e) { print('Bills load error: $e'); }
 
     try {
       final liabilitiesData = await _apiService.get('/api/liabilities');
@@ -104,6 +171,33 @@ class FinancialProvider extends ChangeNotifier {
       householdMembers = [];
     }
 
+    try {
+      final wData = await _apiService.get('/api/discipline/wishlist');
+      if (wData is List) {
+        wishlist = wData.map((w) => WishlistItem.fromJson(w as Map<String, dynamic>)).toList();
+      }
+    } catch (e) {
+      print('Bills load error: $e');
+    }
+
+    try {
+      final insurancesData = await _apiService.get('/api/insurance');
+      if (insurancesData is List) {
+        insurances = insurancesData;
+      }
+    } catch (e) {
+      print('Insurance load error: $e');
+    }
+
+    try {
+      final shData = await _apiService.get('/api/score/history');
+      if (shData is List) {
+        scoreHistory = shData.reversed.toList(); // Oldest first for charts
+      }
+    } catch (e) {
+      print('Score history load error: $e');
+    }
+
     _isLoading = false;
     notifyListeners();
   }
@@ -139,10 +233,70 @@ class FinancialProvider extends ChangeNotifier {
     await loadAllData();
   }
 
+  // ── RECURRING BILLS ────────────────────────────────────────────────────────
+  Future<void> addRecurringBill(String name, double amount, String category, String bucket, {
+    String frequency = 'monthly',
+    bool isEmi = false,
+    int? emiTotalMonths,
+    DateTime? startDate,
+  }) async {
+    await _apiService.post('/api/bills', {
+      'name': name, 
+      'amount': amount, 
+      'category': category, 
+      'bucket': bucket,
+      'frequency': frequency,
+      'is_emi': isEmi,
+      'emi_total_months': emiTotalMonths,
+      'start_date': startDate?.toIso8601String().split('T').first,
+    });
+    await loadAllData();
+  }
+
+  Future<void> deleteRecurringBill(String id) async {
+    await _apiService.delete('/api/bills/$id');
+    await loadAllData();
+  }
+
+  // ── INSURANCE ─────────────────────────────────────────────────────────────
+  Future<void> addInsurance(Map<String, dynamic> data) async {
+    await _apiService.post('/insurance/', data);
+    await loadAllData();
+  }
+
+  Future<void> deleteInsurance(String id) async {
+    await _apiService.delete('/insurance/$id');
+    await loadAllData();
+  }
+
+  // ── TRANSACTIONS ───────────────────────────────────────────────────────────
+  Future<void> uploadTransactionsCsv(String path) async {
+    await _apiService.uploadFile('/api/transactions/upload', 'file', path);
+    await loadAllData();
+  }
+
   // ── ASSETS ─────────────────────────────────────────────────────────────────
-  Future<void> addAsset(String name, String type, double amount) async {
+  Future<void> addAsset(String name, String type, double amount, {
+    double interestRate = 0.0,
+    bool isLiability = false,
+    bool generatesIncome = false,
+    String? incomeFrequency,
+  }) async {
     await _apiService.post('/api/assets', {
       'name': name, 'type': type, 'amount': amount,
+      'interest_rate': interestRate,
+      'is_liability': isLiability,
+      'generates_income': generatesIncome,
+      'income_frequency': incomeFrequency,
+    });
+    await loadAllData();
+  }
+
+  Future<void> addVehicle(String makeModel, double purchaseCost, {DateTime? insuranceRenewalDate}) async {
+    await _apiService.post('/api/assets/vehicles', {
+      'make_model': makeModel,
+      'purchase_cost': purchaseCost,
+      'insurance_renewal_date': insuranceRenewalDate?.toIso8601String().split('T').first,
     });
     await loadAllData();
   }

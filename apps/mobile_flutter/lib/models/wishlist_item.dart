@@ -6,6 +6,7 @@ class WishlistItem {
   final DateTime addedDate;
   final DateTime unlockDate;
   final String status;
+  final int lockDurationDays;
 
   WishlistItem({
     required this.id,
@@ -15,6 +16,7 @@ class WishlistItem {
     required this.addedDate,
     required this.unlockDate,
     required this.status,
+    required this.lockDurationDays,
   });
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class WishlistItem {
       addedDate: DateTime.parse(json['added_date']),
       unlockDate: DateTime.parse(json['unlock_date']),
       status: json['status'],
+      lockDurationDays: json['lock_duration_days'] ?? 0,
     );
   }
 

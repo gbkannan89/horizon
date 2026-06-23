@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'main_shell.dart';
+import 'onboarding_screen.dart';
+import '../utils/ui_utils.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -44,26 +45,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainShell(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text('Registration failed or email already exists', style: TextStyle(fontWeight: FontWeight.w600)),
-          ]),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      UiUtils.showSnack(context, 'Registration failed or email already exists', isError: true);
     }
   }
 

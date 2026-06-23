@@ -21,8 +21,18 @@ class LocalAsset {
   final String id;
   final String name;
   final double amount;
+  final double interestRate;
+  final bool isLiability;
+  final bool generatesIncome;
 
-  LocalAsset({required this.id, required this.name, required this.amount});
+  LocalAsset({
+    required this.id, 
+    required this.name, 
+    required this.amount,
+    this.interestRate = 0.0,
+    this.isLiability = false,
+    this.generatesIncome = false,
+  });
 }
 
 class LocalLiability {
@@ -38,9 +48,36 @@ class LocalBill {
   final String id;
   final String name;
   final double amount;
+  final String frequency;
   final DateTime dueDate;
+  final bool isEmi;
+  final int emiTotalMonths;
+  final int emiMonthsPaid;
 
-  LocalBill({required this.id, required this.name, required this.amount, required this.dueDate});
+  LocalBill({
+    required this.id, 
+    required this.name, 
+    required this.amount, 
+    this.frequency = 'monthly',
+    required this.dueDate,
+    this.isEmi = false,
+    this.emiTotalMonths = 0,
+    this.emiMonthsPaid = 0,
+  });
+}
+
+class LocalVehicle {
+  final String id;
+  final String makeModel;
+  final double purchaseCost;
+  final DateTime? insuranceRenewalDate;
+
+  LocalVehicle({
+    required this.id,
+    required this.makeModel,
+    required this.purchaseCost,
+    this.insuranceRenewalDate,
+  });
 }
 
 class LocalHouseholdMember {

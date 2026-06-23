@@ -1,15 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../providers/financial_provider.dart';
+import '../utils/ui_utils.dart';
 
 class BudgetScreen extends StatelessWidget {
   const BudgetScreen({super.key});
+
+  String _getMonthName(int month, int year) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[month - 1]} $year';
+  }
+
+  void _showUploadProgressDialog(BuildContext context, String filePath) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const UploadAnimationDialog(),
+    );
+    try {
+      await Provider.of<FinancialProvider>(context, listen: false).uploadTransactionsCsv(filePath);
+      if (context.mounted) {
+        Navigator.of(context).pop(); // close dialog
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload successful!')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      }
+    }
+  }
 
   void _showAddExpenseModal(BuildContext context) {
     final amountCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
     String selectedCategory = 'Food';
+    String? manuallySelectedBucket;
+    bool isRecurring = false;
+    bool isEmi = false;
+    final emiMonthsCtrl = TextEditingController();
+    String recurringFreq = 'monthly';
+    DateTime startDate = DateTime.now();
     bool isLoading = false;
 
     String getBucketFor(String cat) {
@@ -17,6 +50,8 @@ class BudgetScreen extends StatelessWidget {
       if (['Shopping', 'Entertainment', 'Dining'].contains(cat)) return 'Wants';
       return 'Savings';
     }
+
+    String getCurrentBucket() => manuallySelectedBucket ?? getBucketFor(selectedCategory);
 
     final categories = [
       {'label': 'Food',          'icon': Icons.restaurant_outlined},
@@ -123,7 +158,12 @@ class BudgetScreen extends StatelessWidget {
                       final icon = c['icon'] as IconData;
                       final selected = selectedCategory == label;
                       return GestureDetector(
-                        onTap: () => setState(() => selectedCategory = label),
+                        onTap: () {
+                          setState(() {
+                            selectedCategory = label;
+                            manuallySelectedBucket = null; // reset to default for this category
+                          });
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -147,17 +187,140 @@ class BudgetScreen extends StatelessWidget {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 12),
-                  // Bucket badge
+                  const SizedBox(height: 20),
+
+                  // Bucket selection
+                  const Text('Bucket (Needs / Wants / Savings)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getBucketColor(getBucketFor(selectedCategory)).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
                     ),
-                    child: Text(
-                      'Will be counted as: ${getBucketFor(selectedCategory)}',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _getBucketColor(getBucketFor(selectedCategory))),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: getCurrentBucket(),
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                        items: ['Needs', 'Wants', 'Savings'].map((b) {
+                          return DropdownMenuItem(
+                            value: b,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 12, height: 12,
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: _getBucketColor(b)),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(b, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => manuallySelectedBucket = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Recurring Switch
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.autorenew_rounded, color: isRecurring ? const Color(0xFF1E3A8A) : Colors.grey, size: 20),
+                                const SizedBox(width: 10),
+                                Text('Make this a Recurring Bill', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRecurring ? const Color(0xFF1E293B) : Colors.grey.shade600)),
+                              ],
+                            ),
+                            Switch(
+                              value: isRecurring,
+                              onChanged: (val) => setState(() => isRecurring = val),
+                              activeColor: const Color(0xFF1E3A8A),
+                            ),
+                          ],
+                        ),
+                        if (isRecurring) ...[
+                          const Divider(),
+                          // Frequency
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Frequency', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                              DropdownButton<String>(
+                                value: recurringFreq,
+                                underline: const SizedBox(),
+                                items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f.toUpperCase(), style: const TextStyle(fontSize: 13)))).toList(),
+                                onChanged: (v) => setState(() => recurringFreq = v!),
+                              ),
+                            ],
+                          ),
+                          // Start Date
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                              TextButton(
+                                onPressed: () async {
+                                  final d = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: startDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (d != null) setState(() => startDate = d);
+                                },
+                                child: Text('${startDate.day}/${startDate.month}/${startDate.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              )
+                            ],
+                          ),
+                          // EMI Toggle
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Is this an EMI?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                              Switch(
+                                value: isEmi,
+                                onChanged: (val) => setState(() => isEmi = val),
+                                activeColor: const Color(0xFF1E3A8A),
+                              ),
+                            ],
+                          ),
+                          if (isEmi) ...[
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: emiMonthsCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: 'Total EMI Months (e.g. 6)',
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ]
+                        ]
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -177,12 +340,29 @@ class BudgetScreen extends StatelessWidget {
                         }
                         setState(() => isLoading = true);
                         try {
-                          await Provider.of<FinancialProvider>(ctx, listen: false)
-                            .addExpense(name, amt, selectedCategory, getBucketFor(selectedCategory));
-                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (isRecurring) {
+                            int? totalEmis;
+                            if (isEmi) {
+                              totalEmis = int.tryParse(emiMonthsCtrl.text);
+                              if (totalEmis == null || totalEmis <= 0) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Please enter valid total EMI months')));
+                                setState(() => isLoading = false);
+                                return;
+                              }
+                            }
+                            await Provider.of<FinancialProvider>(ctx, listen: false)
+                              .addRecurringBill(name, amt, selectedCategory, getCurrentBucket(), frequency: recurringFreq, isEmi: isEmi, emiTotalMonths: totalEmis, startDate: startDate);
+                          } else {
+                            await Provider.of<FinancialProvider>(ctx, listen: false)
+                              .addExpense(name, amt, selectedCategory, getCurrentBucket());
+                          }
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            UiUtils.showSnack(ctx, 'Expense saved successfully!');
+                          }
                         } catch (e) {
                           setState(() => isLoading = false);
-                          if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                          if (ctx.mounted) UiUtils.showSnack(ctx, 'Error: $e', isError: true);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -318,21 +498,27 @@ class BudgetScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<FinancialProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+
 
         double totalBudget = provider.needsBudget + provider.wantsBudget + provider.savingsBudget;
         double overallPct = totalBudget > 0 ? provider.totalSpent / totalBudget : 0.0;
         
+        double totalBills = provider.bills.fold(0, (s, b) => s + b.amount);
+        int billPct = provider.totalIncomeAgg > 0 ? (totalBills / provider.totalIncomeAgg * 100).toInt() : 0;
+        
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
-          appBar: AppBar(
-            title: const Text('Budget', style: TextStyle(fontWeight: FontWeight.bold)),
-            backgroundColor: const Color(0xFFF8F9FA),
-            elevation: 0,
-          ),
-          body: SingleChildScrollView(
+          body: SafeArea(
+            child: Column(
+              children: [
+                if (provider.isLoading)
+                  LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                    minHeight: 4,
+                  ),
+                Expanded(
+                  child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
@@ -340,9 +526,60 @@ class BudgetScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.chevron_left, color: Colors.grey.shade400),
-                    const Text('June 2026', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                    IconButton(
+                      icon: Icon(Icons.chevron_left, color: Colors.blue.shade700),
+                      onPressed: () => provider.previousMonth(),
+                    ),
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: '${provider.selectedMonth}-${provider.selectedYear}',
+                        icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                        items: (() {
+                          List<DropdownMenuItem<String>> items = [];
+                          bool foundSelected = false;
+                          String selectedVal = '${provider.selectedMonth}-${provider.selectedYear}';
+
+                          for (int index = -6; index < 24; index++) {
+                            int y = DateTime.now().year - (index ~/ 12);
+                            int m = DateTime.now().month - (index % 12);
+                            
+                            // Handling negative modulo edge cases safely
+                            while (m <= 0) { m += 12; y -= 1; }
+                            while (m > 12) { m -= 12; y += 1; }
+
+                            String val = '$m-$y';
+                            if (val == selectedVal) foundSelected = true;
+                            
+                            // Prevent duplicates
+                            if (!items.any((item) => item.value == val)) {
+                              items.add(DropdownMenuItem(value: val, child: Text(_getMonthName(m, y))));
+                            }
+                          }
+                          
+                          if (!foundSelected) {
+                            items.insert(0, DropdownMenuItem(
+                              value: selectedVal,
+                              child: Text(_getMonthName(provider.selectedMonth, provider.selectedYear)),
+                            ));
+                          }
+                          
+                          return items;
+                        })(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            final parts = val.split('-');
+                            provider.selectedMonth = int.parse(parts[0]);
+                            provider.selectedYear = int.parse(parts[1]);
+                            provider.loadAllData();
+                          }
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.chevron_right, color: Colors.blue.shade700),
+                      onPressed: () => provider.nextMonth(),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -406,18 +643,18 @@ class BudgetScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.grey.withOpacity(0.1)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Committed Bills', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                          SizedBox(height: 4),
-                          Text('₹33,899/month (45% of income)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          const Text('Committed Bills', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Text('₹${totalBills.toStringAsFixed(0)}/month ($billPct% of income)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         ],
                       ),
-                      Icon(Icons.chevron_right, color: Colors.grey),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -470,7 +707,32 @@ class BudgetScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('See All', style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () async {
+                            try {
+                              FilePickerResult? result = await FilePicker.platform.pickFiles(
+                                type: FileType.custom,
+                                allowedExtensions: ['csv'],
+                              );
+                              if (result != null && result.files.single.path != null) {
+                                if (context.mounted) {
+                                  _showUploadProgressDialog(context, result.files.single.path!);
+                                }
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.upload_file, size: 16),
+                          label: const Text('Upload CSV'),
+                        ),
+                        Text('See All', style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -488,6 +750,10 @@ class BudgetScreen extends StatelessWidget {
               ],
             ),
           ),
+          ),
+          ],
+          ),
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddExpenseModal(context),
             backgroundColor: const Color(0xFF1E3A8A),
@@ -495,6 +761,77 @@ class BudgetScreen extends StatelessWidget {
           ),
         );
       }
+    );
+  }
+}
+
+class UploadAnimationDialog extends StatefulWidget {
+  const UploadAnimationDialog({super.key});
+
+  @override
+  State<UploadAnimationDialog> createState() => _UploadAnimationDialogState();
+}
+
+class _UploadAnimationDialogState extends State<UploadAnimationDialog> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  bool _isSuccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+    
+    // Simulate parsing delay before morphing into success
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() => _isSuccess = true);
+        _controller.stop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              child: _isSuccess
+                  ? const Icon(Icons.check_circle, color: Colors.green, size: 80, key: ValueKey('success'))
+                  : RotationTransition(
+                      turns: _controller,
+                      key: const ValueKey('loading'),
+                      child: const Icon(Icons.sync, color: Color(0xFF1E3A8A), size: 80),
+                    ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _isSuccess ? "Upload Complete!" : "Parsing CSV...",
+              style: TextStyle(
+                fontSize: 18, 
+                fontWeight: FontWeight.bold,
+                color: _isSuccess ? Colors.green.shade700 : const Color(0xFF1E3A8A)
+              ),
+            ),
+            if (!_isSuccess) ...[
+              const SizedBox(height: 8),
+              const Text("Categorizing your transactions...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            ]
+          ],
+        ),
+      ),
     );
   }
 }

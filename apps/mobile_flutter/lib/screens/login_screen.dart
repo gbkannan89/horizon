@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import 'main_shell.dart';
 import 'signup_screen.dart';
+import 'onboarding_screen.dart';
+import '../utils/ui_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,30 +42,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _handleLogin() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final ok   = await auth.login(_emailCtrl.text.trim(), _passwordCtrl.text);
-    if (!mounted) return;
-    if (ok) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainShell(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-      );
+    final success = await auth.login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    if (success) {
+      if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => hasOnboarded ? const MainShell() : const OnboardingScreen(),
+          ),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text('Invalid email or password', style: TextStyle(fontWeight: FontWeight.w600)),
-          ]),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      UiUtils.showSnack(context, 'Invalid email or password', isError: true);
     }
   }
 

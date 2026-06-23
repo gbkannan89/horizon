@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
+import '../models/financial_models.dart';
+import '../utils/ui_utils.dart';
 
 class PortfolioScreen extends StatelessWidget {
   const PortfolioScreen({super.key});
@@ -40,11 +42,33 @@ class PortfolioScreen extends StatelessWidget {
     ),
   );
 
+  static void _showSnack(BuildContext context, String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(
+        children: [
+          Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(child: Text(message)),
+        ],
+      ),
+      backgroundColor: isError ? Colors.redAccent : const Color(0xFF059669),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+
+
   // ── ADD ASSET MODAL ────────────────────────────────────────────────────────
   void _showAddAssetModal(BuildContext context) {
     final nameCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
+    final interestRateCtrl = TextEditingController();
     String selectedType = 'bank';
+    bool isLiability = false;
+    bool generatesIncome = false;
+    String incomeFrequency = 'monthly';
     bool isLoading = false;
 
     final types = [
@@ -100,19 +124,61 @@ class PortfolioScreen extends StatelessWidget {
             const SizedBox(height: 8),
             TextField(controller: amountCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: _inputDec('Amount', prefix: '₹ ', hint: '100000')),
+            const SizedBox(height: 20),
+
+            // Enhanced asset details
+            const Text('Interest Rate (%)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: interestRateCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('e.g. 7.5', hint: 'Interest Rate (if applicable)')),
+            const SizedBox(height: 16),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Is this a Liability?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                Switch(value: isLiability, onChanged: (v) => setState(() => isLiability = v), activeColor: const Color(0xFF059669)),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Generates Income?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                Switch(value: generatesIncome, onChanged: (v) => setState(() => generatesIncome = v), activeColor: const Color(0xFF059669)),
+              ],
+            ),
+            if (generatesIncome) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Income Frequency', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                  DropdownButton<String>(
+                    value: incomeFrequency,
+                    underline: const SizedBox(),
+                    items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f.toUpperCase(), style: const TextStyle(fontSize: 13)))).toList(),
+                    onChanged: (v) => setState(() => incomeFrequency = v!),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 32),
             SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
               onPressed: isLoading ? null : () async {
                 final name = nameCtrl.text.trim();
                 final amount = double.tryParse(amountCtrl.text.trim());
                 if (name.isEmpty || amount == null || amount <= 0) return;
+                final rate = double.tryParse(interestRateCtrl.text.trim()) ?? 0.0;
                 setState(() => isLoading = true);
                 try {
-                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount, interestRate: rate, isLiability: isLiability, generatesIncome: generatesIncome, incomeFrequency: generatesIncome ? incomeFrequency : null);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    _showSnack(ctx, 'Asset added successfully!');
+                  }
                 } catch (e) {
                   setState(() => isLoading = false);
-                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  if (ctx.mounted) _showSnack(ctx, 'Failed to add asset: $e', isError: true);
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
@@ -215,10 +281,13 @@ class PortfolioScreen extends StatelessWidget {
                 setState(() => isLoading = true);
                 try {
                   await Provider.of<FinancialProvider>(ctx, listen: false).addLiability(name, selectedType, outstanding, emi, rate);
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    _showSnack(ctx, 'Liability added successfully!');
+                  }
                 } catch (e) {
                   setState(() => isLoading = false);
-                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  if (ctx.mounted) _showSnack(ctx, 'Failed to add liability: $e', isError: true);
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
@@ -270,15 +339,95 @@ class PortfolioScreen extends StatelessWidget {
                 setState(() => isLoading = true);
                 try {
                   await Provider.of<FinancialProvider>(ctx, listen: false).addIncome(name, selectedType, amount, 'monthly');
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    _showSnack(ctx, 'Income added successfully!');
+                  }
                 } catch (e) {
                   setState(() => isLoading = false);
-                  if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  if (ctx.mounted) _showSnack(ctx, 'Failed to add income: $e', isError: true);
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
               child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Text('Add Income', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── ADD VEHICLE MODAL ──────────────────────────────────────────────────────
+  void _showAddVehicleModal(BuildContext context) {
+    final makeModelCtrl = TextEditingController();
+    final costCtrl = TextEditingController();
+    DateTime? insuranceDate;
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Add Vehicle', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Make & Model', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: makeModelCtrl, textCapitalization: TextCapitalization.words,
+              decoration: _inputDec("e.g. Honda City, Royal Enfield")),
+            const SizedBox(height: 20),
+            const Text('Purchase Cost', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: costCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('Amount', prefix: '₹ ', hint: '800000')),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Insurance Renewal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                TextButton(
+                  onPressed: () async {
+                    final d = await showDatePicker(
+                      context: ctx,
+                      initialDate: DateTime.now().add(const Duration(days: 30)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    );
+                    if (d != null) setState(() => insuranceDate = d);
+                  },
+                  child: Text(insuranceDate == null ? 'Select Date' : '${insuranceDate!.day}/${insuranceDate!.month}/${insuranceDate!.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                )
+              ],
+            ),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final makeModel = makeModelCtrl.text.trim();
+                final cost = double.tryParse(costCtrl.text.trim());
+                if (makeModel.isEmpty || cost == null || cost <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addVehicle(makeModel, cost, insuranceRenewalDate: insuranceDate);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    _showSnack(ctx, 'Vehicle added successfully!');
+                  }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) _showSnack(ctx, 'Failed to add vehicle: $e', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE88A1A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Vehicle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             )),
           ])),
         ),
@@ -364,13 +513,10 @@ class PortfolioScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Portfolio & Net Worth', style: TextStyle(fontWeight: FontWeight.w900)),
-        backgroundColor: Colors.transparent, elevation: 0,
-      ),
-      body: provider.isLoading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
-        : RefreshIndicator(
+      body: SafeArea(
+        child: provider.isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+          : RefreshIndicator(
             onRefresh: provider.loadAllData,
             color: const Color(0xFF1E3A8A),
             child: ListView(
@@ -381,29 +527,40 @@ class PortfolioScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white, borderRadius: BorderRadius.circular(28),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 15))],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.3), blurRadius: 30, offset: const Offset(0, 15))],
                   ),
                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Total Net Worth', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                      Text('Total Net Worth', style: TextStyle(color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Text('₹${provider.netWorth.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
-                      const SizedBox(height: 8),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
+                      const SizedBox(height: 12),
                       Row(children: [
-                        _pill('Assets ₹${_fmt(totalAssets)}', Colors.green),
+                        _pill('Assets ₹${_fmt(totalAssets)}', const Color(0xFF34D399)),
                         const SizedBox(width: 8),
-                        _pill('Debt ₹${_fmt(totalLiabilities)}', Colors.red),
+                        _pill('Debt ₹${_fmt(totalLiabilities)}', const Color(0xFFF87171)),
                       ]),
                     ]),
-                    CircularPercentIndicator(
-                      radius: 44, lineWidth: 8,
-                      percent: totalAssets > 0 ? (totalAssets / (totalAssets + totalLiabilities)).clamp(0.0, 1.0) : 0,
-                      progressColor: const Color(0xFF059669),
-                      backgroundColor: const Color(0xFFDC2626).withOpacity(0.2),
-                      circularStrokeCap: CircularStrokeCap.round,
-                      center: const Text('NW', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: const Color(0xFF34D399).withOpacity(0.4), blurRadius: 20)],
+                      ),
+                      child: CircularPercentIndicator(
+                        radius: 44, lineWidth: 8,
+                        percent: totalAssets > 0 ? (totalAssets / (totalAssets + totalLiabilities)).clamp(0.0, 1.0) : 0,
+                        progressColor: const Color(0xFF34D399),
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        circularStrokeCap: CircularStrokeCap.round,
+                        center: const Text('NW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ),
                     ),
                   ]),
                 ),
@@ -411,40 +568,61 @@ class PortfolioScreen extends StatelessWidget {
                 // Assets
                 _buildSectionHeader('Assets', const [Color(0xFF059669), Color(0xFF34D399)], () => _showAddAssetModal(context)),
                 if (provider.assets.isEmpty)
-                  _emptyState('No assets yet', 'Tap Add to add your savings,\nFDs, gold, property etc.', Icons.account_balance_wallet_outlined, Colors.green),
+                  UiUtils.buildEmptyState('No assets yet', 'Tap Add to add your savings,\nFDs, gold, property etc.', Icons.account_balance_wallet_outlined, Colors.green),
                 ...provider.assets.map((a) => _buildListItem(
                   a.name, a.amount, 'Asset',
                   const [Color(0xFF059669), Color(0xFF34D399)],
                   Icons.account_balance_wallet_rounded,
-                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteAsset(a.id); },
+                  () => UiUtils.showDeleteBottomSheet(context, a.name, () async { 
+                    await Provider.of<FinancialProvider>(context, listen: false).deleteAsset(a.id);
+                    if (context.mounted) _showSnack(context, 'Asset deleted');
+                  }),
                 )),
 
                 // Liabilities
                 _buildSectionHeader('Liabilities', const [Color(0xFFDC2626), Color(0xFFF87171)], () => _showAddLiabilityModal(context)),
                 if (provider.liabilities.isEmpty)
-                  _emptyState('No liabilities', 'Tap Add to track loans,\ncredit cards, EMIs etc.', Icons.credit_card_outlined, Colors.red),
+                  UiUtils.buildEmptyState('No liabilities', 'Tap Add to track loans,\ncredit cards, EMIs etc.', Icons.credit_card_outlined, Colors.red),
                 ...provider.liabilities.map((l) => _buildListItem(
                   l.name, l.amount, '${l.interestRate.toStringAsFixed(1)}% interest',
                   const [Color(0xFFDC2626), Color(0xFFF87171)],
                   Icons.credit_card_rounded,
-                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteLiability(l.id); },
+                  () => UiUtils.showDeleteBottomSheet(context, l.name, () async { 
+                    await Provider.of<FinancialProvider>(context, listen: false).deleteLiability(l.id);
+                    if (context.mounted) _showSnack(context, 'Liability deleted');
+                  }),
                 )),
 
                 // Incomes
                 _buildSectionHeader('Income Sources', const [Color(0xFF1E3A8A), Color(0xFF3B82F6)], () => _showAddIncomeModal(context)),
                 if (provider.incomes.isEmpty)
-                  _emptyState('No income sources', 'Tap Add to record your salary\nand other income.', Icons.trending_up_outlined, Colors.blue),
+                  UiUtils.buildEmptyState('No income sources', 'Tap Add to record your salary\nand other income.', Icons.trending_up_outlined, Colors.blue),
                 ...provider.incomes.map((i) => _buildListItem(
                   i.label, i.amount, '${i.frequency} income',
                   const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
                   Icons.trending_up_rounded,
-                  () async { await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id); },
+                  () => UiUtils.showDeleteBottomSheet(context, i.label, () async { 
+                    await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id);
+                    if (context.mounted) _showSnack(context, 'Income deleted');
+                  }),
+                )),
+
+                // Vehicles
+                _buildSectionHeader('Vehicles', const [Color(0xFFE88A1A), Color(0xFFFBBF24)], () => _showAddVehicleModal(context)),
+                if (provider.vehicles.isEmpty)
+                  UiUtils.buildEmptyState('No vehicles', 'Tap Add to track your cars/bikes\nand insurance.', Icons.directions_car_outlined, Colors.orange),
+                ...provider.vehicles.map((v) => _buildListItem(
+                  v.makeModel, v.purchaseCost, v.insuranceRenewalDate != null ? 'Insurance: ${v.insuranceRenewalDate!.day}/${v.insuranceRenewalDate!.month}/${v.insuranceRenewalDate!.year}' : 'Vehicle',
+                  const [Color(0xFFE88A1A), Color(0xFFFBBF24)],
+                  Icons.directions_car_rounded,
+                  () {}, // TODO: Implement deleteVehicle
                 )),
 
                 const SizedBox(height: 60),
               ],
             ),
           ),
+      ),
     );
   }
 
@@ -454,19 +632,5 @@ class PortfolioScreen extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
     child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-  );
-
-  Widget _emptyState(String title, String sub, IconData icon, Color color) => Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.grey.shade100)),
-    child: Column(children: [
-      Icon(icon, color: color.withOpacity(0.4), size: 36),
-      const SizedBox(height: 12),
-      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      const SizedBox(height: 4),
-      Text(sub, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-    ]),
   );
 }

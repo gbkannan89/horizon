@@ -43,11 +43,11 @@ def add_wishlist_item(item: WishlistItemCreate, current_user: UserOut = Depends(
         with db.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO wishlist_items (user_id, name, amount, unlock_date, status)
-                VALUES (%s, %s, %s, %s, 'locked')
+                INSERT INTO wishlist_items (user_id, name, amount, unlock_date, status, lock_duration_days)
+                VALUES (%s, %s, %s, %s, 'locked', %s)
                 RETURNING id, user_id, name, amount, added_date, unlock_date, status, created_at
                 """,
-                (current_user.id, item.name, item.amount, unlock_date)
+                (current_user.id, item.name, item.amount, unlock_date, item.lock_duration_days)
             )
             row = cursor.fetchone()
             db.commit()
@@ -120,6 +120,8 @@ def get_guardrails(current_user: UserOut = Depends(get_current_user), db = Depen
             
             return FinancialGuardrailsOut(
                 emergency_fund_ratio=ef_ratio,
+                emergency_target_amount=float(monthly_needs) * 6.0,
+                emergency_current_amount=float(liquid_assets),
                 housing_cost_ratio=housing_ratio,
                 housing_status=housing_status,
                 runway_status=runway_status

@@ -1,11 +1,15 @@
 class FinancialGuardrails {
   final double emergencyFundRatio;
+  final double emergencyTargetAmount;
+  final double emergencyCurrentAmount;
   final double housingCostRatio;
   final String housingStatus;
   final String runwayStatus;
 
   FinancialGuardrails({
     required this.emergencyFundRatio,
+    required this.emergencyTargetAmount,
+    required this.emergencyCurrentAmount,
     required this.housingCostRatio,
     required this.housingStatus,
     required this.runwayStatus,
@@ -14,6 +18,8 @@ class FinancialGuardrails {
   factory FinancialGuardrails.fromJson(Map<String, dynamic> json) {
     return FinancialGuardrails(
       emergencyFundRatio: (json['emergency_fund_ratio'] as num).toDouble(),
+      emergencyTargetAmount: (json['emergency_target_amount'] as num).toDouble(),
+      emergencyCurrentAmount: (json['emergency_current_amount'] as num).toDouble(),
       housingCostRatio: (json['housing_cost_ratio'] as num).toDouble(),
       housingStatus: json['housing_status'],
       runwayStatus: json['runway_status'],

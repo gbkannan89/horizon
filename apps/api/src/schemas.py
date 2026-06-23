@@ -79,6 +79,9 @@ class AssetCreate(BaseModel):
     interest_rate: float = Field(default=0.0, ge=0)
     start_date: Optional[date_type] = None
     maturity_date: Optional[date_type] = None
+    is_liability: bool = False
+    generates_income: bool = False
+    income_frequency: Optional[str] = None
 
 class AssetOut(BaseModel):
     id: int
@@ -90,6 +93,23 @@ class AssetOut(BaseModel):
     interest_rate: float
     start_date: Optional[date_type]
     maturity_date: Optional[date_type]
+    is_liability: bool
+    generates_income: bool
+    income_frequency: Optional[str]
+    created_at: datetime
+
+# Vehicle Schemas
+class VehicleCreate(BaseModel):
+    make_model: str
+    purchase_cost: float = Field(..., ge=0)
+    insurance_renewal_date: Optional[date_type] = None
+
+class VehicleOut(BaseModel):
+    id: int
+    user_id: int
+    make_model: str
+    purchase_cost: float
+    insurance_renewal_date: Optional[date_type]
     created_at: datetime
 
 # Liability Schemas
@@ -122,6 +142,10 @@ class RecurringBillCreate(BaseModel):
     due_day: int = Field(default=1, ge=1, le=31)
     is_active: bool = True
     is_subscription: bool = False
+    is_emi: bool = False
+    emi_total_months: Optional[int] = None
+    emi_months_paid: int = 0
+    start_date: Optional[date_type] = None
 
 class RecurringBillOut(BaseModel):
     id: int
@@ -135,6 +159,10 @@ class RecurringBillOut(BaseModel):
     monthly_equivalent: float
     is_active: bool
     is_subscription: bool
+    is_emi: bool
+    emi_total_months: Optional[int]
+    emi_months_paid: int
+    start_date: Optional[date_type]
     created_at: datetime
 
 # Goal Schemas
@@ -178,6 +206,8 @@ class ExpenseOut(BaseModel):
 # Dashboard Aggregated Schema
 class DashboardOverview(BaseModel):
     net_worth: float
+    net_worth_change: float
+    net_worth_change_period: str
     fin_score: int
     total_income: float
     total_spent: float
@@ -213,10 +243,12 @@ class WishlistItemUpdate(BaseModel):
 
 # Discipline Aggregates
 class FinancialGuardrailsOut(BaseModel):
-    emergency_fund_ratio: float  # Current liquid assets / average monthly needs (in months)
-    housing_cost_ratio: float    # Monthly housing cost / monthly gross income (percentage)
-    housing_status: str          # 'Healthy', 'Warning', 'Danger'
-    runway_status: str           # 'Healthy', 'Warning', 'Danger'
+    emergency_fund_ratio: float
+    emergency_target_amount: float
+    emergency_current_amount: float
+    housing_cost_ratio: float
+    housing_status: str
+    runway_status: str
 
 class DebtRepaymentStrategyOut(BaseModel):
     snowball_months_to_freedom: int
@@ -235,4 +267,26 @@ class PayYourselfFirstOut(BaseModel):
     target_percentage: float = 20.0
     target_amount: float
     actual_savings: float
-    status: str # 'On Track', 'Behind'
+    status: str
+
+# Insurance Schemas
+class InsuranceCreate(BaseModel):
+    type: str
+    provider: str
+    policy_name: Optional[str] = None
+    premium_amount: float = Field(..., ge=0)
+    premium_frequency: str
+    coverage_amount: Optional[float] = None
+    renewal_date: Optional[date_type] = None
+
+class InsuranceOut(BaseModel):
+    id: int
+    user_id: int
+    type: str
+    provider: str
+    policy_name: Optional[str]
+    premium_amount: float
+    premium_frequency: str
+    coverage_amount: Optional[float]
+    renewal_date: Optional[date_type]
+    created_at: datetime # 'On Track', 'Behind'

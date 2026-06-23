@@ -12,6 +12,8 @@ from .routes.bills import router as bills_router
 from .routes.score import router as score_router
 from .routes.dashboard import router as dashboard_router
 from .routes.discipline import router as discipline_router
+from .routes.transactions import router as transactions_router
+from .routes.insurance import router as insurance_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,8 @@ app.include_router(bills_router)
 app.include_router(score_router)
 app.include_router(dashboard_router)
 app.include_router(discipline_router)
+app.include_router(transactions_router)
+app.include_router(insurance_router)
 
 # Add CORS Middleware
 app.add_middleware(

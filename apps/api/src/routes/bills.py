@@ -30,9 +30,9 @@ def add_recurring_bill(bill_in: RecurringBillCreate, current_user: UserOut = Dep
         try:
             cur.execute(
                 """
-                INSERT INTO recurring_bills (user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, created_at
+                INSERT INTO recurring_bills (user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date, created_at
                 """,
                 (
                     current_user.id,
@@ -44,7 +44,11 @@ def add_recurring_bill(bill_in: RecurringBillCreate, current_user: UserOut = Dep
                     bill_in.due_day,
                     monthly_equivalent,
                     bill_in.is_active,
-                    bill_in.is_subscription
+                    bill_in.is_subscription,
+                    bill_in.is_emi,
+                    bill_in.emi_total_months,
+                    bill_in.emi_months_paid,
+                    bill_in.start_date
                 )
             )
             row = cur.fetchone()
@@ -61,7 +65,11 @@ def add_recurring_bill(bill_in: RecurringBillCreate, current_user: UserOut = Dep
                 monthly_equivalent=float(row[8]),
                 is_active=row[9],
                 is_subscription=row[10],
-                created_at=row[11]
+                is_emi=row[11],
+                emi_total_months=row[12],
+                emi_months_paid=row[13],
+                start_date=row[14],
+                created_at=row[15]
             )
         except Exception as e:
             db.rollback()
@@ -78,7 +86,7 @@ def list_recurring_bills(is_subscription: Optional[bool] = None, current_user: U
         if is_subscription is not None:
             cur.execute(
                 """
-                SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, created_at
+                SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date, created_at
                 FROM recurring_bills WHERE user_id = %s AND is_subscription = %s
                 """,
                 (current_user.id, is_subscription)
@@ -86,7 +94,7 @@ def list_recurring_bills(is_subscription: Optional[bool] = None, current_user: U
         else:
             cur.execute(
                 """
-                SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, created_at
+                SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date, created_at
                 FROM recurring_bills WHERE user_id = %s
                 """,
                 (current_user.id,)
@@ -105,7 +113,11 @@ def list_recurring_bills(is_subscription: Optional[bool] = None, current_user: U
                 monthly_equivalent=float(r[8]),
                 is_active=r[9],
                 is_subscription=r[10],
-                created_at=r[11]
+                is_emi=r[11],
+                emi_total_months=r[12],
+                emi_months_paid=r[13],
+                start_date=r[14],
+                created_at=r[15]
             )
             for r in rows
         ]
@@ -129,9 +141,9 @@ def update_recurring_bill(bill_id: int, bill_in: RecurringBillCreate, current_us
         try:
             cur.execute(
                 """
-                UPDATE recurring_bills SET name = %s, amount = %s, frequency = %s, category = %s, bucket = %s, due_day = %s, monthly_equivalent = %s, is_active = %s, is_subscription = %s
+                UPDATE recurring_bills SET name = %s, amount = %s, frequency = %s, category = %s, bucket = %s, due_day = %s, monthly_equivalent = %s, is_active = %s, is_subscription = %s, is_emi = %s, emi_total_months = %s, emi_months_paid = %s, start_date = %s
                 WHERE id = %s
-                RETURNING id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, created_at
+                RETURNING id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date, created_at
                 """,
                 (
                     bill_in.name,
@@ -143,6 +155,10 @@ def update_recurring_bill(bill_id: int, bill_in: RecurringBillCreate, current_us
                     monthly_equivalent,
                     bill_in.is_active,
                     bill_in.is_subscription,
+                    bill_in.is_emi,
+                    bill_in.emi_total_months,
+                    bill_in.emi_months_paid,
+                    bill_in.start_date,
                     bill_id
                 )
             )
@@ -160,7 +176,11 @@ def update_recurring_bill(bill_id: int, bill_in: RecurringBillCreate, current_us
                 monthly_equivalent=float(row[8]),
                 is_active=row[9],
                 is_subscription=row[10],
-                created_at=row[11]
+                is_emi=row[11],
+                emi_total_months=row[12],
+                emi_months_paid=row[13],
+                start_date=row[14],
+                created_at=row[15]
             )
         except Exception as e:
             db.rollback()

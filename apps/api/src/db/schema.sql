@@ -134,5 +134,46 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     added_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     unlock_date TIMESTAMP WITH TIME ZONE NOT NULL,
     status VARCHAR(50) DEFAULT 'locked', -- 'locked', 'unlocked', 'bought_early', 'bought', 'discarded'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);
+
+-- Milestone 2: EMIs, Vehicles, Enhanced Assets, Wishlist custom locks
+ALTER TABLE recurring_bills ADD COLUMN IF NOT EXISTS is_emi BOOLEAN DEFAULT FALSE;
+ALTER TABLE recurring_bills ADD COLUMN IF NOT EXISTS emi_total_months INTEGER;
+ALTER TABLE recurring_bills ADD COLUMN IF NOT EXISTS emi_months_paid INTEGER DEFAULT 0;
+ALTER TABLE recurring_bills ADD COLUMN IF NOT EXISTS start_date DATE;
+
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS is_liability BOOLEAN DEFAULT FALSE;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS generates_income BOOLEAN DEFAULT FALSE;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS income_frequency VARCHAR(50); -- 'monthly', 'quarterly', 'yearly'
+
+ALTER TABLE wishlist_items ADD COLUMN IF NOT EXISTS lock_duration_days INTEGER DEFAULT 30;
+
+CREATE TABLE IF NOT EXISTS vehicles (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    make_model VARCHAR(255) NOT NULL,
+    purchase_cost NUMERIC(20, 2) NOT NULL,
+    insurance_renewal_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    snapshot_date DATE NOT NULL,
+    net_worth NUMERIC(20, 2) NOT NULL,
+    UNIQUE(user_id, snapshot_date)
+);
+
+CREATE TABLE IF NOT EXISTS insurances (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    type VARCHAR(50) NOT NULL, -- 'health', 'term', 'life', 'vehicle', 'other'
+    provider VARCHAR(255) NOT NULL,
+    policy_name VARCHAR(255),
+    premium_amount NUMERIC(20, 2) NOT NULL,
+    premium_frequency VARCHAR(50) NOT NULL, -- 'monthly', 'quarterly', 'yearly'
+    coverage_amount NUMERIC(20, 2),
+    renewal_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
