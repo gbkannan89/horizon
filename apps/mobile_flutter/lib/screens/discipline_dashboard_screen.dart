@@ -407,21 +407,58 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
     final amountCtrl = TextEditingController();
     int lockDays = 30;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Wishlist Item', style: TextStyle(fontWeight: FontWeight.bold)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          content: Column(
+        builder: (context, setState) => Container(
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            left: 16,
+            right: 16,
+          ),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)],
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'Item Name', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-              const SizedBox(height: 12),
-              TextField(controller: amountCtrl, decoration: InputDecoration(labelText: 'Amount (₹)', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), keyboardType: TextInputType.number),
+              // Handle
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+              ),
+              const Text('Add Wishlist Item', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Item Name',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+              ),
               const SizedBox(height: 16),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Amount (₹)',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 20),
               const Align(alignment: Alignment.centerLeft, child: Text('Lock Duration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey))),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [7, 15, 30].map((days) {
@@ -432,35 +469,82 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                     onSelected: (v) {
                       if (v) setState(() => lockDays = days);
                     },
-                    selectedColor: const Color(0xFF0891B2).withOpacity(0.2),
-                    labelStyle: TextStyle(color: sel ? const Color(0xFF0891B2) : Colors.grey.shade700, fontWeight: sel ? FontWeight.bold : FontWeight.normal),
+                    selectedColor: const Color(0xFF1E3A8A),
+                    labelStyle: TextStyle(color: sel ? Colors.white : Colors.grey.shade700, fontWeight: sel ? FontWeight.bold : FontWeight.normal),
                     backgroundColor: Colors.grey.shade100,
                     side: BorderSide.none,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 16),
+              // Animated helper text
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return FadeTransition(opacity: animation, child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation), child: child));
+                        },
+                        child: Text(
+                          'This item will be securely locked for $lockDays days to prevent impulse buying.',
+                          key: ValueKey<int>(lockDays),
+                          style: const TextStyle(fontSize: 12, color: Colors.blue, height: 1.4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          await widget.disciplineService.addWishlistItem(nameCtrl.text, double.parse(amountCtrl.text), lockDays);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            UiUtils.showSnack(context, 'Wishlist item added!');
+                          }
+                          _loadData();
+                        } catch(e) {
+                          if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Lock Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await widget.disciplineService.addWishlistItem(nameCtrl.text, double.parse(amountCtrl.text), lockDays);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    UiUtils.showSnack(context, 'Wishlist item added!');
-                  }
-                  _loadData();
-                } catch(e) {
-                  if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: Text('Lock for $lockDays Days', style: const TextStyle(color: Colors.white)),
-            ),
-          ],
         ),
       ),
     );

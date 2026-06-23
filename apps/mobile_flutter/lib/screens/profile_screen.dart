@@ -821,8 +821,8 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-      ),
-      ],
+          ],
+        ),
       ),
     );
   }
