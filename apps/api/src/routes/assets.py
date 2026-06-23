@@ -106,7 +106,6 @@ def list_assets(type: Optional[str] = None, current_user: UserOut = Depends(get_
                 income_frequency=r[11],
                 created_at=r[12]
             )
-            )
             for r in rows
         ]
 

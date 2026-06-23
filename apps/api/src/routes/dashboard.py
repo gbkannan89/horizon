@@ -132,12 +132,13 @@ def get_dashboard_overview(
 
             # Fetch Bills
             cur.execute(
-                "SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, created_at FROM recurring_bills WHERE user_id = %s",
+                "SELECT id, user_id, name, amount, frequency, category, bucket, due_day, monthly_equivalent, is_active, is_subscription, is_emi, emi_total_months, emi_months_paid, start_date, created_at FROM recurring_bills WHERE user_id = %s",
                 (user_id,)
             )
             bills = [RecurringBillOut(
                 id=r[0], user_id=r[1], name=r[2], amount=float(r[3]), frequency=r[4], category=r[5],
-                bucket=r[6], due_day=r[7], monthly_equivalent=float(r[8]), is_active=r[9], is_subscription=r[10], created_at=r[11]
+                bucket=r[6], due_day=r[7], monthly_equivalent=float(r[8]), is_active=r[9], is_subscription=r[10],
+                is_emi=r[11], emi_total_months=r[12], emi_months_paid=r[13], start_date=r[14], created_at=r[15]
             ) for r in cur.fetchall()]
 
             return DashboardOverview(

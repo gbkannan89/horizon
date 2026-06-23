@@ -61,7 +61,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db = Depends(get_db)) 
     
     with db.cursor() as cur:
         cur.execute(
-            'SELECT id, email, name, user_type, risk_profile, household_id FROM users WHERE id = %s',
+            'SELECT id, email, name, phone, user_type, risk_profile, household_id FROM users WHERE id = %s',
             (token_data.user_id,)
         )
         row = cur.fetchone()
@@ -72,9 +72,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db = Depends(get_db)) 
             id=row[0],
             email=row[1],
             name=row[2],
-            user_type=row[3],
-            risk_profile=row[4],
-            household_id=row[5]
+            phone=row[3],
+            user_type=row[4],
+            risk_profile=row[5],
+            household_id=row[6]
         )
 
 # Register
@@ -104,11 +105,11 @@ def register(user_in: UserRegister, db = Depends(get_db)):
             # Insert User
             cur.execute(
                 """
-                INSERT INTO users (email, password_hash, name, user_type, risk_profile, household_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id, email, name, user_type, risk_profile, household_id
+                INSERT INTO users (email, password_hash, name, phone, user_type, risk_profile, household_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, email, name, phone, user_type, risk_profile, household_id
                 """,
-                (user_in.email, password_hash, user_in.name, user_in.user_type, user_in.risk_profile, household_id)
+                (user_in.email, password_hash, user_in.name, user_in.phone, user_in.user_type, user_in.risk_profile, household_id)
             )
             user_row = cur.fetchone()
             db.commit()
@@ -124,9 +125,10 @@ def register(user_in: UserRegister, db = Depends(get_db)):
             id=user_row[0],
             email=user_row[1],
             name=user_row[2],
-            user_type=user_row[3],
-            risk_profile=user_row[4],
-            household_id=user_row[5]
+            phone=user_row[3],
+            user_type=user_row[4],
+            risk_profile=user_row[5],
+            household_id=user_row[6]
         )
         
         # Generate tokens
