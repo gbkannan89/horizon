@@ -11,6 +11,100 @@ import '../screens/insurance_hub_screen.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    final passwordController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          String? errorText;
+          bool isLoading = false;
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                SizedBox(width: 12),
+                Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'This will permanently delete your account and all associated data including income, expenses, goals, investments, insurance, bills, and household data. This action cannot be undone.',
+                      style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Enter your password to confirm',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      errorText: errorText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          errorText = null;
+                          isLoading = true;
+                        });
+                        try {
+                          await Provider.of<AuthProvider>(context, listen: false)
+                              .deleteAccount(passwordController.text.trim());
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                          if (context.mounted) {
+                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          }
+                        } on Exception catch (e) {
+                          setDialogState(() {
+                            errorText = e.toString().replaceFirst('Exception: ', '');
+                            isLoading = false;
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Delete My Account'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   // ─── Add Income Modal ──────────────────────────────────────────────────────
   void _showAddIncomeModal(BuildContext context) {
     final labelCtrl = TextEditingController();
@@ -858,6 +952,21 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: const Text('Log Out',
                     style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // ── Delete Account Button ─────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
+                onPressed: () => _showDeleteConfirmationDialog(context),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red, width: 1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Delete Account',
+                    style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 40),
