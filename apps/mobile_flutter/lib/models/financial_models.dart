@@ -24,6 +24,8 @@ class LocalAsset {
   final double interestRate;
   final bool isLiability;
   final bool generatesIncome;
+  final double? purchasePrice;
+  final String? purchaseDate;
 
   LocalAsset({
     required this.id, 
@@ -32,6 +34,8 @@ class LocalAsset {
     this.interestRate = 0.0,
     this.isLiability = false,
     this.generatesIncome = false,
+    this.purchasePrice,
+    this.purchaseDate,
   });
 }
 

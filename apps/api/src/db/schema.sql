@@ -148,6 +148,9 @@ ALTER TABLE assets ADD COLUMN IF NOT EXISTS income_frequency VARCHAR(50); -- 'mo
 
 ALTER TABLE wishlist_items ADD COLUMN IF NOT EXISTS lock_duration_days INTEGER DEFAULT 30;
 
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(20, 2);
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchase_date DATE;
+
 CREATE TABLE IF NOT EXISTS vehicles (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
@@ -163,6 +166,43 @@ CREATE TABLE IF NOT EXISTS net_worth_snapshots (
     snapshot_date DATE NOT NULL,
     net_worth NUMERIC(20, 2) NOT NULL,
     UNIQUE(user_id, snapshot_date)
+);
+
+-- Advisor Engine: Simulations, Nudges, Subscriptions
+CREATE TABLE IF NOT EXISTS simulations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    scenario_name VARCHAR(255) NOT NULL,
+    scenario_type VARCHAR(50) NOT NULL,
+    input_params JSONB NOT NULL,
+    results JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS nudges (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    severity VARCHAR(20) NOT NULL DEFAULT 'info',
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    action_label VARCHAR(100),
+    action_link VARCHAR(255),
+    is_dismissed BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subscription_insights (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    bill_id INTEGER REFERENCES recurring_bills(id) ON DELETE CASCADE,
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    last_used_date DATE,
+    monthly_cost NUMERIC(20, 2) NOT NULL,
+    annual_cost NUMERIC(20, 2) NOT NULL,
+    savings_opportunity NUMERIC(20, 2) DEFAULT 0.00,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS insurances (

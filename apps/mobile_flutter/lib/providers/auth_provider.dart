@@ -26,11 +26,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     return success;
   }
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(String name, String email, String password, {String userType = 'salaried', String riskProfile = 'moderate', String phone = ''}) async {
     _isLoading = true;
     notifyListeners();
 
-    final success = await _apiService.register(name, email, password);
+    final success = await _apiService.register(name, email, password, userType: userType, riskProfile: riskProfile, phone: phone);
     _isAuthenticated = success;
     
     if (success) await fetchUser();
@@ -61,7 +61,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _apiService.logout();
+    try {
+      await _apiService.logout();
+    } catch (_) {}
     _isAuthenticated = false;
     _user = null;
     notifyListeners();

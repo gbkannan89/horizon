@@ -256,17 +256,21 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                           UiUtils.showSnack(ctx, 'Please fill required fields.');
                           return;
                         }
-                        await p.addInsurance({
-                          'type': type,
-                          'provider': providerCtrl.text,
-                          'policy_name': policyCtrl.text,
-                          'premium_amount': double.tryParse(premiumCtrl.text) ?? 0,
-                          'premium_frequency': frequency,
-                          'coverage_amount': double.tryParse(coverageCtrl.text),
-                        });
-                        if (context.mounted) {
-                          Navigator.pop(ctx);
-                          UiUtils.showSnack(context, 'Policy added successfully!');
+                        try {
+                          await p.addInsurance({
+                            'type': type,
+                            'provider': providerCtrl.text,
+                            'policy_name': policyCtrl.text,
+                            'premium_amount': double.tryParse(premiumCtrl.text) ?? 0,
+                            'premium_frequency': frequency,
+                            'coverage_amount': double.tryParse(coverageCtrl.text),
+                          });
+                          if (context.mounted) {
+                            Navigator.pop(ctx);
+                            UiUtils.showSnack(context, 'Policy added successfully!');
+                          }
+                        } catch (e) {
+                          if (context.mounted) UiUtils.showSnack(context, 'Failed to add policy: $e', isError: true);
                         }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),

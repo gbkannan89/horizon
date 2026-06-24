@@ -5,6 +5,7 @@ import 'budget_screen.dart';
 import 'profile_screen.dart';
 import 'portfolio_screen.dart';
 import 'discipline_dashboard_screen.dart';
+import 'advisor_hub_screen.dart';
 import '../services/discipline_service.dart';
 
 class MainShell extends StatefulWidget {
@@ -21,6 +22,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
     const DashboardScreen(),
     const PortfolioScreen(),
     const BudgetScreen(),
+    const AdvisorHubScreen(),
     DisciplineDashboardScreen(disciplineService: DisciplineService()),
     const ProfileScreen(),
   ];
@@ -29,6 +31,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
     _NavItem(icon: Icons.home_outlined,               activeIcon: Icons.home_rounded,             label: 'Home'),
     _NavItem(icon: Icons.account_balance_outlined,    activeIcon: Icons.account_balance_rounded,  label: 'Portfolio'),
     _NavItem(icon: Icons.pie_chart_outline_rounded,   activeIcon: Icons.pie_chart_rounded,        label: 'Budget'),
+    _NavItem(icon: Icons.auto_awesome_outlined,       activeIcon: Icons.auto_awesome_rounded,     label: 'Advisor'),
     _NavItem(icon: Icons.shield_outlined,             activeIcon: Icons.shield_rounded,           label: 'Discipline'),
     _NavItem(icon: Icons.person_outline_rounded,      activeIcon: Icons.person_rounded,           label: 'Profile'),
   ];

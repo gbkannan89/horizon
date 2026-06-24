@@ -10,13 +10,19 @@ class FinancialScoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<FinancialProvider>();
     final score = provider.finScoreVal;
+    final loading = provider.isLoading;
     
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    List<Map<String, dynamic>> history = provider.scoreHistory.map((e) {
-      final dt = DateTime.parse(e['calculatedAt'].toString());
-      return {'month': months[dt.month - 1], 'score': e['score']};
-    }).toList();
+    List<Map<String, dynamic>> history = [];
+    try {
+      history = provider.scoreHistory.map((e) {
+        final dt = DateTime.parse(e['calculatedAt']?.toString() ?? '');
+        return {'month': months[dt.month - 1], 'score': e['score'] ?? 0};
+      }).toList();
+    } catch (_) {
+      history = [];
+    }
     
     if (history.isEmpty) {
       history = [{'month': months[DateTime.now().month - 1], 'score': score}];
@@ -36,7 +42,9 @@ class FinancialScoreScreen extends StatelessWidget {
         title: const Text('Score Breakdown', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: loading
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+        : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [

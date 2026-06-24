@@ -20,7 +20,7 @@ class BudgetScreen extends StatelessWidget {
       builder: (ctx) => const UploadAnimationDialog(),
     );
     try {
-      await Provider.of<FinancialProvider>(context, listen: false).uploadTransactionsCsv(filePath);
+      await Provider.of<FinancialProvider>(context, listen: false).uploadStatement(filePath);
       if (context.mounted) {
         Navigator.of(context).pop(); // close dialog
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload successful!')));
@@ -384,6 +384,133 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
+  Widget _formatBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  // ── CATEGORY BREAKDOWN ──────────────────────────────────────────────────────
+  Widget _buildCategoryBreakdown(Map<String, dynamic>? bd) {
+    if (bd == null) return const SizedBox.shrink();
+    final categories = bd['categoryBreakdown'] as List<dynamic>? ?? [];
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    final colors = [
+      const Color(0xFF3B82F6), const Color(0xFFF59E0B), const Color(0xFF10B981),
+      const Color(0xFFEF4444), const Color(0xFF8B5CF6), const Color(0xFFEC4899),
+      const Color(0xFF06B6D4), const Color(0xFFF97316),
+    ];
+
+    return _budgetCard(
+      title: 'Spending by Category',
+      icon: Icons.pie_chart_rounded,
+      color: const Color(0xFF3B82F6),
+      child: Column(children: [
+        ...categories.take(6).toList().asMap().entries.map((entry) {
+          final i = entry.key;
+          final cat = entry.value;
+          final name = cat['category'] ?? '';
+          final amount = (cat['amount'] ?? 0).toDouble();
+          final color = colors[i % colors.length];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(children: [
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+              const SizedBox(width: 10),
+              Expanded(child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+              Text('₹${_fmt(amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+            ]),
+          );
+        }),
+      ]),
+    );
+  }
+
+  // ── MONTH-OVER-MONTH COMPARISON ─────────────────────────────────────────────
+  Widget _buildBucketComparison(Map<String, dynamic>? bd) {
+    if (bd == null) return const SizedBox.shrink();
+    final buckets = bd['bucketComparison'] as List<dynamic>? ?? [];
+    if (buckets.isEmpty) return const SizedBox.shrink();
+
+    final prevMonth = bd['previousMonth'] ?? 'Last';
+    final colors = {
+      'Needs': const Color(0xFFE88A1A),
+      'Wants': const Color(0xFF6B46C1),
+      'Savings': const Color(0xFF059669),
+    };
+
+    return _budgetCard(
+      title: 'vs $prevMonth',
+      icon: Icons.compare_arrows_rounded,
+      color: const Color(0xFF6B46C1),
+      child: Column(children: buckets.map<Widget>((b) {
+        final bucket = b['bucket'] ?? '';
+        final curr = (b['currentAmount'] ?? 0).toDouble();
+        final change = (b['changePct'] ?? 0).toDouble();
+        final color = colors[bucket] ?? Colors.grey;
+        final isUp = change > 0;
+        final isDown = change < 0;
+        final isWants = bucket == 'Wants';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(children: [
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 10),
+            Expanded(child: Text(bucket, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color))),
+            Text('₹${_fmt(curr)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: (isUp ? (isWants ? Colors.red : Colors.green) : isDown ? (isWants ? Colors.green : Colors.red) : Colors.grey).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(
+                  change == 0 ? Icons.remove_rounded : (isUp ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded),
+                  size: 12,
+                  color: isUp ? (isWants ? Colors.red : Colors.green) : isDown ? (isWants ? Colors.green : Colors.red) : Colors.grey,
+                ),
+                const SizedBox(width: 2),
+                Text('${change.abs().toStringAsFixed(1)}%', style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.bold,
+                  color: isUp ? (isWants ? Colors.red : Colors.green) : isDown ? (isWants ? Colors.green : Colors.red) : Colors.grey,
+                )),
+              ]),
+            ),
+          ]),
+        );
+      }).toList()),
+    );
+  }
+
+  Widget _budgetCard({required String title, required IconData icon, required Color color, required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 16, offset: const Offset(0, 6))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 18)),
+          const SizedBox(width: 10),
+          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+        ]),
+        const SizedBox(height: 16),
+        child,
+      ]),
+    );
+  }
+
+  String _fmt(double v) => v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}K' : v.toStringAsFixed(0);
+
   Widget _buildCategoryPill(String label, IconData icon, bool isSelected) {
     return Container(
       width: 70,
@@ -442,33 +569,69 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseItem(String title, String subtitle, String amount, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+  String _formatDate(dynamic dateVal) {
+    if (dateVal == null) return '';
+    try {
+      final dt = DateTime.parse(dateVal.toString());
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final diff = today.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
+      if (diff == 0) return 'Today';
+      if (diff == 1) return 'Yesterday';
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      if (dt.year == now.year) return '${dt.day} ${months[dt.month - 1]}';
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return dateVal.toString();
+    }
+  }
+
+  Widget _buildExpenseItem(dynamic exp) {
+    final name = exp['name'] ?? '';
+    final date = _formatDate(exp['date']);
+    final amount = (exp['amount'] ?? 0).toDouble();
+    final bucket = exp['bucket'] ?? 'Wants';
+    final color = _getColorForBucket(bucket);
+    final icon = _getIconData(exp['icon'] ?? '');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.08)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
-              )
-            ],
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 20),
           ),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(date, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                      child: Text(bucket, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
         ],
       ),
     );
@@ -476,10 +639,16 @@ class BudgetScreen extends StatelessWidget {
 
   IconData _getIconData(String iconName) {
     switch(iconName) {
+      case 'movie_outlined': return Icons.movie_outlined;
+      case 'shopping_bag_outlined': return Icons.shopping_bag_outlined;
+      case 'restaurant_outlined': return Icons.restaurant_outlined;
+      case 'directions_car_outlined': return Icons.directions_car_outlined;
+      case 'receipt_long_outlined': return Icons.receipt_long_outlined;
+      case 'savings_outlined': return Icons.savings_outlined;
       case 'home_outlined': return Icons.home_outlined;
       case 'business_center_outlined': return Icons.business_center_outlined;
       case 'star_border': return Icons.star_border;
-      default: return Icons.attach_money;
+      default: return Icons.receipt;
     }
   }
 
@@ -627,9 +796,9 @@ class BudgetScreen extends StatelessWidget {
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Divider(),
                       ),
-                      _buildBudgetBar('Needs', '${(provider.needsSpent / provider.needsBudget * 100).toInt()}%', '₹${provider.needsSpent.toStringAsFixed(0)}', provider.needsSpent / provider.needsBudget, const Color(0xFFE88A1A)),
-                      _buildBudgetBar('Wants', '${(provider.wantsSpent / provider.wantsBudget * 100).toInt()}%', '₹${provider.wantsSpent.toStringAsFixed(0)}', provider.wantsSpent / provider.wantsBudget, const Color(0xFF6B46C1)),
-                      _buildBudgetBar('Savings', '${(provider.savingsSpent / provider.savingsBudget * 100).toInt()}%', '₹${provider.savingsSpent.toStringAsFixed(0)}', provider.savingsSpent / provider.savingsBudget, const Color(0xFF059669)),
+                      _buildBudgetBar('Needs', '${provider.needsBudget > 0 ? (provider.needsSpent / provider.needsBudget * 100).toInt() : 0}%', '₹${provider.needsSpent.toStringAsFixed(0)}', provider.needsBudget > 0 ? provider.needsSpent / provider.needsBudget : 0, const Color(0xFFE88A1A)),
+                      _buildBudgetBar('Wants', '${provider.wantsBudget > 0 ? (provider.wantsSpent / provider.wantsBudget * 100).toInt() : 0}%', '₹${provider.wantsSpent.toStringAsFixed(0)}', provider.wantsBudget > 0 ? provider.wantsSpent / provider.wantsBudget : 0, const Color(0xFF6B46C1)),
+                      _buildBudgetBar('Savings', '${provider.savingsBudget > 0 ? (provider.savingsSpent / provider.savingsBudget * 100).toInt() : 0}%', '₹${provider.savingsSpent.toStringAsFixed(0)}', provider.savingsBudget > 0 ? provider.savingsSpent / provider.savingsBudget : 0, const Color(0xFF059669)),
                     ],
                   ),
                 ),
@@ -702,49 +871,85 @@ class BudgetScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // Recent Expenses
+                // Recent Expenses Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        TextButton.icon(
-                          onPressed: () async {
-                            try {
-                              FilePickerResult? result = await FilePicker.platform.pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: ['csv'],
-                              );
-                              if (result != null && result.files.single.path != null) {
-                                if (context.mounted) {
-                                  _showUploadProgressDialog(context, result.files.single.path!);
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.upload_file, size: 16),
-                          label: const Text('Upload CSV'),
-                        ),
-                        Text('See All', style: TextStyle(color: Colors.blue.shade700, fontSize: 13, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                    Text('${provider.recentExpenses.length} transactions', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                   ],
                 ),
                 const SizedBox(height: 16),
-                ...provider.recentExpenses.map((exp) {
-                  return _buildExpenseItem(
-                    exp['name'] ?? '',
-                    exp['date'] ?? 'Today',
-                    '₹${(exp['amount'] ?? 0).toStringAsFixed(0)}',
-                    _getIconData(exp['icon'] ?? ''),
-                    _getColorForBucket(exp['bucket'] ?? '')
-                  );
-                }).toList(),
+
+                // Upload Statement Card
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)]),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () async {
+                        try {
+                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                            type: FileType.custom,
+                            allowedExtensions: ['csv', 'xlsx'],
+                          );
+                          if (result != null && result.files.single.path != null) {
+                            if (context.mounted) _showUploadProgressDialog(context, result.files.single.path!);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            UiUtils.showSnack(context, 'Upload failed: $e', isError: true);
+                          }
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                              child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 26),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Upload Bank Statement', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      _formatBadge('CSV'),
+                                      const SizedBox(width: 6),
+                                      _formatBadge('XLSX'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Expense List
+                ...provider.recentExpenses.map((exp) => _buildExpenseItem(exp)).toList(),
+
+                const SizedBox(height: 24),
+
+                // Analytics
+                _buildCategoryBreakdown(provider.budgetBreakdown),
+                _buildBucketComparison(provider.budgetBreakdown),
 
                 const SizedBox(height: 80),
               ],
@@ -818,7 +1023,7 @@ class _UploadAnimationDialogState extends State<UploadAnimationDialog> with Sing
             ),
             const SizedBox(height: 24),
             Text(
-              _isSuccess ? "Upload Complete!" : "Parsing CSV...",
+              _isSuccess ? "Upload Complete!" : "Parsing file...",
               style: TextStyle(
                 fontSize: 18, 
                 fontWeight: FontWeight.bold,
@@ -827,7 +1032,7 @@ class _UploadAnimationDialogState extends State<UploadAnimationDialog> with Sing
             ),
             if (!_isSuccess) ...[
               const SizedBox(height: 8),
-              const Text("Categorizing your transactions...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const Text("Reading and categorizing transactions...", style: TextStyle(color: Colors.grey, fontSize: 13)),
             ]
           ],
         ),

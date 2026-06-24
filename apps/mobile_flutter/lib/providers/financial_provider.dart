@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/financial_models.dart';
 import '../models/wishlist_item.dart';
@@ -36,6 +37,11 @@ class FinancialProvider extends ChangeNotifier {
   List<dynamic> recentExpenses = [];
   List<dynamic> upcomingBills = [];
   List<WishlistItem> wishlist = [];
+
+  // Analytics
+  List<dynamic> spendingTrend = [];
+  Map<String, dynamic>? budgetBreakdown;
+  Map<String, dynamic>? portfolioSummary;
 
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -84,6 +90,7 @@ class FinancialProvider extends ChangeNotifier {
       goals = dashboardData['goals'] ?? [];
       recentExpenses = dashboardData['recent_expenses'] ?? [];
       upcomingBills = dashboardData['upcoming_bills'] ?? [];
+      spendingTrend = dashboardData['spending_trend'] ?? [];
     } catch (e) {
       print('Dashboard load error: $e');
     }
@@ -98,9 +105,15 @@ class FinancialProvider extends ChangeNotifier {
           interestRate: (a['interest_rate'] ?? 0).toDouble(),
           isLiability: a['is_liability'] ?? false,
           generatesIncome: a['generates_income'] ?? false,
+          purchasePrice: a['purchase_price']?.toDouble(),
+          purchaseDate: a['purchase_date'],
         )).toList();
       }
     } catch (e) { print('Assets load error: $e'); }
+
+    try {
+      portfolioSummary = await _apiService.get('/api/analytics/portfolio-summary');
+    } catch (e) { print('Portfolio summary load error: $e'); }
 
     try {
       final vehiclesData = await _apiService.get('/api/assets/vehicles');
@@ -198,6 +211,10 @@ class FinancialProvider extends ChangeNotifier {
       print('Score history load error: $e');
     }
 
+    // Load background data
+    loadBudgetBreakdown();
+    loadNudges();
+
     _isLoading = false;
     notifyListeners();
   }
@@ -270,7 +287,7 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── TRANSACTIONS ───────────────────────────────────────────────────────────
-  Future<void> uploadTransactionsCsv(String path) async {
+  Future<void> uploadStatement(String path) async {
     await _apiService.uploadFile('/api/transactions/upload', 'file', path);
     await loadAllData();
   }
@@ -281,6 +298,8 @@ class FinancialProvider extends ChangeNotifier {
     bool isLiability = false,
     bool generatesIncome = false,
     String? incomeFrequency,
+    double? purchasePrice,
+    String? purchaseDate,
   }) async {
     await _apiService.post('/api/assets', {
       'name': name, 'type': type, 'amount': amount,
@@ -288,6 +307,8 @@ class FinancialProvider extends ChangeNotifier {
       'is_liability': isLiability,
       'generates_income': generatesIncome,
       'income_frequency': incomeFrequency,
+      'purchase_price': purchasePrice,
+      'purchase_date': purchaseDate,
     });
     await loadAllData();
   }
@@ -298,6 +319,11 @@ class FinancialProvider extends ChangeNotifier {
       'purchase_cost': purchaseCost,
       'insurance_renewal_date': insuranceRenewalDate?.toIso8601String().split('T').first,
     });
+    await loadAllData();
+  }
+
+  Future<void> deleteVehicle(String id) async {
+    await _apiService.delete('/api/assets/vehicles/$id');
     await loadAllData();
   }
 
@@ -327,5 +353,104 @@ class FinancialProvider extends ChangeNotifier {
       'contribution_to_household': contribution, 'relationship': relationship
     });
     await loadAllData();
+  }
+
+  // ── REPORT ────────────────────────────────────────────────────────────────
+  Future<String> downloadReport() async {
+    final bytes = await _apiService.downloadFile('/api/report/summary-pdf');
+    if (bytes.isEmpty) throw Exception('Empty response');
+    final dir = Directory.systemTemp;
+    final file = File('${dir.path}/horizon_report.pdf');
+    await file.writeAsBytes(bytes);
+    return file.path;
+  }
+
+  // ── ANALYTICS ─────────────────────────────────────────────────────────────
+  Future<void> loadBudgetBreakdown() async {
+    try {
+      budgetBreakdown = await _apiService.get('/api/analytics/budget-breakdown');
+    } catch (e) {
+      print('Budget breakdown load error: $e');
+    }
+    notifyListeners();
+  }
+
+  // ── ADVISOR ────────────────────────────────────────────────────────────────
+  List<dynamic> nudges = [];
+  List<dynamic> simulations = [];
+  Map<String, dynamic>? debtOptimizer;
+  List<dynamic> subscriptionInsights = [];
+
+  Future<void> loadNudges() async {
+    try {
+      final data = await _apiService.get('/api/advisor/nudges');
+      if (data is List) nudges = data;
+    } catch (e) {
+      print('Nudges load error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> dismissNudge(int id) async {
+    await _apiService.put('/api/advisor/nudges/$id/dismiss', {});
+    await loadNudges();
+  }
+
+  Future<Map<String, dynamic>> lifecycleSimulate(Map<String, dynamic> params) async {
+    final result = await _apiService.post('/api/advisor/lifecycle-simulate', params);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> runSimulation(Map<String, dynamic> params) async {
+    final result = await _apiService.post('/api/advisor/simulate', params);
+    await loadSimulations();
+    return result;
+  }
+
+  Future<void> loadSimulations() async {
+    try {
+      final data = await _apiService.get('/api/advisor/simulations');
+      if (data is List) simulations = data;
+    } catch (e) {
+      print('Simulations load error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> loadDebtOptimizer() async {
+    try {
+      debtOptimizer = await _apiService.get('/api/advisor/debt-optimizer');
+    } catch (e) {
+      print('Debt optimizer load error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> loadSubscriptionInsights() async {
+    try {
+      final data = await _apiService.get('/api/advisor/subscription-insights');
+      if (data is List) subscriptionInsights = data;
+    } catch (e) {
+      print('Subscription insights load error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> flagSubscription(int billId, String status) async {
+    await _apiService.put('/api/advisor/subscription-insights/$billId', {'status': status});
+    await loadSubscriptionInsights();
+  }
+
+  Future<void> loadAllAdvisorData() async {
+    try {
+      await Future.wait([
+        loadNudges(),
+        loadSimulations(),
+        loadDebtOptimizer(),
+        loadSubscriptionInsights(),
+      ]);
+    } catch (e) {
+      print('Advisor data load error: $e');
+    }
   }
 }

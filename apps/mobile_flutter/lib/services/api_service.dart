@@ -24,7 +24,7 @@ class _Config {
 
 class ApiService {
   static String get baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8000';
+    if (kIsWeb) return 'http://localhost:8000';
     if (kReleaseMode) {
       return _Config.production;
     } else {
@@ -69,7 +69,7 @@ class ApiService {
       return false;
     }
   }
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(String name, String email, String password, {String userType = 'salaried', String riskProfile = 'moderate', String phone = ''}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/auth/register'),
@@ -78,8 +78,9 @@ class ApiService {
           'name': name,
           'email': email,
           'password': password,
-          'user_type': 'primary',
-          'risk_profile': 'moderate'
+          'user_type': userType,
+          'risk_profile': riskProfile,
+          'phone': phone.isEmpty ? null : phone,
         }),
       );
       if (response.statusCode == 201) {
@@ -286,6 +287,28 @@ class ApiService {
       _handleError(response);
     } catch (e) {
       print('ApiService.uploadFile error: $e');
+      rethrow;
+    }
+  }
+
+  // ── FILE DOWNLOAD ──────────────────────────────────────────────────────────
+  Future<List<int>> downloadFile(String endpoint) async {
+    try {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final request = http.Request('GET', uri);
+      final token = await _getToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.bodyBytes;
+      }
+      _handleError(response);
+      return [];
+    } catch (e) {
+      print('ApiService.downloadFile error: $e');
       rethrow;
     }
   }

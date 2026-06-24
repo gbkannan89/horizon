@@ -196,8 +196,13 @@ class ProfileScreen extends StatelessWidget {
                       final provider = Provider.of<FinancialProvider>(ctx, listen: false);
                       try {
                         await provider.addIncome(label, selectedType, amount, selectedFrequency);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      } catch (_) {}
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          UiUtils.showSnack(ctx, 'Income added successfully');
+                        }
+                      } catch (e) {
+                        if (ctx.mounted) UiUtils.showSnack(ctx, 'Failed to add income: $e', isError: true);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E3A8A),
@@ -319,9 +324,16 @@ class ProfileScreen extends StatelessWidget {
                     if (nameCtrl.text.isEmpty || incomeCtrl.text.isEmpty || contribCtrl.text.isEmpty) return;
                     final income = double.tryParse(incomeCtrl.text) ?? 0.0;
                     final contrib = double.tryParse(contribCtrl.text) ?? 0.0;
-                    final provider = Provider.of<FinancialProvider>(context, listen: false);
-                    await provider.addContributingMember(nameCtrl.text, income, contrib, relationCtrl.text);
-                    if (context.mounted) Navigator.pop(context);
+                    try {
+                      final provider = Provider.of<FinancialProvider>(context, listen: false);
+                      await provider.addContributingMember(nameCtrl.text, income, contrib, relationCtrl.text);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        UiUtils.showSnack(context, 'Member added successfully');
+                      }
+                    } catch (e) {
+                      if (context.mounted) UiUtils.showSnack(context, 'Failed to add member: $e', isError: true);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A8A),
@@ -788,6 +800,37 @@ class ProfileScreen extends StatelessWidget {
                 label: const Text('Insurance Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Export Report Button ─────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Downloading report...')),
+                    );
+                    final path = await context.read<FinancialProvider>().downloadReport();
+                    if (context.mounted) {
+                      UiUtils.showSnack(context, 'Report saved to: $path');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      UiUtils.showSnack(context, 'Export failed: $e', isError: true);
+                    }
+                  }
+                },
+                icon: const Icon(Icons.description_outlined),
+                label: const Text('Export Financial Report (PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),

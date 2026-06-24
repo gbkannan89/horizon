@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 import datetime
 from ..database import get_db
-from ..schemas import DashboardOverview, GoalOut, ExpenseOut, RecurringBillOut, ExpenseCreate, UserOut
+from ..schemas import DashboardOverview, TrendPoint, GoalOut, ExpenseOut, RecurringBillOut, ExpenseCreate, UserOut
 from .auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
+
+MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 @router.get("/overview", response_model=DashboardOverview)
 def get_dashboard_overview(
@@ -16,7 +18,7 @@ def get_dashboard_overview(
 ):
     try:
         with conn.cursor() as cur:
-            user_id = current_user.id  # FIX: was current_user['id'] — UserOut is a Pydantic model not a dict
+            user_id = current_user.id
 
             # Fetch Incomes
             cur.execute("SELECT amount, frequency FROM incomes WHERE user_id = %s", (user_id,))
@@ -89,7 +91,6 @@ def get_dashboard_overview(
                     wants_spent += amt
                 elif bucket == 'Savings':
                     savings_spent += amt
-
                 expenses.append(ExpenseOut(
                     id=row[0], user_id=row[1], name=row[2], amount=amt, category=row[4],
                     bucket=bucket, icon=row[6], date=row[7], created_at=row[8]
@@ -98,7 +99,7 @@ def get_dashboard_overview(
             total_spent = needs_spent + wants_spent + savings_spent
             total_left = total_income - total_spent
 
-            # Budget targets: 50/30/20 of total income
+            # Budget targets
             needs_budget = total_income * 0.50 if total_income > 0 else 37500.0
             wants_budget = total_income * 0.30 if total_income > 0 else 22500.0
             savings_budget = total_income * 0.20 if total_income > 0 else 15000.0
@@ -118,17 +119,68 @@ def get_dashboard_overview(
             ef_score = min(40, int((liquid_assets / ef_target) * 40)) if ef_target > 0 else 0
 
             fin_score = savings_score + dti_score + ef_score
-            fin_score = max(10, min(100, fin_score))  # clamp between 10 and 100
+            fin_score = max(10, min(100, fin_score))
 
-            # Fetch Goals
+            # ── Fetch Goals with Projections ──────────────────────────────────
             cur.execute(
                 "SELECT id, user_id, name, target_amount, current_amount, status, color, created_at FROM goals WHERE user_id = %s",
                 (user_id,)
             )
-            goals = [GoalOut(
-                id=r[0], user_id=r[1], name=r[2], target_amount=float(r[3]), current_amount=float(r[4]),
-                status=r[5], color=r[6], created_at=r[7]
-            ) for r in cur.fetchall()]
+            goal_rows = cur.fetchall()
+
+            # Average monthly savings (last 6 months of Savings bucket)
+            cur.execute("""
+                SELECT COALESCE(AVG(monthly_amt), 0) FROM (
+                    SELECT SUM(amount) as monthly_amt FROM expenses
+                    WHERE user_id = %s AND bucket = 'Savings' AND date >= CURRENT_DATE - INTERVAL '6 months'
+                    GROUP BY DATE_TRUNC('month', date)
+                ) sub
+            """, (user_id,))
+            avg_monthly_savings = float(cur.fetchone()[0] or 0)
+
+            total_goal_target = sum(float(r[3]) for r in goal_rows)
+            goals = []
+            for r in goal_rows:
+                target = float(r[3])
+                current = float(r[4])
+                remaining = target - current
+                projected_date = None
+                monthly_needed = 0.0
+
+                if remaining > 0 and avg_monthly_savings > 0 and total_goal_target > 0:
+                    monthly_allocation = avg_monthly_savings * (target / total_goal_target)
+                    months_needed = remaining / monthly_allocation if monthly_allocation > 0 else 999
+                    if months_needed < 1200:
+                        projected_date = (datetime.date.today() + datetime.timedelta(days=int(months_needed * 30.5))).isoformat()
+                    monthly_needed = round(monthly_allocation, 2)
+
+                goals.append(GoalOut(
+                    id=r[0], user_id=r[1], name=r[2], target_amount=target, current_amount=current,
+                    status=r[5], color=r[6], created_at=r[7],
+                    projected_completion_date=projected_date,
+                    monthly_saving_needed=monthly_needed
+                ))
+
+            # ── Spending Trend (last 6 months) ─────────────────────────────────
+            six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
+            cur.execute("""
+                SELECT DATE_TRUNC('month', date) as month,
+                       SUM(CASE WHEN bucket = 'Needs' THEN amount ELSE 0 END) as needs,
+                       SUM(CASE WHEN bucket = 'Wants' THEN amount ELSE 0 END) as wants,
+                       SUM(CASE WHEN bucket = 'Savings' THEN amount ELSE 0 END) as savings
+                FROM expenses
+                WHERE user_id = %s AND date >= %s
+                GROUP BY month ORDER BY month LIMIT 6
+            """, (user_id, six_months_ago))
+            trend_rows = cur.fetchall()
+            spending_trend = [
+                TrendPoint(
+                    month=MONTHS_SHORT[r[0].month - 1],
+                    needs=float(r[1] or 0),
+                    wants=float(r[2] or 0),
+                    savings=float(r[3] or 0)
+                ) for r in trend_rows
+            ]
 
             # Fetch Bills
             cur.execute(
@@ -157,7 +209,8 @@ def get_dashboard_overview(
                 savings_budget=savings_budget,
                 goals=goals,
                 recent_expenses=expenses,
-                upcoming_bills=bills
+                upcoming_bills=bills,
+                spending_trend=spending_trend
             )
     except Exception as e:
         import traceback

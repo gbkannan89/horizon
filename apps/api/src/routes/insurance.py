@@ -4,9 +4,9 @@ from ..database import get_db
 from .auth import get_current_user
 from ..schemas import UserOut, InsuranceCreate, InsuranceOut
 
-router = APIRouter(prefix="/insurance", tags=["Insurance"])
+router = APIRouter(prefix="/api/insurance", tags=["Insurance"])
 
-@router.get("/", response_model=List[InsuranceOut])
+@router.get("", response_model=List[InsuranceOut])
 def get_insurances(
     current_user: UserOut = Depends(get_current_user),
     conn = Depends(get_db)
@@ -31,7 +31,7 @@ def get_insurances(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/", response_model=InsuranceOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InsuranceOut, status_code=status.HTTP_201_CREATED)
 def add_insurance(
     ins: InsuranceCreate,
     current_user: UserOut = Depends(get_current_user),

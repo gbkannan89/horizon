@@ -334,67 +334,187 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
   Widget _buildWishlistCard() {
     return _buildGamifiedCard(
       title: 'Wishlist Lockbox',
-      icon: Icons.ac_unit_rounded,
+      icon: Icons.lock_clock_rounded,
       gradient: const [Color(0xFF0891B2), Color(0xFF22D3EE)],
       child: Column(
         children: [
+          if (_wishlist.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: [
+                  Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.grey.withOpacity(0.5)),
+                  const SizedBox(height: 8),
+                  const Text('Your lockbox is empty', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
+                  const Text('Lock items here to delay impulse purchases.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+            ),
           ..._wishlist.map((item) {
             bool unlocked = item.isUnlocked;
             bool bought = item.status == 'bought';
+            
+            BoxDecoration itemDecoration;
+            if (bought) {
+              itemDecoration = BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              );
+            } else if (unlocked) {
+              itemDecoration = BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              );
+            } else {
+              itemDecoration = BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              );
+            }
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: itemDecoration,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: bought 
+                          ? const Color(0xFFE2E8F0) 
+                          : unlocked 
+                              ? const Color(0xFFD1FAE5) 
+                              : const Color(0xFFFEF3C7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      bought 
+                          ? Icons.check_circle_outline_rounded 
+                          : unlocked 
+                              ? Icons.lock_open_rounded 
+                              : Icons.lock_outline_rounded,
+                      color: bought 
+                          ? const Color(0xFF64748B) 
+                          : unlocked 
+                              ? const Color(0xFF059669) 
+                              : const Color(0xFFD97706),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, decoration: bought ? TextDecoration.lineThrough : null)),
-                        const SizedBox(height: 4),
-                        Text('₹${item.amount.toStringAsFixed(0)}', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                        Text(
+                          item.name, 
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700, 
+                            fontSize: 15, 
+                            color: bought 
+                                ? const Color(0xFF64748B) 
+                                : unlocked 
+                                    ? const Color(0xFF064E3B) 
+                                    : const Color(0xFF1E293B),
+                            decoration: bought ? TextDecoration.lineThrough : null,
+                          )
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '₹${item.amount.toStringAsFixed(0)}', 
+                          style: TextStyle(
+                            color: bought 
+                                ? const Color(0xFF94A3B8) 
+                                : unlocked 
+                                    ? const Color(0xFF047857) 
+                                    : const Color(0xFF0891B2), 
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          )
+                        ),
                       ],
                     ),
                   ),
                   if (bought)
-                    const Icon(Icons.check_circle_rounded, color: Colors.green)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Purchased', 
+                        style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                    )
                   else if (unlocked)
-                    ElevatedButton(
+                    FilledButton.icon(
                       onPressed: () => _updateWishlistStatus(item.id, 'bought'),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0891B2), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Buy Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 14, color: Colors.white),
+                      label: const Text('Buy Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     )
                   else
-                    Column(
-                      children: [
-                        const Icon(Icons.lock_rounded, color: Colors.orange, size: 20),
-                        const SizedBox(height: 4),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: item.unlockDate.difference(DateTime.now()).inDays.toDouble()),
-                          duration: const Duration(milliseconds: 1500),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Text('${value.toInt()}d left', style: const TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold));
-                          },
-                        ),
-                      ],
-                    )
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: item.unlockDate.difference(DateTime.now()).inDays.toDouble()),
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        final days = value.toInt().clamp(0, 365);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFED7AA)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.timer_outlined, color: Color(0xFFD97706), size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${days}d left', 
+                                style: const TextStyle(color: Color(0xFFD97706), fontSize: 11, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
             );
           }).toList(),
+          const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _addWishlistItemDialog,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add to Wishlist'),
-              style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+              label: const Text('Add to Wishlist', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0891B2),
+                side: const BorderSide(color: Color(0xFF0891B2), width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
             ),
           )
         ],

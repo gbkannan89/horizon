@@ -1,9 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/financial_provider.dart';
 import '../providers/auth_provider.dart';
 import 'financial_score_screen.dart';
+import 'nudge_center_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -62,6 +65,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 20),
                   _buildAnimatedSection(_buildBudgetCard(provider, loaded), 200),
                   const SizedBox(height: 20),
+                  _buildAnimatedSection(_buildSpendingTrend(provider, loaded), 250),
+                  const SizedBox(height: 20),
                   _buildAnimatedSection(_buildFinancialInsights(provider, loaded), 300),
                   const SizedBox(height: 20),
                   _buildAnimatedSection(_buildColdPurchaseCountdown(provider, loaded), 400),
@@ -119,10 +124,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 2),
             Text('$userName 👋', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
           ]),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
-            child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NudgeCenterScreen())),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                ),
+                if (loaded && p.nudges.isNotEmpty)
+                  Positioned(
+                    right: 4, top: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                      child: Text(
+                        '${p.nudges.length > 9 ? '9+' : p.nudges.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, height: 1),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ]),
 
@@ -264,6 +288,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ]);
   }
 
+  // ── SPENDING TREND ─────────────────────────────────────────────────────────
+  Widget _buildSpendingTrend(FinancialProvider p, bool loaded) {
+    if (!loaded || p.spendingTrend.isEmpty) return const SizedBox.shrink();
+
+    final trend = p.spendingTrend;
+    double maxVal = 0;
+    for (final t in trend) {
+      maxVal = [maxVal, (t['needs'] ?? 0).toDouble(), (t['wants'] ?? 0).toDouble(), (t['savings'] ?? 0).toDouble()].reduce((a, b) => a > b ? a : b);
+    }
+
+    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _cardHeader('Spending Trend', Icons.trending_up_rounded, const Color(0xFF6B46C1)),
+      const SizedBox(height: 20),
+      SizedBox(
+        height: 180,
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
+              getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+            ),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, interval: 1,
+                getTitlesWidget: (v, _) {
+                  final i = v.toInt();
+                  if (i < 0 || i >= trend.length) return const SizedBox();
+                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(trend[i]['month'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)));
+                },
+              )),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              _trendLine(trend, 'needs', const Color(0xFFE88A1A)),
+              _trendLine(trend, 'wants', const Color(0xFF6B46C1)),
+              _trendLine(trend, 'savings', const Color(0xFF059669)),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _legendDot('Needs', const Color(0xFFE88A1A)),
+        const SizedBox(width: 16),
+        _legendDot('Wants', const Color(0xFF6B46C1)),
+        const SizedBox(width: 16),
+        _legendDot('Savings', const Color(0xFF059669)),
+      ]),
+    ]));
+  }
+
+  LineChartBarData _trendLine(List<dynamic> data, String key, Color color) {
+    return LineChartBarData(
+      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value[key] ?? 0).toDouble())).toList(),
+      isCurved: true,
+      color: color,
+      barWidth: 2.5,
+      isStrokeCapRound: true,
+      dotData: FlDotData(show: false),
+      belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+        colors: [color.withOpacity(0.15), color.withOpacity(0.01)],
+        begin: Alignment.topCenter, end: Alignment.bottomCenter,
+      )),
+    );
+  }
+
+  Widget _legendDot(String label, Color color) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+    ]);
+  }
+
   // ── FINANCIAL INSIGHTS ─────────────────────────────────────────────────────
   Widget _buildFinancialInsights(FinancialProvider p, bool loaded) {
     if (!loaded) return const SizedBox.shrink();
@@ -321,47 +421,237 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E293B))),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0891B2).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.ac_unit_rounded, color: Color(0xFF0891B2), size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E293B))),
+            ],
+          ),
         ),
         SizedBox(
-          height: 140,
+          height: 270,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: p.wishlist.length,
             itemBuilder: (ctx, i) {
               final w = p.wishlist[i];
-              final daysLeft = w.unlockDate.difference(DateTime.now()).inDays;
+              final now = DateTime.now();
+              final diff = w.unlockDate.difference(now);
+              final totalDays = w.unlockDate.difference(w.addedDate).inDays;
+              final daysLeft = diff.inDays;
+              final hoursLeft = diff.inHours;
               final unlocked = daysLeft <= 0;
-              
-              return Container(
-                width: 160,
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: unlocked 
-                    ? const LinearGradient(colors: [Color(0xFF059669), Color(0xFF10B981)])
-                    : const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)]),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: unlocked ? const Color(0xFF059669).withOpacity(0.3) : const Color(0xFF1E3A8A).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(unlocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded, color: Colors.white70, size: 24),
-                    const Spacer(),
-                    Text(w.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text(unlocked ? 'Ready to buy!' : '$daysLeft days left', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12)),
-                  ],
+              final progress = totalDays > 0 ? (daysLeft / totalDays).clamp(0.0, 1.0) : 0.0;
+              final isCloseToUnlock = !unlocked && daysLeft <= 3;
+
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, anim, _) => Transform.translate(
+                  offset: Offset(40 * (1 - anim), 0),
+                  child: Opacity(
+                    opacity: anim,
+                    child: Container(
+                      width: 200,
+                      margin: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: unlocked
+                          ? const LinearGradient(colors: [Color(0xFFD1FAE5), Color(0xFFECFDF5)])
+                          : isCloseToUnlock
+                            ? const LinearGradient(colors: [Color(0xFFFEF3C7), Color(0xFFFFF7ED)])
+                            : const LinearGradient(colors: [Color(0xFFE0E7FF), Color(0xFFEDE9FE)]),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: unlocked
+                              ? const Color(0xFF059669).withOpacity(0.12)
+                              : isCloseToUnlock
+                                ? const Color(0xFFD97706).withOpacity(0.12)
+                                : const Color(0xFF6366F1).withOpacity(0.10),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                unlocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
+                                color: unlocked ? const Color(0xFF059669) : isCloseToUnlock ? const Color(0xFFB45309) : const Color(0xFF6366F1),
+                                size: 18,
+                              ),
+                              const Spacer(),
+                              if (isCloseToUnlock)
+                                _pulsingDot(),
+                            ],
+                          ),
+                          const Spacer(),
+                          // Circular countdown
+                          Center(
+                            child: SizedBox(
+                              width: 130, height: 130,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  unlocked
+                                    ? _celebrationRing(size: 130)
+                                    : TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 1, end: progress),
+                                        duration: const Duration(milliseconds: 1500),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, val, _) => SizedBox(
+                                          width: 130,
+                                          height: 130,
+                                          child: CircularProgressIndicator(
+                                            value: val.clamp(0.0, 1.0),
+                                            strokeWidth: 6,
+                                            strokeCap: StrokeCap.round,
+                                            backgroundColor: unlocked
+                                              ? const Color(0xFF059669).withOpacity(0.12)
+                                              : isCloseToUnlock
+                                                ? const Color(0xFFD97706).withOpacity(0.12)
+                                                : const Color(0xFF6366F1).withOpacity(0.12),
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              unlocked
+                                                ? const Color(0xFF10B981)
+                                                : isCloseToUnlock
+                                                  ? const Color(0xFFF59E0B)
+                                                  : const Color(0xFF818CF8),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      TweenAnimationBuilder<int>(
+                                        tween: IntTween(begin: totalDays, end: daysLeft),
+                                        duration: const Duration(milliseconds: 1500),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, val, _) => Text(
+                                          '${unlocked ? 0 : val}',
+                                          style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                            color: unlocked
+                                              ? const Color(0xFF059669)
+                                              : isCloseToUnlock
+                                                ? const Color(0xFFB45309)
+                                                : const Color(0xFF4338CA),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        unlocked ? '' : 'days',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: unlocked
+                                            ? const Color(0xFF059669).withOpacity(0.6)
+                                            : isCloseToUnlock
+                                              ? const Color(0xFFB45309).withOpacity(0.6)
+                                              : const Color(0xFF4338CA).withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            w.name,
+                            style: TextStyle(
+                              color: unlocked
+                                ? const Color(0xFF065F46)
+                                : isCloseToUnlock
+                                  ? const Color(0xFF92400E)
+                                  : const Color(0xFF1E1B4B),
+                              fontWeight: FontWeight.bold, fontSize: 13,
+                            ),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            child: Text(
+                              unlocked
+                                ? '🎉 Ready to buy!'
+                                : isCloseToUnlock
+                                  ? '$hoursLeft hours left'
+                                  : '$daysLeft days left',
+                              key: ValueKey('${w.id}_$daysLeft'),
+                              style: TextStyle(
+                                color: unlocked
+                                  ? const Color(0xFF047857)
+                                  : isCloseToUnlock
+                                    ? const Color(0xFFB45309)
+                                    : const Color(0xFF6366F1),
+                                fontWeight: FontWeight.w600, fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _pulsingDot() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
+      builder: (context, value, _) {
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: Color.lerp(const Color(0xFFFBBF24), const Color(0xFFF59E0B), value)!,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFBBF24).withOpacity((0.5 + value * 0.5)),
+                blurRadius: 4 + value * 4,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _celebrationRing({double size = 130}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.elasticOut,
+      builder: (context, value, _) {
+        return CustomPaint(
+          size: Size(size, size),
+          painter: _CelebrationPainter(value),
+        );
+      },
     );
   }
 
@@ -373,21 +663,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (loaded && p.goals.isEmpty)
         const Text('No goals set yet.', style: TextStyle(color: Colors.grey, fontSize: 13))
       else if (loaded)
-        ...p.goals.map((g) => _buildGoalRow(g['name'], g['current_amount'], g['target_amount'], g['color']))
+        ...p.goals.map((g) => _buildGoalRow(g))
       else
         const Center(child: CircularProgressIndicator()),
     ]));
   }
 
-  Widget _buildGoalRow(String title, num current, num target, String colorHex) {
+  Widget _buildGoalRow(dynamic g) {
+    final title = g['name'] ?? '';
+    final current = (g['current_amount'] ?? 0).toDouble();
+    final target = (g['target_amount'] ?? 0).toDouble();
+    final colorHex = g['color'] ?? '#059669';
+    final projectedDate = g['projected_completion_date'];
+    final monthlyNeeded = (g['monthly_saving_needed'] ?? 0).toDouble();
+
     Color c = _parseColor(colorHex);
     double pct = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+
+    String projectionText = '';
+    if (projectedDate != null && monthlyNeeded > 0) {
+      try {
+        final dt = DateTime.parse(projectedDate.toString());
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        projectionText = '📅 ${dt.day} ${months[dt.month - 1]} ${dt.year}  ·  ₹${_formatNum(monthlyNeeded)}/mo';
+      } catch (_) {
+        projectionText = '';
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          Text('₹${_formatNum(current.toDouble())} / ₹${_formatNum(target.toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text('₹${_formatNum(current)} / ₹${_formatNum(target)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
         ]),
         const SizedBox(height: 8),
         LinearPercentIndicator(
@@ -398,6 +707,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           barRadius: const Radius.circular(8),
           padding: EdgeInsets.zero,
         ),
+        if (projectionText.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(projectionText, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w600)),
+        ],
       ]),
     );
   }
@@ -405,13 +718,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ── UPCOMING BILLS ──────────────────────────────────────────────────────────
   Widget _buildUpcomingBills(FinancialProvider p, bool loaded) {
     if (!loaded) return const SizedBox.shrink();
-    if (p.upcomingBills.isEmpty) return const SizedBox.shrink();
 
     final now = DateTime.now();
     return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _cardHeader('Upcoming Bills', Icons.event_note_rounded, const Color(0xFFEF4444)),
       const SizedBox(height: 16),
-      ...p.upcomingBills.map((bill) {
+      if (p.upcomingBills.isEmpty)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Row(children: [
+            Icon(Icons.check_circle_outline, color: Color(0xFF059669), size: 18),
+            SizedBox(width: 8),
+            Text('No upcoming bills', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w600, fontSize: 14)),
+          ]),
+        )
+      else
+        ...p.upcomingBills.map((bill) {
         int dueDay = bill['due_day'] ?? 1;
         int daysLeft = dueDay - now.day;
         if (daysLeft < 0) daysLeft += 30; // rough estimation for next month
@@ -476,4 +798,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (v >= 1000)    return '${(v / 1000).toStringAsFixed(1)}K';
     return v.toStringAsFixed(0);
   }
+}
+
+class _CelebrationPainter extends CustomPainter {
+  final double progress;
+  _CelebrationPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2;
+    final paint = Paint()
+      ..color = const Color(0xFF34D399).withOpacity(0.3 * progress)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 12; i++) {
+      final angle = (i / 12) * math.pi * 2;
+      final dist = (radius + 15) * progress;
+      final dx = math.cos(angle) * dist;
+      final dy = math.sin(angle) * dist;
+      canvas.drawCircle(
+        center + Offset(dx, dy),
+        3 + 3 * progress,
+        paint..color = [const Color(0xFF34D399), const Color(0xFF6EE7B7), const Color(0xFFA7F3D0), const Color(0xFF10B981)][i % 4].withOpacity(0.5 * progress),
+      );
+    }
+
+    // Outer celebration ring matching the progress indicator diameter
+    canvas.drawCircle(center, (radius - 3) * progress, Paint()..color = const Color(0xFF34D399));
+    // Inner hollow center to prevent overlap with the text
+    canvas.drawCircle(
+      center,
+      (radius - 9) * progress,
+      Paint()..color = Colors.white.withOpacity(0.8 * progress)..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CelebrationPainter old) => old.progress != progress;
 }

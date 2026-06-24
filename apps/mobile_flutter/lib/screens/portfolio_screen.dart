@@ -65,10 +65,12 @@ class PortfolioScreen extends StatelessWidget {
     final nameCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
     final interestRateCtrl = TextEditingController();
+    final purchasePriceCtrl = TextEditingController();
     String selectedType = 'bank';
     bool isLiability = false;
     bool generatesIncome = false;
     String incomeFrequency = 'monthly';
+    DateTime? purchaseDate;
     bool isLoading = false;
 
     final types = [
@@ -132,7 +134,28 @@ class PortfolioScreen extends StatelessWidget {
             TextField(controller: interestRateCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: _inputDec('e.g. 7.5', hint: 'Interest Rate (if applicable)')),
             const SizedBox(height: 16),
-            
+
+            const Text('Purchase Price (for ROI)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: purchasePriceCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDec('What you paid', prefix: '₹ ', hint: 'Optional')),
+            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Purchase Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                TextButton(
+                  onPressed: () async {
+                    final d = await showDatePicker(context: ctx, initialDate: purchaseDate ?? DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime.now());
+                    if (d != null) setState(() => purchaseDate = d);
+                  },
+                  child: Text(purchaseDate == null ? 'Select (Optional)' : '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -171,7 +194,9 @@ class PortfolioScreen extends StatelessWidget {
                 final rate = double.tryParse(interestRateCtrl.text.trim()) ?? 0.0;
                 setState(() => isLoading = true);
                 try {
-                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount, interestRate: rate, isLiability: isLiability, generatesIncome: generatesIncome, incomeFrequency: generatesIncome ? incomeFrequency : null);
+                  final pp = double.tryParse(purchasePriceCtrl.text.trim());
+                  final pd = purchaseDate?.toIso8601String().split('T').first;
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount, interestRate: rate, isLiability: isLiability, generatesIncome: generatesIncome, incomeFrequency: generatesIncome ? incomeFrequency : null, purchasePrice: pp, purchaseDate: pd);
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     _showSnack(ctx, 'Asset added successfully!');
@@ -464,6 +489,83 @@ class PortfolioScreen extends StatelessWidget {
     );
   }
 
+  // ── Portfolio Summary ──────────────────────────────────────────────────────
+  List<Widget> _buildPortfolioSummary(FinancialProvider p) {
+    final ps = p.portfolioSummary;
+    if (ps == null || (ps['totalInvested'] ?? 0) == 0) return [];
+
+    final totalInvested = (ps['totalInvested'] ?? 0).toDouble();
+    final totalCurrent = (ps['totalCurrent'] ?? 0).toDouble();
+    final totalReturn = (ps['totalReturn'] ?? 0).toDouble();
+    final estimatedCagr = (ps['estimatedCagr'] ?? 0).toDouble();
+    final allocation = ps['allocation'] as List<dynamic>? ?? [];
+    final returnColor = totalReturn >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626);
+    final returnSign = totalReturn >= 0 ? '+' : '';
+
+    return [
+      const SizedBox(height: 20),
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.grey.withOpacity(0.08)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 16, offset: const Offset(0, 6))],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF059669).withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.trending_up_rounded, color: Color(0xFF059669), size: 20)),
+            const SizedBox(width: 12),
+            const Text('Portfolio Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+          ]),
+          const SizedBox(height: 16),
+          Row(children: [
+            _psColumn('Invested', '₹${_fmt(totalInvested)}', Colors.grey),
+            const SizedBox(width: 20),
+            _psColumn('Current', '₹${_fmt(totalCurrent)}', const Color(0xFF1E293B)),
+            const SizedBox(width: 20),
+            _psColumn('Return', '$returnSign₹${_fmt(totalReturn.abs())}', returnColor),
+            const SizedBox(width: 20),
+            _psColumn('Est. CAGR', '${estimatedCagr.toStringAsFixed(1)}%', const Color(0xFF6B46C1)),
+          ]),
+          if (allocation.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            ...allocation.take(5).map((a) {
+              final label = a['label'] ?? '';
+              final pct = (a['percentage'] ?? 0).toDouble();
+              final clr = _parseHex(a['color'] ?? '#6366F1');
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(children: [
+                  Container(width: 10, height: 10, decoration: BoxDecoration(color: clr, borderRadius: BorderRadius.circular(3))),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                  Text('${pct.toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                ]),
+              );
+            }),
+          ],
+        ]),
+      ),
+    ];
+  }
+
+  Widget _psColumn(String label, String value, Color color) {
+    return Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 2),
+      Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
+    ]));
+  }
+
+  Color _parseHex(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) hex = 'FF$hex';
+    return Color(int.parse('0x$hex'));
+  }
+
   // ── Item card with delete swipe ────────────────────────────────────────────
   Widget _buildListItem(String title, double amount, String subtitle, List<Color> gradient, IconData icon, VoidCallback onDelete) {
     return Container(
@@ -562,15 +664,18 @@ class PortfolioScreen extends StatelessWidget {
                         center: const Text('NW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
                       ),
                     ),
-                  ]),
+                  ]                ),
                 ),
+
+                // Portfolio Summary
+                ..._buildPortfolioSummary(provider),
 
                 // Assets
                 _buildSectionHeader('Assets', const [Color(0xFF059669), Color(0xFF34D399)], () => _showAddAssetModal(context)),
                 if (provider.assets.isEmpty)
                   UiUtils.buildEmptyState('No assets yet', 'Tap Add to add your savings,\nFDs, gold, property etc.', Icons.account_balance_wallet_outlined, Colors.green),
                 ...provider.assets.map((a) => _buildListItem(
-                  a.name, a.amount, 'Asset',
+                  a.name, a.amount, a.purchasePrice != null ? 'Invested: ₹${a.purchasePrice!.toStringAsFixed(0)}' : 'Asset',
                   const [Color(0xFF059669), Color(0xFF34D399)],
                   Icons.account_balance_wallet_rounded,
                   () => UiUtils.showDeleteBottomSheet(context, a.name, () async { 
@@ -615,7 +720,10 @@ class PortfolioScreen extends StatelessWidget {
                   v.makeModel, v.purchaseCost, v.insuranceRenewalDate != null ? 'Insurance: ${v.insuranceRenewalDate!.day}/${v.insuranceRenewalDate!.month}/${v.insuranceRenewalDate!.year}' : 'Vehicle',
                   const [Color(0xFFE88A1A), Color(0xFFFBBF24)],
                   Icons.directions_car_rounded,
-                  () {}, // TODO: Implement deleteVehicle
+                  () => UiUtils.showDeleteBottomSheet(context, v.makeModel, () async {
+                    await Provider.of<FinancialProvider>(context, listen: false).deleteVehicle(v.id);
+                    if (context.mounted) _showSnack(context, 'Vehicle deleted');
+                  }),
                 )),
 
                 const SizedBox(height: 60),

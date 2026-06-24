@@ -115,6 +115,15 @@ def get_household_financial_data(household_id: int, db) -> Dict[str, Any]:
             
         investment_classes_count = len(unique_types)
 
+        # 8. Fetch goal progress
+        cur.execute(
+            f"SELECT COALESCE(SUM(current_amount), 0), COALESCE(SUM(target_amount), 0) FROM goals WHERE user_id IN ({user_placeholders})",
+            tuple(user_ids)
+        )
+        goal_row = cur.fetchone()
+        total_goal_current = float(goal_row[0]) if goal_row and goal_row[0] else 0.0
+        total_goal_target = float(goal_row[1]) if goal_row and goal_row[1] else 0.0
+
         return {
             "user_incomes": user_incomes,
             "contributing_income": contributing_income,
@@ -125,7 +134,9 @@ def get_household_financial_data(household_id: int, db) -> Dict[str, Any]:
             "committed_wants": committed_wants,
             "committed_savings": committed_savings,
             "total_committed_expenses": total_committed_expenses,
-            "investment_classes_count": investment_classes_count
+            "investment_classes_count": investment_classes_count,
+            "total_goal_current": total_goal_current,
+            "total_goal_target": total_goal_target
         }
 
 def calculate_financial_health_score(household_id: int, db) -> Tuple[int, int, Dict[str, Any]]:
@@ -202,15 +213,40 @@ def calculate_financial_health_score(household_id: int, db) -> Tuple[int, int, D
     else:
         debt_score = 0
 
-    # Pillar 4: Goal Progress (20 points) - Locked in Phase 1
-    goal_score = None
-    
-    # Pillar 5: Investment Diversity (15 points) - Locked in Phase 1
-    diversity_score = None
+    # Pillar 4: Goal Progress (20 points)
+    goal_score = 0
+    goal_completion_pct = 0.0
+    if data["total_goal_target"] > 0:
+        goal_completion_pct = data["total_goal_current"] / data["total_goal_target"]
+        if goal_completion_pct >= 0.80:
+            goal_score = 20
+        elif goal_completion_pct >= 0.60:
+            goal_score = 15
+        elif goal_completion_pct >= 0.40:
+            goal_score = 10
+        elif goal_completion_pct >= 0.20:
+            goal_score = 5
+        else:
+            goal_score = 0
 
-    # Calculate final score (out of 65 points in Phase 1)
-    calculated_score = adherence_score + emergency_score + debt_score
-    max_possible_score = 65
+    # Pillar 5: Investment Diversity (15 points)
+    classes = data["investment_classes_count"]
+    if classes >= 5:
+        diversity_score = 15
+    elif classes == 4:
+        diversity_score = 12
+    elif classes == 3:
+        diversity_score = 9
+    elif classes == 2:
+        diversity_score = 6
+    elif classes == 1:
+        diversity_score = 3
+    else:
+        diversity_score = 0
+
+    # Calculate final score (out of 100)
+    calculated_score = adherence_score + emergency_score + debt_score + goal_score + diversity_score
+    max_possible_score = 100
 
     breakdown = {
         "income": income,
@@ -236,12 +272,12 @@ def calculate_financial_health_score(household_id: int, db) -> Tuple[int, int, D
             "goalProgress": {
                 "score": goal_score,
                 "max": 20,
-                "status": "locked_phase_1"
+                "completionPct": round(goal_completion_pct * 100, 2)
             },
             "investmentDiversity": {
                 "score": diversity_score,
                 "max": 15,
-                "status": "locked_phase_1"
+                "classes": data["investment_classes_count"]
             }
         }
     }

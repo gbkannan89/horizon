@@ -82,6 +82,8 @@ class AssetCreate(BaseModel):
     is_liability: bool = False
     generates_income: bool = False
     income_frequency: Optional[str] = None
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[date_type] = None
 
 class AssetOut(BaseModel):
     id: int
@@ -96,6 +98,8 @@ class AssetOut(BaseModel):
     is_liability: bool
     generates_income: bool
     income_frequency: Optional[str]
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[date_type] = None
     created_at: datetime
 
 # Vehicle Schemas
@@ -161,8 +165,8 @@ class RecurringBillOut(BaseModel):
     is_subscription: bool
     is_emi: bool
     emi_total_months: Optional[int]
-    emi_months_paid: int
-    start_date: Optional[date_type]
+    emi_months_paid: Optional[int] = None
+    start_date: Optional[date_type] = None
     created_at: datetime
 
 # Goal Schemas
@@ -182,6 +186,8 @@ class GoalOut(BaseModel):
     status: str
     color: str
     created_at: datetime
+    projected_completion_date: Optional[str] = None
+    monthly_saving_needed: Optional[float] = None
 
 # Expense Schemas
 class ExpenseCreate(BaseModel):
@@ -203,6 +209,12 @@ class ExpenseOut(BaseModel):
     date: date_type
     created_at: datetime
 
+class TrendPoint(BaseModel):
+    month: str
+    needs: float = 0
+    wants: float = 0
+    savings: float = 0
+
 # Dashboard Aggregated Schema
 class DashboardOverview(BaseModel):
     net_worth: float
@@ -221,6 +233,7 @@ class DashboardOverview(BaseModel):
     goals: List[GoalOut]
     recent_expenses: List[ExpenseOut]
     upcoming_bills: List[RecurringBillOut]
+    spending_trend: List[TrendPoint] = []
 
 # Wishlist Schemas
 class WishlistItemCreate(BaseModel):
@@ -268,6 +281,58 @@ class PayYourselfFirstOut(BaseModel):
     target_amount: float
     actual_savings: float
     status: str
+
+# ── Advisor Schemas ───────────────────────────────────────────────────────────
+class SimulationInput(BaseModel):
+    scenario_name: str
+    scenario_type: str
+    target_amount: Optional[float] = None
+    loan_amount: Optional[float] = None
+    interest_rate: Optional[float] = None
+    tenure_months: Optional[int] = None
+    monthly_emi: Optional[float] = None
+    sip_amount: Optional[float] = None
+    income_change: Optional[float] = None
+
+class SimulationOut(BaseModel):
+    id: int
+    scenario_name: str
+    scenario_type: str
+    input_params: dict
+    results: dict
+    created_at: datetime
+
+class NudgeOut(BaseModel):
+    id: int
+    category: str
+    severity: str
+    title: str
+    message: str
+    action_label: Optional[str]
+    action_link: Optional[str]
+    is_dismissed: bool
+    created_at: datetime
+
+class DebtOptimizerOut(BaseModel):
+    total_outstanding: float
+    total_monthly_emis: float
+    total_interest_paid: float
+    snowball: dict
+    avalanche: dict
+    recommended_strategy: str
+    estimated_freedom_months: int
+    total_interest_savable: float
+
+class SubscriptionInsightOut(BaseModel):
+    id: int
+    bill_id: int
+    name: str
+    amount: float
+    monthly_cost: float
+    annual_cost: float
+    status: str
+    savings_opportunity: float
+    notes: Optional[str]
 
 # Insurance Schemas
 class InsuranceCreate(BaseModel):

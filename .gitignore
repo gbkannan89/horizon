@@ -50,3 +50,6 @@ desktop.ini
 # ── Docker ────────────────────────────────────────────────────────────────────
 # Keep docker-compose.yml but ignore override files with secrets
 docker-compose.override.yml
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log

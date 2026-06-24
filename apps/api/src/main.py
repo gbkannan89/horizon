@@ -15,6 +15,9 @@ from .routes.dashboard import router as dashboard_router
 from .routes.discipline import router as discipline_router
 from .routes.transactions import router as transactions_router
 from .routes.insurance import router as insurance_router
+from .routes.advisor import router as advisor_router
+from .routes.analytics import router as analytics_router
+from .routes.report import router as report_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +35,9 @@ app.include_router(dashboard_router)
 app.include_router(discipline_router)
 app.include_router(transactions_router)
 app.include_router(insurance_router)
+app.include_router(advisor_router)
+app.include_router(analytics_router)
+app.include_router(report_router)
 
 # Add CORS Middleware
 app.add_middleware(
