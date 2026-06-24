@@ -33,6 +33,8 @@ def categorize_transaction(description: str, amount: float) -> tuple[str, str, s
 
 
 def _parse_date(date_str: str) -> datetime.date:
+    if not date_str:
+        return datetime.now().date()
     date_str = date_str.strip()
     try:
         if '-' in date_str and len(date_str.split('-')[0]) == 4:
@@ -47,7 +49,7 @@ def _parse_date(date_str: str) -> datetime.date:
 
 
 def _parse_csv(file) -> list[dict]:
-    lines = codecs.iterdecode(file, 'utf-8')
+    lines = codecs.iterdecode(file, 'utf-8-sig')
     header_row_str = ""
     for line in lines:
         lower_line = line.lower()
@@ -76,8 +78,8 @@ def _parse_csv(file) -> list[dict]:
     transactions = []
     for row in csvReader:
         normalized_row = {k.strip().lower(): v for k, v in row.items() if k}
-        date_str = normalized_row.get(date_col, "").strip()
-        desc = normalized_row.get(desc_col, "").strip()
+        date_str = (normalized_row.get(date_col) or "").strip()
+        desc = (normalized_row.get(desc_col) or "").strip()
         if not date_str or not desc:
             continue
 
@@ -136,7 +138,14 @@ def _parse_excel(file) -> list[dict]:
         for row in all_rows[header_idx + 1:]:
             if row is None or all(c is None for c in row):
                 continue
-            date_val = str(row[date_col]).strip() if date_col is not None and row[date_col] is not None else ""
+            date_val_raw = row[date_col] if date_col is not None else None
+            if date_val_raw is not None:
+                if isinstance(date_val_raw, datetime):
+                    date_val = date_val_raw.date().isoformat()
+                else:
+                    date_val = str(date_val_raw).strip()
+            else:
+                date_val = ""
             desc_val = str(row[desc_col]).strip() if desc_col is not None and row[desc_col] is not None else ""
             if not date_val or not desc_val or date_val.lower() == 'none':
                 continue
