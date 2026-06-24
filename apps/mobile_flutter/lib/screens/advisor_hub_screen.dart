@@ -43,7 +43,7 @@ class _AdvisorHubScreenState extends State<AdvisorHubScreen> {
                 if (loading)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: LinearProgressIndicator(color: const Color(0xFF6B46C1), backgroundColor: const Color(0xFF6B46C1).withOpacity(0.1)),
+                    child: LinearProgressIndicator(color: const Color(0xFF6B46C1), backgroundColor: const Color(0xFF6B46C1).withValues(alpha: 0.1)),
                   ),
                 if (criticalNudges > 0)
                   Container(
@@ -127,8 +127,8 @@ class _AdvisorHubScreenState extends State<AdvisorHubScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: gradient[0].withOpacity(0.2), width: 1.5),
-          boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 12))],
+          border: Border.all(color: gradient[0].withValues(alpha: 0.2), width: 1.5),
+          boxShadow: [BoxShadow(color: gradient[0].withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
@@ -142,7 +142,7 @@ class _AdvisorHubScreenState extends State<AdvisorHubScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(colors: gradient),
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: gradient[0].withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
                   ),
                   child: Icon(icon, color: Colors.white, size: 24),
                 ),

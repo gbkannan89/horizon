@@ -88,18 +88,18 @@ class UiUtils {
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Row(children: [
-        Icon(icon, size: 36, color: color.withOpacity(0.6)),
+        Icon(icon, size: 36, color: color.withValues(alpha: 0.6)),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color.withOpacity(0.8))),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color.withValues(alpha: 0.8))),
               const SizedBox(height: 4),
               Text(desc, style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ],

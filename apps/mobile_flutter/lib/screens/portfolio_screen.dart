@@ -160,14 +160,14 @@ class PortfolioScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Is this a Liability?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                Switch(value: isLiability, onChanged: (v) => setState(() => isLiability = v), activeColor: const Color(0xFF059669)),
+                Switch(value: isLiability, onChanged: (v) => setState(() => isLiability = v), activeThumbColor: const Color(0xFF059669)),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Generates Income?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                Switch(value: generatesIncome, onChanged: (v) => setState(() => generatesIncome = v), activeColor: const Color(0xFF059669)),
+                Switch(value: generatesIncome, onChanged: (v) => setState(() => generatesIncome = v), activeThumbColor: const Color(0xFF059669)),
               ],
             ),
             if (generatesIncome) ...[
@@ -475,7 +475,7 @@ class PortfolioScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(colors: gradient),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: gradient[0].withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))],
               ),
               child: const Row(children: [
                 Icon(Icons.add_rounded, size: 18, color: Colors.white),
@@ -509,12 +509,12 @@ class PortfolioScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.grey.withOpacity(0.08)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 16, offset: const Offset(0, 6))],
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF059669).withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.trending_up_rounded, color: Color(0xFF059669), size: 20)),
+            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF059669).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.trending_up_rounded, color: Color(0xFF059669), size: 20)),
             const SizedBox(width: 12),
             const Text('Portfolio Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
           ]),
@@ -574,7 +574,7 @@ class PortfolioScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Row(children: [
@@ -597,7 +597,7 @@ class PortfolioScreen extends StatelessWidget {
             onTap: onDelete,
             child: Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: Colors.red.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
               child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
             ),
           ),
@@ -635,11 +635,11 @@ class PortfolioScreen extends StatelessWidget {
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.3), blurRadius: 30, offset: const Offset(0, 15))],
+                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3), blurRadius: 30, offset: const Offset(0, 15))],
                   ),
                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Total Net Worth', style: TextStyle(color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w600)),
+                      Text('Total Net Worth', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       Text('₹${provider.netWorth.toStringAsFixed(0)}',
                         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
@@ -653,13 +653,13 @@ class PortfolioScreen extends StatelessWidget {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: const Color(0xFF34D399).withOpacity(0.4), blurRadius: 20)],
+                        boxShadow: [BoxShadow(color: const Color(0xFF34D399).withValues(alpha: 0.4), blurRadius: 20)],
                       ),
                       child: CircularPercentIndicator(
                         radius: 44, lineWidth: 8,
                         percent: totalAssets > 0 ? (totalAssets / (totalAssets + totalLiabilities)).clamp(0.0, 1.0) : 0,
                         progressColor: const Color(0xFF34D399),
-                        backgroundColor: Colors.white.withOpacity(0.1),
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
                         circularStrokeCap: CircularStrokeCap.round,
                         center: const Text('NW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
                       ),
@@ -738,7 +738,7 @@ class PortfolioScreen extends StatelessWidget {
 
   Widget _pill(String text, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
     child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
   );
 }

@@ -416,7 +416,7 @@ class ProfileScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
                     ),
                     child: CircleAvatar(
                       radius: 46,
@@ -427,12 +427,12 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(userName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(userEmail, style: TextStyle(color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                  Text(userEmail, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(userType[0].toUpperCase() + userType.substring(1), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
@@ -453,7 +453,7 @@ class ProfileScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +465,7 @@ class ProfileScreen extends StatelessWidget {
                   TextField(
                     controller: TextEditingController(text: userName),
                     decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
@@ -475,7 +475,7 @@ class ProfileScreen extends StatelessWidget {
                   TextField(
                     controller: TextEditingController(text: userEmail),
                     decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
@@ -485,7 +485,7 @@ class ProfileScreen extends StatelessWidget {
                   TextField(
                     controller: TextEditingController(text: ''),
                     decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withOpacity(0.05),
+                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
@@ -556,7 +556,7 @@ class ProfileScreen extends StatelessWidget {
                         Container(
                           width: 56, height: 56,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                            color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.account_balance_wallet_outlined,
@@ -628,7 +628,7 @@ class ProfileScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -639,7 +639,7 @@ class ProfileScreen extends StatelessWidget {
                           leading: Container(
                             width: 44, height: 44,
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
+                              color: color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(_typeIcon(income.type), color: color, size: 22),
@@ -652,7 +652,7 @@ class ProfileScreen extends StatelessWidget {
                                 margin: const EdgeInsets.only(top: 4),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.1),
+                                  color: color.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -703,7 +703,7 @@ class ProfileScreen extends StatelessWidget {
                                   width: 32, height: 32,
                                   margin: const EdgeInsets.only(left: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.08),
+                                    color: Colors.red.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(Icons.delete_outline_rounded,
@@ -714,7 +714,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 );
               },
@@ -759,7 +759,7 @@ class ProfileScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

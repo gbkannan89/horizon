@@ -81,7 +81,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF312E81)]),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.3), blurRadius: 24, offset: const Offset(0, 12))],
+        boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Column(
         children: [
@@ -121,7 +121,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isRecommended ? color : Colors.grey.shade200, width: isRecommended ? 2 : 1),
-        boxShadow: [BoxShadow(color: color.withOpacity(isRecommended ? 0.1 : 0.04), blurRadius: 20, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: color.withValues(alpha: isRecommended ? 0.1 : 0.04), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -131,7 +131,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: Icon(isRecommended ? Icons.star_rounded : Icons.trending_flat_rounded, color: color, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -178,7 +178,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
             ? [const Color(0xFFDC2626), const Color(0xFFF87171)]
             : [const Color(0xFF0891B2), const Color(0xFF22D3EE)]),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.1), blurRadius: 24, offset: const Offset(0, 12))],
+        boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.1), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Column(
         children: [

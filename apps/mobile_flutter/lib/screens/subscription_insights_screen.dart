@@ -80,7 +80,7 @@ class _SubscriptionInsightsScreenState extends State<SubscriptionInsightsScreen>
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [Color(0xFF059669), Color(0xFF10B981)]),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF059669).withOpacity(0.3), blurRadius: 24, offset: const Offset(0, 12))],
+        boxShadow: [BoxShadow(color: const Color(0xFF059669).withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Column(
         children: [
@@ -139,8 +139,8 @@ class _SubscriptionInsightsScreenState extends State<SubscriptionInsightsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: statusColor.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 6))],
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+        boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -151,7 +151,7 @@ class _SubscriptionInsightsScreenState extends State<SubscriptionInsightsScreen>
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: Icon(statusIcon, color: statusColor, size: 22),
                 ),
                 const SizedBox(width: 14),
@@ -168,7 +168,7 @@ class _SubscriptionInsightsScreenState extends State<SubscriptionInsightsScreen>
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                   child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
               ],

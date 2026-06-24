@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/wishlist_item.dart';
 import '../models/discipline_aggregates.dart';
-import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 
 class DisciplineService {
@@ -58,6 +57,16 @@ class DisciplineService {
       return WishlistItem.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to update wishlist item status: ${response.statusCode}');
+    }
+  }
+
+  Future<void> deleteWishlistItem(int id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/discipline/wishlist/$id'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete wishlist item: ${response.statusCode}');
     }
   }
 

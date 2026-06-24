@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2563EB).withOpacity(0.2),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.2),
               ),
             ),
           ),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF0891B2).withOpacity(0.15),
+                color: const Color(0xFF0891B2).withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -141,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         )),
                         const SizedBox(height: 8),
                         Text('Your smart financial companion', style: TextStyle(
-                          color: Colors.white.withOpacity(0.65),
+                          color: Colors.white.withValues(alpha: 0.65),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         )),
@@ -182,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             borderRadius: BorderRadius.circular(32),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 30,
                                 offset: const Offset(0, 15),
                               ),
@@ -290,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF1E3A8A).withOpacity(0.35),
+                                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.35),
                                       blurRadius: 16,
                                       offset: const Offset(0, 6),
                                     ),
@@ -326,13 +326,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         // ── Sign Up Navigation ───────────────────────────────
                         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Text("Don't have an account? ", style: TextStyle(
-                            color: Colors.white.withOpacity(0.6), fontSize: 14)),
+                            color: Colors.white.withValues(alpha: 0.6), fontSize: 14)),
                           GestureDetector(
                             onTap: () {
                               Navigator.of(context).push(
                                 PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => const SignupScreen(),
-                                  transitionsBuilder: (_, anim, __, child) =>
+                                  pageBuilder: (_, _, _) => const SignupScreen(),
+                                  transitionsBuilder: (_, anim, _, child) =>
                                       FadeTransition(opacity: anim, child: child),
                                   transitionDuration: const Duration(milliseconds: 300),
                                 ),

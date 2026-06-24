@@ -103,8 +103,8 @@ class _NudgeCenterScreenState extends State<NudgeCenterScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: severityColor.withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: severityColor.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 6))],
+        border: Border.all(color: severityColor.withValues(alpha: 0.2)),
+        boxShadow: [BoxShadow(color: severityColor.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -116,7 +116,7 @@ class _NudgeCenterScreenState extends State<NudgeCenterScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.1),
+                    color: severityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(severityIcon, color: severityColor, size: 20),
@@ -141,7 +141,7 @@ class _NudgeCenterScreenState extends State<NudgeCenterScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.1),
+                    color: severityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(severity.toUpperCase(), style: TextStyle(color: severityColor, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -166,7 +166,7 @@ class _NudgeCenterScreenState extends State<NudgeCenterScreen> {
                     icon: Icon(Icons.arrow_forward_rounded, size: 16, color: severityColor),
                     label: Text(nudge['action_label'], style: TextStyle(color: severityColor, fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                      backgroundColor: severityColor.withOpacity(0.08),
+                      backgroundColor: severityColor.withValues(alpha: 0.08),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),

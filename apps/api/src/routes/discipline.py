@@ -96,6 +96,21 @@ def update_wishlist_item(item_id: int, update: WishlistItemUpdate, current_user:
         logging.error(f"Error updating wishlist item: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.delete("/wishlist/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_wishlist_item(item_id: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM wishlist_items WHERE id = %s AND user_id = %s RETURNING id", (item_id, current_user.id))
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Item not found")
+            db.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error deleting wishlist item: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/guardrails", response_model=FinancialGuardrailsOut)
 def get_guardrails(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
     try:

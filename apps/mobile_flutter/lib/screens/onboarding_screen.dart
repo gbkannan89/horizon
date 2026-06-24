@@ -197,7 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
@@ -208,7 +208,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           const Spacer(),
           Text(
             'Step ${_currentIndex + 1} of 4',
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           const SizedBox(width: 38),
@@ -237,7 +237,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           decoration: BoxDecoration(
                             color: isActive
                                 ? const Color(0xFF60A5FA)
-                                : Colors.white.withOpacity(0.15),
+                                : Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
                       ),
@@ -248,7 +248,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         shape: BoxShape.circle,
                         color: isActive
                             ? const Color(0xFF60A5FA)
-                            : Colors.white.withOpacity(0.08),
+                            : Colors.white.withValues(alpha: 0.08),
                         border: isCurrent && !isActive
                             ? Border.all(color: const Color(0xFF60A5FA), width: 2)
                             : null,
@@ -261,7 +261,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 style: TextStyle(
                                   color: isCurrent
                                       ? const Color(0xFF60A5FA)
-                                      : Colors.white.withOpacity(0.4),
+                                      : Colors.white.withValues(alpha: 0.4),
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -275,7 +275,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           decoration: BoxDecoration(
                             color: _currentIndex > index
                                 ? const Color(0xFF60A5FA)
-                                : Colors.white.withOpacity(0.15),
+                                : Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
                       ),
@@ -285,7 +285,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 Text(
                   _steps[index],
                   style: TextStyle(
-                    color: isActive ? Colors.white : Colors.white.withOpacity(0.3),
+                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
                     fontSize: 11,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                   ),
@@ -304,9 +304,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: TextField(
         controller: controller,
@@ -318,7 +318,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           prefixText: '₹ ',
           prefixStyle: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF60A5FA)),
           hintText: hint,
-          hintStyle: TextStyle(fontSize: 28, color: Colors.white.withOpacity(0.15), fontWeight: FontWeight.normal),
+          hintStyle: TextStyle(fontSize: 28, color: Colors.white.withValues(alpha: 0.15), fontWeight: FontWeight.normal),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 24),
         ),
@@ -346,9 +346,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
                 ),
                 child: Center(child: Text(emoji, style: const TextStyle(fontSize: 44))),
               ),
@@ -364,7 +364,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.55), height: 1.5),
+                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.55), height: 1.5),
                 ),
               ),
               const SizedBox(height: 36),
@@ -379,7 +379,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     backgroundColor: const Color(0xFF3B82F6),
                     foregroundColor: Colors.white,
                     elevation: 4,
-                    shadowColor: const Color(0xFF3B82F6).withOpacity(0.4),
+                    shadowColor: const Color(0xFF3B82F6).withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -390,7 +390,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 TextButton(
                   onPressed: _goNext,
                   child: Text('Skip this step',
-                      style: TextStyle(color: Colors.white.withOpacity(0.45), fontWeight: FontWeight.w600, fontSize: 14)),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
               ],
             ],
@@ -449,9 +449,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
                 ),
                 child: const Center(child: Text('✅', style: TextStyle(fontSize: 44))),
               ),
@@ -465,7 +465,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               Text(
                 'Review your details before we start.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.55), height: 1.5),
+                style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.55), height: 1.5),
               ),
               const SizedBox(height: 28),
 
@@ -474,9 +474,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
+                  color: Colors.white.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 child: Column(
                   children: [
@@ -501,9 +501,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
+                  color: Colors.white.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,7 +512,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Emergency Runway',
-                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
                         Text('${_runwayMonths.toInt()} months',
                             style: const TextStyle(
                                 color: Color(0xFF10B981), fontSize: 18, fontWeight: FontWeight.bold)),
@@ -525,18 +525,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       max: 12,
                       divisions: 11,
                       activeColor: const Color(0xFF10B981),
-                      inactiveColor: Colors.white.withOpacity(0.15),
+                      inactiveColor: Colors.white.withValues(alpha: 0.15),
                       onChanged: (val) => setState(() => _runwayMonths = val),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('1 mo', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+                        Text('1 mo', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11)),
                         if (rent > 0)
                           Text('Target: ₹${_formatCurrency(target.toStringAsFixed(0))}',
                               style: const TextStyle(
                                   color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w600)),
-                        Text('12 mo', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+                        Text('12 mo', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11)),
                       ],
                     ),
                   ],
@@ -554,7 +554,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                     elevation: 4,
-                    shadowColor: const Color(0xFF10B981).withOpacity(0.4),
+                    shadowColor: const Color(0xFF10B981).withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: _isSubmitting
@@ -578,11 +578,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
         Text(
           value,
           style: TextStyle(
-            color: filled ? Colors.white : Colors.white.withOpacity(0.35),
+            color: filled ? Colors.white : Colors.white.withValues(alpha: 0.35),
             fontSize: 14,
             fontWeight: FontWeight.bold,
           ),

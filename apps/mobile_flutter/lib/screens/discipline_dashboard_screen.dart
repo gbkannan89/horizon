@@ -8,13 +8,13 @@ import '../utils/ui_utils.dart';
 class DisciplineDashboardScreen extends StatefulWidget {
   final DisciplineService disciplineService;
 
-  const DisciplineDashboardScreen({Key? key, required this.disciplineService}) : super(key: key);
+  const DisciplineDashboardScreen({super.key, required this.disciplineService});
 
   @override
   _DisciplineDashboardScreenState createState() => _DisciplineDashboardScreenState();
 }
 
-class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
+class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   PayYourselfFirst? _payYourselfFirst;
   ZeroBasedBudget? _zeroBasedBudget;
@@ -22,10 +22,27 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
   FinancialGuardrails? _guardrails;
   DebtRepaymentStrategy? _debtStrategy;
 
+  late AnimationController _peekController;
+  late Animation<double> _peekAnimation;
+
   @override
   void initState() {
     super.initState();
+    
+    _peekController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _peekAnimation = TweenSequence([
+      TweenSequenceItem(tween: Tween<double>(begin: 0, end: -60).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 40),
+      TweenSequenceItem(tween: ConstantTween<double>(-60), weight: 10),
+      TweenSequenceItem(tween: Tween<double>(begin: -60, end: 0).chain(CurveTween(curve: Curves.easeInCubic)), weight: 50),
+    ]).animate(_peekController);
+
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _peekController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -49,7 +66,14 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
     } catch (e) {
       if (mounted) UiUtils.showSnack(context, 'Error loading discipline data: $e', isError: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (_wishlist.isNotEmpty) {
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) _peekController.forward();
+          });
+        }
+      }
     }
   }
 
@@ -59,9 +83,9 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: gradient[0].withOpacity(0.2), width: 1.5),
+        border: Border.all(color: gradient[0].withValues(alpha: 0.2), width: 1.5),
         boxShadow: [
-          BoxShadow(color: gradient[0].withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 12))
+          BoxShadow(color: gradient[0].withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 12))
         ],
       ),
       child: ClipRRect(
@@ -81,7 +105,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(colors: gradient),
                       shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: gradient[0].withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: gradient[0].withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
                     ),
                     child: Icon(icon, color: Colors.white, size: 20),
                   ),
@@ -343,7 +367,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: [
-                  Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.grey.withOpacity(0.5)),
+                  Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.grey.withValues(alpha: 0.5)),
                   const SizedBox(height: 8),
                   const Text('Your lockbox is empty', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
                   const Text('Lock items here to delay impulse purchases.', style: TextStyle(color: Colors.grey, fontSize: 12)),
@@ -368,7 +392,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                 border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.06),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.06),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -382,12 +406,83 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
               );
             }
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: itemDecoration,
-              child: Row(
-                children: [
+            return Dismissible(
+              key: Key('wishlist_${item.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                alignment: Alignment.centerRight,
+                child: Icon(Icons.delete_outline_rounded, color: Colors.red.shade700, size: 28),
+              ),
+              confirmDismiss: (direction) async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete Item'),
+                    content: const Text('Are you sure you want to delete this wishlist item?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true), 
+                        child: const Text('Delete', style: TextStyle(color: Colors.red))
+                      ),
+                    ],
+                  ),
+                );
+                
+                if (confirm == true) {
+                  try {
+                    await widget.disciplineService.deleteWishlistItem(item.id);
+                    return true;
+                  } catch (e) {
+                    if (context.mounted) UiUtils.showSnack(context, 'Failed to delete: $e', isError: true);
+                    return false;
+                  }
+                }
+                return false;
+              },
+              onDismissed: (direction) {
+                setState(() {
+                  _wishlist.removeWhere((w) => w.id == item.id);
+                });
+                UiUtils.showSnack(context, 'Wishlist item deleted');
+              },
+              child: AnimatedBuilder(
+                animation: _peekAnimation,
+                builder: (context, child) {
+                  if (_peekAnimation.value == 0) return child!;
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          alignment: Alignment.centerRight,
+                          child: Icon(Icons.delete_outline_rounded, color: Colors.red.shade700, size: 28),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: Offset(_peekAnimation.value, 0),
+                        child: child,
+                      ),
+                    ],
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: itemDecoration,
+                  child: Row(
+                    children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -500,8 +595,9 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                     ),
                 ],
               ),
-            );
-          }).toList(),
+            ),
+            ));
+          }),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
@@ -542,7 +638,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(28),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

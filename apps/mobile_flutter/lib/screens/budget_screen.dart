@@ -259,7 +259,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             Switch(
                               value: isRecurring,
                               onChanged: (val) => setState(() => isRecurring = val),
-                              activeColor: const Color(0xFF1E3A8A),
+                              activeThumbColor: const Color(0xFF1E3A8A),
                             ),
                           ],
                         ),
@@ -305,7 +305,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               Switch(
                                 value: isEmi,
                                 onChanged: (val) => setState(() => isEmi = val),
-                                activeColor: const Color(0xFF1E3A8A),
+                                activeThumbColor: const Color(0xFF1E3A8A),
                               ),
                             ],
                           ),
@@ -394,7 +394,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Widget _formatBadge(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
       child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
@@ -473,7 +473,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: (isUp ? (isWants ? Colors.red : Colors.green) : isDown ? (isWants ? Colors.green : Colors.red) : Colors.grey).withOpacity(0.1),
+                color: (isUp ? (isWants ? Colors.red : Colors.green) : isDown ? (isWants ? Colors.green : Colors.red) : Colors.grey).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -502,11 +502,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 18)),
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 18)),
           const SizedBox(width: 10),
           Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
         ]),
@@ -525,7 +525,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: isSelected ? null : Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: isSelected ? null : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -567,7 +567,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             lineHeight: 8.0,
             percent: safePercent,
             progressColor: color,
-            backgroundColor: Colors.grey.withOpacity(0.2),
+            backgroundColor: Colors.grey.withValues(alpha: 0.2),
             barRadius: const Radius.circular(8),
             padding: EdgeInsets.zero,
           )
@@ -607,14 +607,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 14),
@@ -630,7 +630,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                       child: Text(bucket, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700)),
                     ),
                   ],
@@ -766,7 +766,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                   ),
                   child: Column(
                     children: [
@@ -795,7 +795,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         lineHeight: 12.0,
                         percent: overallPct.clamp(0.0, 1.0),
                         linearGradient: const LinearGradient(colors: [Color(0xFFE88A1A), Color(0xFFDC2626)]),
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
                         barRadius: const Radius.circular(8),
                         padding: EdgeInsets.zero,
                       ),
@@ -817,7 +817,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -894,7 +894,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)]),
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -921,7 +921,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                               child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 26),
                             ),
                             const SizedBox(width: 16),
@@ -950,7 +950,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ),
 
                 // Expense List
-                ...provider.recentExpenses.take(_visibleCount).map((exp) => _buildExpenseItem(exp)).toList(),
+                ...provider.recentExpenses.take(_visibleCount).map((exp) => _buildExpenseItem(exp)),
 
                 if (provider.recentExpenses.length > _visibleCount) ...[
                   const SizedBox(height: 12),

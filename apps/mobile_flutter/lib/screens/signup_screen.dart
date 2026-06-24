@@ -129,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -152,7 +152,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     )),
                     const SizedBox(height: 4),
                     Text('Start your wealth journey', style: TextStyle(
-                      color: Colors.white.withOpacity(0.6), fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.6), fontSize: 14,
                       fontWeight: FontWeight.w500,
                     )),
                     SizedBox(height: size.height * 0.04),
@@ -165,8 +165,8 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                         child: Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            border: Border.all(color: Colors.white.withOpacity(0.12)),
+                            color: Colors.white.withValues(alpha: 0.08),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                             borderRadius: BorderRadius.circular(28),
                           ),
                           child: Column(
@@ -174,7 +174,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                             children: [
                               // ── User Type Selector ──────────────────────────
                               Text("I am a...", style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 12, fontWeight: FontWeight.w600,
                               )),
                               const SizedBox(height: 10),
@@ -240,7 +240,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
                               // ── Risk Profile ────────────────────────────────
                               Text("Investment style", style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 12, fontWeight: FontWeight.w600,
                               )),
                               const SizedBox(height: 10),
@@ -257,7 +257,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                               Text(
                                 'By creating an account, you agree to our Terms and Privacy Policy.',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
+                                  color: Colors.white.withValues(alpha: 0.4),
                                   fontSize: 11, fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -293,7 +293,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     // ── Login link ────────────────────────────────────────────
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text("Already have an account? ", style: TextStyle(
-                        color: Colors.white.withOpacity(0.6), fontSize: 14)),
+                        color: Colors.white.withValues(alpha: 0.6), fontSize: 14)),
                       GestureDetector(
                         onTap: () => Navigator.of(context).pop(),
                         child: const Text('Sign In', style: TextStyle(
@@ -322,10 +322,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.08),
+            color: selected ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.12),
+              color: selected ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.12),
               width: 1.5,
             ),
           ),
@@ -333,7 +333,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             Text(emoji, style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 4),
             Text(label, style: TextStyle(
-              color: selected ? Colors.white : Colors.white.withOpacity(0.6),
+              color: selected ? Colors.white : Colors.white.withValues(alpha: 0.6),
               fontSize: 11, fontWeight: FontWeight.w700,
             )),
           ]),
@@ -352,10 +352,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: selected ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.08),
+            color: selected ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.12),
+              color: selected ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.12),
               width: 1.5,
             ),
           ),
@@ -363,7 +363,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             Text(emoji, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 6),
             Text(label, style: TextStyle(
-              color: selected ? Colors.white : Colors.white.withOpacity(0.6),
+              color: selected ? Colors.white : Colors.white.withValues(alpha: 0.6),
               fontSize: 13, fontWeight: FontWeight.w700,
             )),
           ]),
@@ -450,7 +450,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: _passwordStrength,
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation(barColor),
             minHeight: 4,
           ),

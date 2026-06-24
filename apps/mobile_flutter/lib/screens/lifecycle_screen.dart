@@ -69,10 +69,10 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
   Widget _buildParamsCard() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF6B46C1).withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.tune_rounded, color: Color(0xFF6B46C1), size: 20)),
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF6B46C1).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.tune_rounded, color: Color(0xFF6B46C1), size: 20)),
           const SizedBox(width: 12),
           const Text('Parameters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
         ]),
@@ -118,8 +118,8 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: const Color(0xFF6B46C1), thumbColor: const Color(0xFF6B46C1),
-            inactiveTrackColor: const Color(0xFF6B46C1).withOpacity(0.12),
-            overlayColor: const Color(0xFF6B46C1).withOpacity(0.12),
+            inactiveTrackColor: const Color(0xFF6B46C1).withValues(alpha: 0.12),
+            overlayColor: const Color(0xFF6B46C1).withValues(alpha: 0.12),
           ),
           child: Slider(value: value, min: min, max: max, onChanged: onChanged),
         ),
@@ -133,10 +133,10 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981), size: 20)),
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981), size: 20)),
           const SizedBox(width: 12),
           const Text('Projection to Age 100', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
         ]),
@@ -163,7 +163,7 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
                   isCurved: true,
                   gradient: const LinearGradient(colors: [Color(0xFF6B46C1), Color(0xFF8B5CF6)]),
                   barWidth: 3, isStrokeCapRound: true, dotData: FlDotData(show: false),
-                  belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [Color(0xFF6B46C1).withOpacity(0.15), Color(0xFF8B5CF6).withOpacity(0.05)])),
+                  belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [Color(0xFF6B46C1).withValues(alpha: 0.15), Color(0xFF8B5CF6).withValues(alpha: 0.05)])),
                 ),
               ],
             )),
@@ -186,7 +186,7 @@ class _LifecycleScreenState extends State<LifecycleScreen> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: isValley ? Colors.red.withOpacity(0.1) : isRetirement ? const Color(0xFF059669).withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                    color: isValley ? Colors.red.withValues(alpha: 0.1) : isRetirement ? const Color(0xFF059669).withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

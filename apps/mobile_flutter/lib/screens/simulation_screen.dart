@@ -94,7 +94,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
             else
               Container(
                 padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)]),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)]),
                 child: Column(children: [
                   Icon(Icons.query_stats_outlined, size: 48, color: Colors.grey.shade300),
                   const SizedBox(height: 12),
@@ -159,7 +159,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
   Widget _buildInputForm() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,7 +219,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -257,7 +257,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
                             barWidth: 3,
                             isStrokeCapRound: true,
                             dotData: FlDotData(show: false),
-                            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [Color(0xFF6B46C1).withOpacity(0.15), Color(0xFF8B5CF6).withOpacity(0.05)])),
+                            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [Color(0xFF6B46C1).withValues(alpha: 0.15), Color(0xFF8B5CF6).withValues(alpha: 0.05)])),
                           ),
                         ],
                       ),

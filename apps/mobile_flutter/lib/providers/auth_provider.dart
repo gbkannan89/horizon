@@ -68,4 +68,11 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     notifyListeners();
   }
+
+  Future<void> deleteAccount(String password) async {
+    await _apiService.deleteAccount(password);
+    _isAuthenticated = false;
+    _user = null;
+    notifyListeners();
+  }
 }

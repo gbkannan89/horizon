@@ -9,7 +9,7 @@ import bcrypt
 
 from ..config import settings
 from ..database import get_db
-from ..schemas import UserRegister, UserLogin, UserOut, Token, TokenRefresh, TokenData
+from ..schemas import UserRegister, UserLogin, UserOut, Token, TokenRefresh, TokenData, DeleteAccountRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -322,3 +322,33 @@ def logout(refresh_in: TokenRefresh, db = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: UserOut = Depends(get_current_user)):
     return current_user
+
+# Delete Account (Protected)
+@router.delete("/me", status_code=status.HTTP_200_OK)
+def delete_account(
+    delete_in: DeleteAccountRequest,
+    current_user: UserOut = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    with db.cursor() as cur:
+        cur.execute("SELECT password_hash FROM users WHERE id = %s", (current_user.id,))
+        row = cur.fetchone()
+        if not row or not verify_password(delete_in.password, row[0]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect password",
+            )
+
+        if current_user.household_id:
+            cur.execute(
+                "SELECT COUNT(*) FROM users WHERE household_id = %s AND id != %s",
+                (current_user.household_id, current_user.id)
+            )
+            other_members = cur.fetchone()[0]
+            if other_members == 0:
+                cur.execute("DELETE FROM households WHERE id = %s", (current_user.household_id,))
+
+        cur.execute("DELETE FROM users WHERE id = %s", (current_user.id,))
+        db.commit()
+
+    return {"message": "Account deleted successfully"}

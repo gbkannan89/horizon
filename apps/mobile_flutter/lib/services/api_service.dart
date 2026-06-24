@@ -234,6 +234,18 @@ class ApiService {
     }
   }
 
+  // ── DELETE ACCOUNT (separate — 401 means wrong password, not expired session) ──
+  Future<void> deleteAccount(String password) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/auth/me'),
+      headers: {...await _getHeaders(), 'Content-Type': 'application/json'},
+      body: json.encode({'password': password}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    final detail = json.decode(response.body)['detail'] ?? 'Failed to delete account';
+    throw Exception(detail);
+  }
+
   // ── PUT ───────────────────────────────────────────────────────────────────
   Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     try {
