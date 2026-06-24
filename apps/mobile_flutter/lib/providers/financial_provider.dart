@@ -68,39 +68,42 @@ class FinancialProvider extends ChangeNotifier {
     loadAllData();
   }
 
-  Future<void> loadAllData() async {
-    _isLoading = true;
-    notifyListeners();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TARGETED RELOAD METHODS — no loading state, just data refresh
+  // ═══════════════════════════════════════════════════════════════════════════
 
+  Future<void> _reloadDashboard() async {
     try {
-      final dashboardData = await _apiService.get('/api/v1/dashboard/overview?month=$selectedMonth&year=$selectedYear');
-      netWorth = (dashboardData['net_worth'] ?? 0).toDouble();
-      netWorthChange = (dashboardData['net_worth_change'] ?? 0).toDouble();
-      netWorthChangePeriod = dashboardData['net_worth_change_period'] ?? '';
-      finScoreVal = dashboardData['fin_score'] ?? 0;
-      totalIncomeAgg = (dashboardData['total_income'] ?? 0).toDouble();
-      totalSpent = (dashboardData['total_spent'] ?? 0).toDouble();
-      totalLeft = (dashboardData['total_left'] ?? 0).toDouble();
-      needsSpent = (dashboardData['needs_spent'] ?? 0).toDouble();
-      wantsSpent = (dashboardData['wants_spent'] ?? 0).toDouble();
-      savingsSpent = (dashboardData['savings_spent'] ?? 0).toDouble();
-      needsBudget = (dashboardData['needs_budget'] ?? 1).toDouble();
-      wantsBudget = (dashboardData['wants_budget'] ?? 1).toDouble();
-      savingsBudget = (dashboardData['savings_budget'] ?? 1).toDouble();
-      goals = dashboardData['goals'] ?? [];
-      recentExpenses = dashboardData['recent_expenses'] ?? [];
-      upcomingBills = dashboardData['upcoming_bills'] ?? [];
-      spendingTrend = dashboardData['spending_trend'] ?? [];
+      final data = await _apiService.get('/api/v1/dashboard/overview?month=$selectedMonth&year=$selectedYear');
+      netWorth = (data['net_worth'] ?? 0).toDouble();
+      netWorthChange = (data['net_worth_change'] ?? 0).toDouble();
+      netWorthChangePeriod = data['net_worth_change_period'] ?? '';
+      finScoreVal = data['fin_score'] ?? 0;
+      totalIncomeAgg = (data['total_income'] ?? 0).toDouble();
+      totalSpent = (data['total_spent'] ?? 0).toDouble();
+      totalLeft = (data['total_left'] ?? 0).toDouble();
+      needsSpent = (data['needs_spent'] ?? 0).toDouble();
+      wantsSpent = (data['wants_spent'] ?? 0).toDouble();
+      savingsSpent = (data['savings_spent'] ?? 0).toDouble();
+      needsBudget = (data['needs_budget'] ?? 1).toDouble();
+      wantsBudget = (data['wants_budget'] ?? 1).toDouble();
+      savingsBudget = (data['savings_budget'] ?? 1).toDouble();
+      goals = data['goals'] ?? [];
+      recentExpenses = data['recent_expenses'] ?? [];
+      upcomingBills = data['upcoming_bills'] ?? [];
+      spendingTrend = data['spending_trend'] ?? [];
+      notifyListeners();
     } catch (e) {
       print('Dashboard load error: $e');
     }
+  }
 
+  Future<void> _reloadAssets() async {
     try {
-      final assetsData = await _apiService.get('/api/assets');
-      if (assetsData is List) {
-        assets = assetsData.map((a) => LocalAsset(
-          id: a['id'].toString(), 
-          name: a['name'], 
+      final data = await _apiService.get('/api/assets');
+      if (data is List) {
+        assets = data.map((a) => LocalAsset(
+          id: a['id'].toString(), name: a['name'],
           amount: (a['amount'] ?? 0).toDouble(),
           interestRate: (a['interest_rate'] ?? 0).toDouble(),
           isLiability: a['is_liability'] ?? false,
@@ -110,15 +113,19 @@ class FinancialProvider extends ChangeNotifier {
         )).toList();
       }
     } catch (e) { print('Assets load error: $e'); }
+  }
 
+  Future<void> _reloadPortfolioSummary() async {
     try {
       portfolioSummary = await _apiService.get('/api/analytics/portfolio-summary');
     } catch (e) { print('Portfolio summary load error: $e'); }
+  }
 
+  Future<void> _reloadVehicles() async {
     try {
-      final vehiclesData = await _apiService.get('/api/assets/vehicles');
-      if (vehiclesData is List) {
-        vehicles = vehiclesData.map((v) => LocalVehicle(
+      final data = await _apiService.get('/api/assets/vehicles');
+      if (data is List) {
+        vehicles = data.map((v) => LocalVehicle(
           id: v['id'].toString(),
           makeModel: v['make_model'],
           purchaseCost: (v['purchase_cost'] ?? 0).toDouble(),
@@ -126,38 +133,44 @@ class FinancialProvider extends ChangeNotifier {
         )).toList();
       }
     } catch (e) { print('Vehicles load error: $e'); }
+  }
 
+  Future<void> _reloadBills() async {
     try {
-      final billsData = await _apiService.get('/api/bills');
-      if (billsData is List) {
-        bills = billsData.map((b) => LocalBill(
+      final data = await _apiService.get('/api/bills');
+      if (data is List) {
+        bills = data.map((b) => LocalBill(
           id: b['id'].toString(),
           name: b['name'],
           amount: (b['amount'] ?? 0).toDouble(),
           frequency: b['frequency'] ?? 'monthly',
-          dueDate: DateTime.now(), // Fallback since due_day is an int, ideally construct full date
+          dueDate: DateTime.now(),
           isEmi: b['is_emi'] ?? false,
           emiTotalMonths: b['emi_total_months'] ?? 0,
           emiMonthsPaid: b['emi_months_paid'] ?? 0,
         )).toList();
       }
     } catch (e) { print('Bills load error: $e'); }
+  }
 
+  Future<void> _reloadLiabilities() async {
     try {
-      final liabilitiesData = await _apiService.get('/api/liabilities');
-      if (liabilitiesData is List) {
-        liabilities = liabilitiesData.map((l) => LocalLiability(
+      final data = await _apiService.get('/api/liabilities');
+      if (data is List) {
+        liabilities = data.map((l) => LocalLiability(
           id: l['id'].toString(), name: l['name'],
           amount: (l['outstanding'] ?? 0).toDouble(),
           interestRate: (l['interest_rate'] ?? 0).toDouble()
         )).toList();
       }
     } catch (e) { print('Liabilities load error: $e'); }
+  }
 
+  Future<void> _reloadIncomes() async {
     try {
-      final incomesData = await _apiService.get('/api/incomes');
-      if (incomesData is List) {
-        incomes = incomesData.map((i) => LocalIncome(
+      final data = await _apiService.get('/api/incomes');
+      if (data is List) {
+        incomes = data.map((i) => LocalIncome(
           id: i['id'].toString(),
           label: i['label'] ?? _typeToLabel(i['type'] ?? 'salary'),
           type: i['type'] ?? 'salary',
@@ -166,7 +179,9 @@ class FinancialProvider extends ChangeNotifier {
         )).toList();
       }
     } catch (e) { print('Incomes load error: $e'); }
+  }
 
+  Future<void> _reloadHousehold() async {
     try {
       final hhData = await _apiService.get('/api/household/summary');
       if (hhData['contributingMembers'] != null) {
@@ -178,40 +193,70 @@ class FinancialProvider extends ChangeNotifier {
           contribution: (m['contributionToHousehold'] ?? 0).toDouble(),
           relationship: m['relationship'] ?? 'Member',
         )).toList();
+      } else {
+        householdMembers = [];
       }
     } catch (e) {
       print('Household load error: $e');
       householdMembers = [];
     }
+  }
 
+  Future<void> _reloadWishlist() async {
     try {
       final wData = await _apiService.get('/api/discipline/wishlist');
       if (wData is List) {
         wishlist = wData.map((w) => WishlistItem.fromJson(w as Map<String, dynamic>)).toList();
       }
     } catch (e) {
-      print('Bills load error: $e');
+      print('Wishlist load error: $e');
     }
+  }
 
+  Future<void> _reloadInsurances() async {
     try {
-      final insurancesData = await _apiService.get('/api/insurance');
-      if (insurancesData is List) {
-        insurances = insurancesData;
+      final data = await _apiService.get('/api/insurance');
+      if (data is List) {
+        insurances = data;
       }
     } catch (e) {
       print('Insurance load error: $e');
     }
+  }
 
+  Future<void> _reloadScoreHistory() async {
     try {
       final shData = await _apiService.get('/api/score/history');
       if (shData is List) {
-        scoreHistory = shData.reversed.toList(); // Oldest first for charts
+        scoreHistory = shData.reversed.toList();
       }
     } catch (e) {
       print('Score history load error: $e');
     }
+  }
 
-    // Load background data
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FULL DATA LOAD — for initial load, month navigation, and pull-to-refresh
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> loadAllData() async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.wait([
+      _reloadDashboard(),
+      _reloadAssets(),
+      _reloadPortfolioSummary(),
+      _reloadVehicles(),
+      _reloadBills(),
+      _reloadLiabilities(),
+      _reloadIncomes(),
+      _reloadHousehold(),
+      _reloadWishlist(),
+      _reloadInsurances(),
+      _reloadScoreHistory(),
+    ]);
+
     loadBudgetBreakdown();
     loadNudges();
 
@@ -230,24 +275,46 @@ class FinancialProvider extends ChangeNotifier {
 
   // ── EXPENSE ────────────────────────────────────────────────────────────────
   Future<void> addExpense(String name, double amount, String category, String bucket) async {
-    await _apiService.post('/api/v1/dashboard/expense', {
+    final created = await _apiService.post('/api/v1/dashboard/expense', {
       'name': name, 'amount': amount, 'category': category, 'bucket': bucket,
       'date': DateTime.now().toIso8601String().split('T').first, 'icon': 'receipt'
     });
-    await loadAllData();
+    if (created != null && created['id'] != null) {
+      recentExpenses.insert(0, created);
+    }
+    notifyListeners();
+    _reloadDashboard();
   }
 
   // ── INCOME ─────────────────────────────────────────────────────────────────
   Future<void> addIncome(String label, String type, double amount, String frequency) async {
-    await _apiService.post('/api/incomes', {
+    final created = await _apiService.post('/api/incomes', {
       'label': label, 'type': type, 'amount': amount, 'frequency': frequency,
     });
-    await loadAllData();
+    incomes.add(LocalIncome(
+      id: created['id'].toString(),
+      label: created['label'] ?? label,
+      type: created['type'] ?? type,
+      amount: (created['amount'] ?? amount).toDouble(),
+      frequency: created['frequency'] ?? frequency,
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> deleteIncome(String id) async {
-    await _apiService.delete('/api/incomes/$id');
-    await loadAllData();
+    final index = incomes.indexWhere((i) => i.id == id);
+    if (index == -1) return;
+    final removed = incomes.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/incomes/$id');
+      _reloadDashboard();
+    } catch (_) {
+      incomes.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // ── RECURRING BILLS ────────────────────────────────────────────────────────
@@ -257,7 +324,7 @@ class FinancialProvider extends ChangeNotifier {
     int? emiTotalMonths,
     DateTime? startDate,
   }) async {
-    await _apiService.post('/api/bills', {
+    final created = await _apiService.post('/api/bills', {
       'name': name, 
       'amount': amount, 
       'category': category, 
@@ -267,23 +334,56 @@ class FinancialProvider extends ChangeNotifier {
       'emi_total_months': emiTotalMonths,
       'start_date': startDate?.toIso8601String().split('T').first,
     });
-    await loadAllData();
+    bills.add(LocalBill(
+      id: created['id'].toString(),
+      name: created['name'] ?? name,
+      amount: (created['amount'] ?? amount).toDouble(),
+      frequency: created['frequency'] ?? frequency,
+      dueDate: DateTime.now(),
+      isEmi: created['is_emi'] ?? isEmi,
+      emiTotalMonths: created['emi_total_months'] ?? emiTotalMonths ?? 0,
+      emiMonthsPaid: created['emi_months_paid'] ?? 0,
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> deleteRecurringBill(String id) async {
-    await _apiService.delete('/api/bills/$id');
-    await loadAllData();
+    final index = bills.indexWhere((b) => b.id == id);
+    if (index == -1) return;
+    final removed = bills.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/bills/$id');
+      _reloadDashboard();
+    } catch (_) {
+      bills.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // ── INSURANCE ─────────────────────────────────────────────────────────────
   Future<void> addInsurance(Map<String, dynamic> data) async {
-    await _apiService.post('/insurance/', data);
-    await loadAllData();
+    final created = await _apiService.post('/insurance/', data);
+    insurances.add(created);
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> deleteInsurance(String id) async {
-    await _apiService.delete('/insurance/$id');
-    await loadAllData();
+    final index = insurances.indexWhere((ins) => ins['id'].toString() == id);
+    if (index == -1) return;
+    final removed = insurances.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/insurance/$id');
+      _reloadDashboard();
+    } catch (_) {
+      insurances.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // ── TRANSACTIONS ───────────────────────────────────────────────────────────
@@ -301,7 +401,7 @@ class FinancialProvider extends ChangeNotifier {
     double? purchasePrice,
     String? purchaseDate,
   }) async {
-    await _apiService.post('/api/assets', {
+    final created = await _apiService.post('/api/assets', {
       'name': name, 'type': type, 'amount': amount,
       'interest_rate': interestRate,
       'is_liability': isLiability,
@@ -310,49 +410,112 @@ class FinancialProvider extends ChangeNotifier {
       'purchase_price': purchasePrice,
       'purchase_date': purchaseDate,
     });
-    await loadAllData();
+    assets.add(LocalAsset(
+      id: created['id'].toString(),
+      name: created['name'] ?? name,
+      amount: (created['amount'] ?? amount).toDouble(),
+      interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
+      isLiability: created['is_liability'] ?? isLiability,
+      generatesIncome: created['generates_income'] ?? generatesIncome,
+      purchasePrice: created['purchase_price']?.toDouble(),
+      purchaseDate: created['purchase_date'],
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> addVehicle(String makeModel, double purchaseCost, {DateTime? insuranceRenewalDate}) async {
-    await _apiService.post('/api/assets/vehicles', {
+    final created = await _apiService.post('/api/assets/vehicles', {
       'make_model': makeModel,
       'purchase_cost': purchaseCost,
       'insurance_renewal_date': insuranceRenewalDate?.toIso8601String().split('T').first,
     });
-    await loadAllData();
+    vehicles.add(LocalVehicle(
+      id: created['id'].toString(),
+      makeModel: created['make_model'] ?? makeModel,
+      purchaseCost: (created['purchase_cost'] ?? purchaseCost).toDouble(),
+      insuranceRenewalDate: created['insurance_renewal_date'] != null ? DateTime.parse(created['insurance_renewal_date']) : null,
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> deleteVehicle(String id) async {
-    await _apiService.delete('/api/assets/vehicles/$id');
-    await loadAllData();
+    final index = vehicles.indexWhere((v) => v.id == id);
+    if (index == -1) return;
+    final removed = vehicles.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/assets/vehicles/$id');
+      _reloadDashboard();
+    } catch (_) {
+      vehicles.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> deleteAsset(String id) async {
-    await _apiService.delete('/api/assets/$id');
-    await loadAllData();
+    final index = assets.indexWhere((a) => a.id == id);
+    if (index == -1) return;
+    final removed = assets.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/assets/$id');
+      _reloadDashboard();
+    } catch (_) {
+      assets.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // ── LIABILITIES ────────────────────────────────────────────────────────────
   Future<void> addLiability(String name, String type, double outstanding, double emi, double interestRate) async {
-    await _apiService.post('/api/liabilities', {
+    final created = await _apiService.post('/api/liabilities', {
       'name': name, 'type': type, 'outstanding': outstanding,
       'emi': emi, 'interest_rate': interestRate,
     });
-    await loadAllData();
+    liabilities.add(LocalLiability(
+      id: created['id'].toString(),
+      name: created['name'] ?? name,
+      amount: (created['outstanding'] ?? outstanding).toDouble(),
+      interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   Future<void> deleteLiability(String id) async {
-    await _apiService.delete('/api/liabilities/$id');
-    await loadAllData();
+    final index = liabilities.indexWhere((l) => l.id == id);
+    if (index == -1) return;
+    final removed = liabilities.removeAt(index);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/liabilities/$id');
+      _reloadDashboard();
+    } catch (_) {
+      liabilities.insert(index, removed);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // ── HOUSEHOLD MEMBERS ──────────────────────────────────────────────────────
   Future<void> addContributingMember(String name, double monthlyIncome, double contribution, String relationship) async {
-    await _apiService.post('/api/household/contributing-members', {
+    final created = await _apiService.post('/api/household/contributing-members', {
       'name': name, 'monthly_income': monthlyIncome,
       'contribution_to_household': contribution, 'relationship': relationship
     });
-    await loadAllData();
+    householdMembers.add(LocalHouseholdMember(
+      id: created['id'].toString(),
+      name: created['name'] ?? name,
+      monthlyIncome: (created['monthlyIncome'] ?? monthlyIncome).toDouble(),
+      contribution: (created['contributionToHousehold'] ?? contribution).toDouble(),
+      relationship: created['relationship'] ?? relationship,
+    ));
+    notifyListeners();
+    _reloadDashboard();
   }
 
   // ── REPORT ────────────────────────────────────────────────────────────────

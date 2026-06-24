@@ -643,12 +643,13 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         try {
-                          await widget.disciplineService.addWishlistItem(nameCtrl.text, double.parse(amountCtrl.text), lockDays);
+                          final item = await widget.disciplineService.addWishlistItem(
+                              nameCtrl.text, double.parse(amountCtrl.text), lockDays);
                           if (context.mounted) {
+                            setState(() => _wishlist.add(item));
                             Navigator.pop(context);
                             UiUtils.showSnack(context, 'Wishlist item added!');
                           }
-                          _loadData();
                         } catch(e) {
                           if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
                         }
@@ -672,9 +673,14 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> {
 
   void _updateWishlistStatus(int id, String status) async {
     try {
-      await widget.disciplineService.updateWishlistItemStatus(id, status);
-      _loadData();
-      if (mounted) UiUtils.showSnack(context, 'Wishlist item purchased!');
+      final updated = await widget.disciplineService.updateWishlistItemStatus(id, status);
+      if (mounted) {
+        setState(() {
+          final idx = _wishlist.indexWhere((w) => w.id == id);
+          if (idx != -1) _wishlist[idx] = updated;
+        });
+        UiUtils.showSnack(context, 'Wishlist item purchased!');
+      }
     } catch(e) {
       if (mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
     }

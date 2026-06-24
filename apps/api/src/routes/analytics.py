@@ -110,7 +110,7 @@ def portfolio_summary(
     asset_list = []
 
     for r in asset_rows:
-        current_val = float(r[3])
+        current_val = float(r[2])
         total_current += current_val
 
         pp = float(r[4]) if r[4] is not None else None

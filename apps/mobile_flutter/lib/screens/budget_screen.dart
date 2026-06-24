@@ -5,8 +5,15 @@ import 'package:file_picker/file_picker.dart';
 import '../providers/financial_provider.dart';
 import '../utils/ui_utils.dart';
 
-class BudgetScreen extends StatelessWidget {
+class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
+
+  @override
+  State<BudgetScreen> createState() => _BudgetScreenState();
+}
+
+class _BudgetScreenState extends State<BudgetScreen> {
+  int _visibleCount = 3;
 
   String _getMonthName(int month, int year) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -943,7 +950,31 @@ class BudgetScreen extends StatelessWidget {
                 ),
 
                 // Expense List
-                ...provider.recentExpenses.map((exp) => _buildExpenseItem(exp)).toList(),
+                ...provider.recentExpenses.take(_visibleCount).map((exp) => _buildExpenseItem(exp)).toList(),
+
+                if (provider.recentExpenses.length > _visibleCount) ...[
+                  const SizedBox(height: 12),
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _visibleCount += 3;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1E3A8A),
+                        side: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.expand_more_rounded, size: 20),
+                      label: const Text(
+                        'Load More',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
