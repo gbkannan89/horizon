@@ -193,6 +193,12 @@ class GoalOut(BaseModel):
     monthly_saving_needed: Optional[float] = None
 
 # Expense Schemas
+class UploadSummary(BaseModel):
+    inserted: int
+    skipped: int
+    duplicates: int
+    total_parsed: int
+
 class ExpenseCreate(BaseModel):
     name: str
     amount: float = Field(..., ge=0)

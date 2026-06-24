@@ -320,6 +320,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           hintText: hint,
           hintStyle: TextStyle(fontSize: 28, color: Colors.white.withValues(alpha: 0.15), fontWeight: FontWeight.normal),
           border: InputBorder.none,
+          filled: false,
           contentPadding: const EdgeInsets.symmetric(vertical: 24),
         ),
       ),

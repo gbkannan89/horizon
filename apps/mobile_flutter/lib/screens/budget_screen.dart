@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../providers/financial_provider.dart';
 import '../utils/ui_utils.dart';
+import '../main.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -20,24 +21,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return '${months[month - 1]} $year';
   }
 
-  void _showUploadProgressDialog(BuildContext context, String filePath) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const UploadAnimationDialog(),
+  void _showUploadProgressDialog(BuildContext context, String filePath) {
+    final prov = Provider.of<FinancialProvider>(context, listen: false);
+    
+    UiUtils.showSnack(
+      context, 
+      'Processing statement in background. This might take a moment...',
     );
-    try {
-      await Provider.of<FinancialProvider>(context, listen: false).uploadStatement(filePath);
-      if (context.mounted) {
-        Navigator.of(context).pop(); // close dialog
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload successful!')));
+    
+    prov.uploadStatement(filePath).then((insertedCount) {
+      if (navigatorKey.currentContext != null) {
+        UiUtils.showSnack(
+          navigatorKey.currentContext!, 
+          'Uploaded: $insertedCount new transactions'
+        );
       }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+    }).catchError((e) {
+      if (navigatorKey.currentContext != null) {
+        UiUtils.showSnack(
+          navigatorKey.currentContext!, 
+          'Upload failed: $e',
+          isError: true,
+        );
       }
-    }
+    });
   }
 
   void _showAddExpenseModal(BuildContext context) {
@@ -694,7 +701,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     minHeight: 4,
                   ),
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await provider.loadAllData();
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
@@ -828,13 +840,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           const Text('Committed Bills', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 4),
                           Text('₹${totalBills.toStringAsFixed(0)}/month ($billPct% of income)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        ],
-                      ),
-                      const Icon(Icons.chevron_right, color: Colors.grey),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
+              ],
+            ),
+            ],
+            ),
+            ),
+            const SizedBox(height: 20),
 
                 // Left to spend
                 Row(
@@ -987,10 +998,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
             ),
           ),
           ),
-          ],
           ),
-          ),
-          floatingActionButton: FloatingActionButton(
+        ],
+      ),
+    ),
+    floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddExpenseModal(context),
             backgroundColor: const Color(0xFF1E3A8A),
             child: const Icon(Icons.add, color: Colors.white),
@@ -1001,73 +1013,3 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 }
 
-class UploadAnimationDialog extends StatefulWidget {
-  const UploadAnimationDialog({super.key});
-
-  @override
-  State<UploadAnimationDialog> createState() => _UploadAnimationDialogState();
-}
-
-class _UploadAnimationDialogState extends State<UploadAnimationDialog> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  bool _isSuccess = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
-    
-    // Simulate parsing delay before morphing into success
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() => _isSuccess = true);
-        _controller.stop();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
-              child: _isSuccess
-                  ? const Icon(Icons.check_circle, color: Colors.green, size: 80, key: ValueKey('success'))
-                  : RotationTransition(
-                      turns: _controller,
-                      key: const ValueKey('loading'),
-                      child: const Icon(Icons.sync, color: Color(0xFF1E3A8A), size: 80),
-                    ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _isSuccess ? "Upload Complete!" : "Parsing file...",
-              style: TextStyle(
-                fontSize: 18, 
-                fontWeight: FontWeight.bold,
-                color: _isSuccess ? Colors.green.shade700 : const Color(0xFF1E3A8A)
-              ),
-            ),
-            if (!_isSuccess) ...[
-              const SizedBox(height: 8),
-              const Text("Reading and categorizing transactions...", style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ]
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from ..database import get_db
-from ..schemas import ExpenseOut, UserOut
+from ..schemas import UserOut, UploadSummary
 from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def _parse_date(date_str: str) -> datetime.date:
     return datetime.now().date()
 
 
-def _parse_csv(file) -> list[dict]:
+def _parse_csv(file) -> dict:
     lines = codecs.iterdecode(file, 'utf-8-sig')
     header_row_str = ""
     for line in lines:
@@ -70,17 +70,20 @@ def _parse_csv(file) -> list[dict]:
     date_col = next((f for f in fieldnames if 'date' in f), None)
     desc_col = next((f for f in fieldnames if 'description' in f or 'narration' in f or 'particulars' in f), None)
     amount_col = next((f for f in fieldnames if 'amount' in f and 'balance' not in f), None)
-    debit_col = next((f for f in fieldnames if 'debit' in f or 'withdrawal' in f), None)
+    debit_col = next((f for f in fieldnames if 'debit' in f or 'withdrawal' in f or 'dr' in f), None)
+    cr_col = next((f for f in fieldnames if f.strip() in ('cr', 'credit')), None)
 
     if not date_col or not desc_col:
         raise HTTPException(status_code=400, detail=f"Could not identify required columns. Found: {fieldnames}")
 
     transactions = []
+    skipped = 0
     for row in csvReader:
         normalized_row = {k.strip().lower(): v for k, v in row.items() if k}
         date_str = (normalized_row.get(date_col) or "").strip()
         desc = (normalized_row.get(desc_col) or "").strip()
         if not date_str or not desc:
+            skipped += 1
             continue
 
         amount = 0.0
@@ -90,16 +93,20 @@ def _parse_csv(file) -> list[dict]:
         elif debit_col and normalized_row.get(debit_col):
             try: amount = float(normalized_row[debit_col].replace(',', '').strip())
             except: pass
+        elif cr_col and normalized_row.get(cr_col):
+            try: amount = float(normalized_row[cr_col].replace(',', '').strip())
+            except: pass
 
         if amount <= 0:
+            skipped += 1
             continue
 
         transactions.append({"date": _parse_date(date_str), "description": desc[:100], "amount": amount})
 
-    return transactions
+    return {"transactions": transactions, "skipped": skipped}
 
 
-def _parse_excel(file) -> list[dict]:
+def _parse_excel(file) -> dict:
     import openpyxl
     suffix = ".xlsx"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -129,14 +136,17 @@ def _parse_excel(file) -> list[dict]:
         date_col = next((i for i, f in enumerate(fieldnames) if 'date' in f), None)
         desc_col = next((i for i, f in enumerate(fieldnames) if any(d in f for d in ['description', 'narration', 'particulars'])), None)
         amount_col = next((i for i, f in enumerate(fieldnames) if 'amount' in f and 'balance' not in f), None)
-        debit_col = next((i for i, f in enumerate(fieldnames) if any(d in f for d in ['debit', 'withdrawal'])), None)
+        debit_col = next((i for i, f in enumerate(fieldnames) if any(d in f for d in ['debit', 'withdrawal', 'dr'])), None)
+        cr_col = next((i for i, f in enumerate(fieldnames) if f.strip() in ('cr', 'credit')), None)
 
         if date_col is None or desc_col is None:
             raise HTTPException(status_code=400, detail=f"Could not identify required columns. Found: {fieldnames}")
 
         transactions = []
+        skipped = 0
         for row in all_rows[header_idx + 1:]:
             if row is None or all(c is None for c in row):
+                skipped += 1
                 continue
             date_val_raw = row[date_col] if date_col is not None else None
             if date_val_raw is not None:
@@ -148,6 +158,7 @@ def _parse_excel(file) -> list[dict]:
                 date_val = ""
             desc_val = str(row[desc_col]).strip() if desc_col is not None and row[desc_col] is not None else ""
             if not date_val or not desc_val or date_val.lower() == 'none':
+                skipped += 1
                 continue
 
             amount = 0.0
@@ -157,18 +168,22 @@ def _parse_excel(file) -> list[dict]:
             elif debit_col is not None and row[debit_col] is not None:
                 try: amount = float(row[debit_col])
                 except: pass
+            elif cr_col is not None and row[cr_col] is not None:
+                try: amount = float(row[cr_col])
+                except: pass
 
             if amount <= 0:
+                skipped += 1
                 continue
             transactions.append({"date": _parse_date(date_val), "description": desc_val[:100], "amount": amount})
 
         wb.close()
-        return transactions
+        return {"transactions": transactions, "skipped": skipped}
     finally:
         os.unlink(tmp_path)
 
 
-@router.post("/upload", response_model=list[ExpenseOut])
+@router.post("/upload", response_model=UploadSummary)
 def upload_statement(
     file: UploadFile = File(...),
     current_user: UserOut = Depends(get_current_user),
@@ -179,9 +194,12 @@ def upload_statement(
         raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'. Accepted: CSV and XLSX. If you have an .xls file, please save it as .xlsx or .csv.")
 
     try:
-        transactions = _parse_csv(file.file) if ext == '.csv' else _parse_excel(file.file)
+        result = _parse_csv(file.file) if ext == '.csv' else _parse_excel(file.file)
+        transactions = result["transactions"]
+        skipped = result["skipped"]
 
-        inserted_expenses = []
+        inserted = 0
+        duplicates = 0
         with conn.cursor() as cur:
             for txn in transactions:
                 category, bucket, icon = categorize_transaction(txn["description"], txn["amount"])
@@ -190,6 +208,7 @@ def upload_statement(
                     (current_user.id, txn["description"], txn["amount"], txn["date"])
                 )
                 if cur.fetchone():
+                    duplicates += 1
                     continue
                 cur.execute(
                     """INSERT INTO expenses (user_id, name, amount, category, bucket, icon, date)
@@ -197,14 +216,16 @@ def upload_statement(
                        RETURNING id, user_id, name, amount, category, bucket, icon, date, created_at""",
                     (current_user.id, txn["description"], txn["amount"], category, bucket, icon, txn["date"])
                 )
-                row = cur.fetchone()
-                inserted_expenses.append(ExpenseOut(
-                    id=row[0], user_id=row[1], name=row[2], amount=float(row[3]),
-                    category=row[4], bucket=row[5], icon=row[6], date=row[7], created_at=row[8]
-                ))
+                cur.fetchone()
+                inserted += 1
             conn.commit()
 
-        return inserted_expenses
+        return UploadSummary(
+            inserted=inserted,
+            skipped=skipped,
+            duplicates=duplicates,
+            total_parsed=len(transactions) + skipped
+        )
 
     except HTTPException:
         raise

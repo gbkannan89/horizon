@@ -215,7 +215,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: type,
+                    initialValue: type,
                     decoration: InputDecoration(labelText: 'Insurance Type', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
                     items: const [
                       DropdownMenuItem(value: 'health', child: Text('Health Insurance')),
@@ -236,7 +236,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: frequency,
+                          initialValue: frequency,
                           decoration: InputDecoration(labelText: 'Frequency', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
                           items: ['monthly', 'quarterly', 'yearly'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (v) => setState(() => frequency = v!),

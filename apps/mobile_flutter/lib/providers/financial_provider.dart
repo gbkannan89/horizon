@@ -387,9 +387,10 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── TRANSACTIONS ───────────────────────────────────────────────────────────
-  Future<void> uploadStatement(String path) async {
-    await _apiService.uploadFile('/api/transactions/upload', 'file', path);
+  Future<int> uploadStatement(String path) async {
+    final res = await _apiService.uploadFile('/api/transactions/upload', 'file', path);
     await loadAllData();
+    return res['inserted'] ?? 0;
   }
 
   // ── ASSETS ─────────────────────────────────────────────────────────────────
