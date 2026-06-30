@@ -1,0 +1,2 @@
+-- U006__goal.sql
+DROP TABLE IF EXISTS goals CASCADE;

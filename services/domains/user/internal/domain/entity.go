@@ -123,3 +123,19 @@ func (u *User) GetActiveConsents() []ConsentRecord {
 	}
 	return active
 }
+
+// ReconstructFromDB creates a User from persistent storage without validation.
+func ReconstructFromDB(id, displayName, legalName, preferredName, country, baseCurrency, locale, timezone string,
+	userHealth UserHealth, userConfidence UserConfidence, fip FinancialIdentityProfile,
+	status UserStatus, userType UserType, beh FinBehaviourProfile, profileCompleteness float64,
+	sot SOT, tags []string, metadata map[string]string, notes string,
+	dob *time.Time, createdAt, updatedAt time.Time) *User {
+	return &User{
+		userID: id, displayName: displayName, legalName: legalName, preferredName: preferredName,
+		dateOfBirth: dob, country: country, baseCurrency: baseCurrency, locale: locale, timezone: timezone,
+		userHealth: userHealth, userConfidence: userConfidence, financialIdentityProfile: fip,
+		status: status, userType: userType, financialBehaviourProfile: beh,
+		profileCompleteness: profileCompleteness, sourceOfTruth: sot,
+		tags: tags, metadata: metadata, notes: notes, createdAt: createdAt, updatedAt: updatedAt,
+	}
+}

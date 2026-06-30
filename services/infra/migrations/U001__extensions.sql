@@ -1,0 +1,4 @@
+-- U001__extensions.sql
+DROP EXTENSION IF EXISTS btree_gin;
+DROP EXTENSION IF EXISTS "uuid-ossp";
+DROP EXTENSION IF EXISTS pgcrypto;

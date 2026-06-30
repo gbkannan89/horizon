@@ -1,0 +1,3 @@
+-- U002__foundation.sql
+DROP TABLE IF EXISTS event_store CASCADE;
+DROP TABLE IF EXISTS outbox CASCADE;

@@ -92,3 +92,15 @@ func (g *Goal) CanTransitionTo(target GoalStatus) error {
 	}
 	return fmt.Errorf("cannot transition from %s to %s", g.status, target)
 }
+
+
+// ReconstructFromDB creates a Goal from persistent storage without validation.
+func ReconstructFromDB(id, userID, name string, importance GoalImportance, gtype GoalType, subtype GoalSubtype,
+	sc SuccessCriteria, priority int, status GoalStatus, notes string, tags []string, createdAt, updatedAt time.Time,
+	targetDate *time.Time) *Goal {
+	return &Goal{
+		id: id, userID: userID, name: name, importance: importance, gtype: gtype, subtype: subtype,
+		successCriteria: sc, priority: priority, status: status, notes: notes, tags: tags,
+		createdAt: createdAt, updatedAt: updatedAt, targetDate: targetDate,
+	}
+}

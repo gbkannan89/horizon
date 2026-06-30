@@ -92,3 +92,21 @@ func (e *FinancialEvent) SetSequenceNumber(seq int64)  { e.sequenceNumber = seq 
 func (e *FinancialEvent) SetOrderIndex(idx string)       { e.orderIndex = idx }
 func (e *FinancialEvent) SetCreatedAt(t time.Time)       { e.createdAt = t.UTC() }
 func (e *FinancialEvent) SetUpdatedAt(t time.Time)       { e.updatedAt = t.UTC() }
+
+
+// ReconstructFromDB creates a FinancialEvent from persistent storage without validation.
+func ReconstructFromDB(id, userID, householdID string, eventType EventType, eventSubType string,
+	eventDate, effectiveDate time.Time, currency string, amount int64, source, destination, description, notes, reference string,
+	origin EventOrigin, confidence EventConfidence, sourceOfTruth SourceOfTruth, createdBy CreatedBy,
+	importedFrom, correlationID, reversalOfEventID string, tags []string, state EventState,
+	sequenceNumber int64, orderIndex string, createdAt, updatedAt time.Time) *FinancialEvent {
+	return &FinancialEvent{
+		eventID: id, userID: userID, householdID: householdID, eventType: eventType, eventSubType: eventSubType,
+		eventDate: eventDate, effectiveDate: effectiveDate, currency: currency, amount: amount,
+		source: source, destination: destination, description: description, notes: notes, reference: reference,
+		origin: origin, confidence: confidence, sourceOfTruth: sourceOfTruth, createdBy: createdBy,
+		importedFrom: importedFrom, correlationID: correlationID, reversalOfEventID: reversalOfEventID,
+		tags: tags, state: state, sequenceNumber: sequenceNumber, orderIndex: orderIndex,
+		createdAt: createdAt, updatedAt: updatedAt,
+	}
+}

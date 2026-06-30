@@ -1,0 +1,6 @@
+-- U003__user.sql
+DROP TABLE IF EXISTS user_households CASCADE;
+DROP TABLE IF EXISTS user_privacy CASCADE;
+DROP TABLE IF EXISTS user_preferences CASCADE;
+DROP TABLE IF EXISTS user_consents CASCADE;
+DROP TABLE IF EXISTS users CASCADE;

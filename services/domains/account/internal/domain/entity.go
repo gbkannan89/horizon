@@ -76,3 +76,14 @@ func (a *Account) CanTransitionTo(target AccountStatus) error {
 	if a.status == StatusArchived { return fmt.Errorf("archived accounts cannot transition") }
 	return fmt.Errorf("cannot transition from %s to %s", a.status, target)
 }
+
+func ReconstructFromDB(id, ownerID, name, currency string, acctType AccountType, cls AccountClassification,
+	status AccountStatus, openedDate time.Time, lp LiquidityProfile, ah AccountHealth, vis Visibility,
+	tags []string, createdAt, updatedAt time.Time) *Account {
+	return &Account{
+		id: id, ownerID: ownerID, accountName: name, currency: currency, accountType: acctType,
+		classification: cls, status: status, openedDate: openedDate,
+		liquidityProfile: lp, accountHealth: ah, visibility: vis,
+		tags: tags, createdAt: createdAt, updatedAt: updatedAt,
+	}
+}
