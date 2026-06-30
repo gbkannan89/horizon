@@ -188,6 +188,8 @@ func (c *Composer) buildCards(inputs Inputs) []Card {
 	return cards
 }
 
+func SummaryCount(n int) string { if n == 0 { return "No items" }; return fmt.Sprintf("%d items", n) }
+func SummaryMoney(v int64) string { return fmt.Sprintf("₹%d projected", v) }
 func fmtMoney(v int64) string {
 	if v >= 10000000 { return fmt.Sprintf("₹%.2fCr", float64(v)/10000000) }
 	if v >= 100000 { return fmt.Sprintf("₹%.2fL", float64(v)/100000) }

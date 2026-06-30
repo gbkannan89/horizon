@@ -111,14 +111,14 @@ func (a *Aggregator) Aggregate(ctx context.Context, userID string) (*engine.Inpu
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		has, cnt, err := a.providers.Optimize.HasOptimizations(ctx, userID)
+		has, _, err := a.providers.Optimize.HasOptimizations(ctx, userID)
 		if err != nil { errs <- err; return }
 		mu.Lock(); inputs.HasOpts = has; mu.Unlock()
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		has, cnt, err := a.providers.Simulation.HasSimulations(ctx, userID)
+		has, _, err := a.providers.Simulation.HasSimulations(ctx, userID)
 		if err != nil { errs <- err; return }
 		mu.Lock(); inputs.HasSims = has; mu.Unlock()
 	}()

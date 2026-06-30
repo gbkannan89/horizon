@@ -39,4 +39,5 @@ use (
 	./services/infra
 	./services/infra/api-gateway
 	./tools
+	./services/ai
 )
