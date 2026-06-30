@@ -1,0 +1,69 @@
+version: '3'
+
+tasks:
+  setup:
+    desc: One-time developer setup
+    cmds:
+      - go mod download
+      - cd tools && go mod download && cd ..
+    silent: false
+
+  dev:
+    desc: Start development environment
+    cmds:
+      - docker compose -f deploy/docker/docker-compose.yml up -d
+    silent: false
+
+  build:
+    desc: Build all Go packages
+    cmds:
+      - task: build-package
+        vars: {PACKAGE: errors}
+      - task: build-package
+        vars: {PACKAGE: types}
+      - task: build-package
+        vars: {PACKAGE: events}
+      - task: build-package
+        vars: {PACKAGE: logging}
+      - task: build-package
+        vars: {PACKAGE: testing}
+      - task: build-package
+        vars: {PACKAGE: config}
+      - task: build-package
+        vars: {PACKAGE: http}
+      - task: build-package
+        vars: {PACKAGE: auth}
+      - task: build-package
+        vars: {PACKAGE: telemetry}
+    silent: false
+
+  build-package:
+    internal: true
+    cmds:
+      - cd packages/{{.PACKAGE}} && go build ./...
+    silent: false
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./packages/... -count=1
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./packages/... --timeout=5m
+
+  proto:
+    desc: Compile protos
+    cmds:
+      - cd proto && buf generate
+
+  docker-up:
+    desc: Start Docker infrastructure
+    cmds:
+      - docker compose -f deploy/docker/docker-compose.yml up -d
+
+  docker-down:
+    desc: Stop Docker infrastructure
+    cmds:
+      - docker compose -f deploy/docker/docker-compose.yml down

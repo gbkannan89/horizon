@@ -1,2 +1,34 @@
-# horizon
-Horizon is a multi-currency wealth intelligence engine that replaces static spreadsheets with a dynamic lifecycle simulation. It tracks your global assets, enforces a 50/30/20 budget, and uses localized inflation to project your net worth to age 100. By identifying future liquidity valleys, it ensures your cash flows survive lifelong milestones.
+# Horizon
+
+Goal-Centric Personal Financial Operating System
+
+## Quick Start
+
+```bash
+git clone <repository-url>
+cd horizon
+make setup
+make dev
+```
+
+## Repository Structure
+
+| Directory | Purpose |
+|---|---|
+| `apps/` | Frontend applications (Flutter) |
+| `services/` | Backend services (Go, Python) |
+| `packages/` | Shared Go libraries |
+| `proto/` | Protobuf definitions |
+| `deploy/` | Docker and deployment configs |
+| `docs/` | Documentation |
+| `scripts/` | Build and utility scripts |
+
+## Documentation
+
+- [Development Setup](docs/development.md)
+- [Architecture Overview](docs/architecture.md)
+- [Decision Records](docs/decisions/)
+
+## Project Status
+
+Phase 0: Foundation — Repository setup

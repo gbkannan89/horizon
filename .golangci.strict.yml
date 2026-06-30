@@ -1,0 +1,21 @@
+# Strict CI variant — additional linters enforced in CI
+inherits: .golangci.yml
+
+linters:
+  enable:
+    - wsl
+    - nlreturn
+    - wrapcheck
+    - forcetypeassert
+    - noctx
+    - gofumpt
+
+linters-settings:
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - fmt.Errorf(
+      - .Wrap(
+      - .Wrapf(

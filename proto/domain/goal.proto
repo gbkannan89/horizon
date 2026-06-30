@@ -1,0 +1,40 @@
+syntax = "proto3";
+package horizon.domain.goal;
+option go_package = "github.com/horizon/core/proto/gen/go/domain/goal;goalpb";
+
+enum Importance {
+  IMPORTANCE_UNSPECIFIED = 0;
+  MANDATORY = 1;
+  ESSENTIAL = 2;
+  LIFESTYLE = 3;
+  DREAM = 4;
+  SPECULATIVE = 5;
+}
+
+enum GoalStatus {
+  GOAL_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  AT_RISK = 2;
+  COMPLETED = 3;
+  ARCHIVED = 4;
+  CANCELLED = 5;
+}
+
+message GoalCreated {
+  string goal_id = 1;
+  string user_id = 2;
+  string name = 3;
+  Importance importance = 4;
+  int32 priority = 5;
+  int64 target_amount = 6;
+  string currency = 7;
+  string target_date = 8;
+}
+
+message GoalCompleted {
+  string goal_id = 1;
+  string user_id = 2;
+  string completion_date = 3;
+  int64 total_contributions = 4;
+  int64 total_growth = 5;
+}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package horizon.domain.financial_event;
+option go_package = "github.com/horizon/core/proto/gen/go/domain/financial_event;fepb";
+
+enum EventStatus {
+  EVENT_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  POSTED = 2;
+  REVERSED = 3;
+  RECONCILED = 4;
+}
+
+message FinancialEventPosted {
+  string event_id = 1;
+  string user_id = 2;
+  string event_type = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string category = 6;
+  string account_id = 7;
+  int64 event_time = 8;
+}
+
+message FinancialEventReversed {
+  string original_event_id = 1;
+  string reversal_event_id = 2;
+  string reason = 3;
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+package horizon.common;
+option go_package = "github.com/horizon/core/proto/gen/go/common;commonpb";
+
+message EventEnvelope {
+  string event_id = 1;
+  string event_type = 2;
+  int32 event_version = 3;
+  int64 timestamp = 4;
+  string correlation_id = 5;
+  string user_id = 6;
+  string source = 7;
+  bytes data = 8;
+}

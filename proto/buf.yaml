@@ -1,0 +1,12 @@
+version: v2
+modules:
+  - path: .
+    lint:
+      use:
+        - STANDARD
+      except:
+        - PACKAGE_VERSION_SUFFIX
+        - ENUM_VALUE_PREFIX
+breaking:
+  use:
+    - FILE

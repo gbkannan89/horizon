@@ -1,0 +1,51 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  issues-exit-code: 1
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - staticcheck
+    - gosec
+    - errcheck
+    - ineffassign
+    - whitespace
+    - misspell
+    - revive
+    - prealloc
+    - unconvert
+    - unparam
+    - wastedassign
+    - nilness
+    - usestdlibvars
+    - decorder
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/horizon/core
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+      - name: package-comments
+        disabled: true
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - unparam
+    - path: cmd/
+      linters:
+        - gosec
+  max-issues-per-linter: 0
+  max-same-issues: 0

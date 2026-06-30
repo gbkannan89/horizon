@@ -1,0 +1,34 @@
+# Default owners
+* @horizon/architects
+
+# Go shared packages
+/packages/ @horizon/backend-leads
+
+# Domain services
+/services/domains/ @horizon/backend-leads
+
+# Engine services
+/services/engines/ @horizon/engine-leads
+
+# Infrastructure services
+/services/infra/ @horizon/infra-leads
+
+# Python import service
+/services/import/ @horizon/infra-leads
+
+# Flutter apps
+/apps/ @horizon/frontend-leads
+
+# Proto definitions
+/proto/ @horizon/architects
+
+# Documentation
+/docs/ @horizon/architects
+
+# CI/CD
+/.github/ @horizon/devops-leads
+/deploy/ @horizon/devops-leads
+
+# Root config
+/Makefile @horizon/architects
+/go.work @horizon/architects

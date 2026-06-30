@@ -1,0 +1,18 @@
+go 1.24
+
+use (
+	./packages/errors
+	./packages/events
+	./packages/logging
+	./packages/config
+	./packages/http
+	./packages/auth
+	./packages/testing
+	./packages/telemetry
+	./packages/types
+	./services/domains/financial-event
+	./services/domains/user
+	./services/domains/goal
+	./services/domains/account
+	./tools
+)

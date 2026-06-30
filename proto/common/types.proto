@@ -1,0 +1,17 @@
+syntax = "proto3";
+package horizon.common;
+option go_package = "github.com/horizon/core/proto/gen/go/common;commonpb";
+
+message Money {
+  int64 amount = 1;
+  string currency = 2;
+}
+
+message DateRange {
+  int64 start_timestamp = 1;
+  int64 end_timestamp = 2;
+}
+
+message Percentage {
+  double rate = 1;
+}
