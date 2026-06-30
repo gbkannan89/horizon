@@ -16,6 +16,7 @@ import 'package:horizon_mobile/features/accounts/pages/accounts_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_detail_page.dart';
 import 'package:horizon_mobile/features/goals/pages/goal_detail_page.dart';
+import 'package:horizon_mobile/features/accounts/pages/account_detail_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
@@ -60,7 +61,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/planning', builder: (_, __) => const PlanningPage()),
-      GoRoute(path: '/accounts', builder: (_, __) => const AccountsPage()),
+      GoRoute(path: '/accounts', builder: (_, __) => const AccountsPage(), routes: [
+        GoRoute(path: ':id', builder: (_, state) => AccountDetailPage(accountId: state.pathParameters['id'] ?? '')),
+      ]),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
     ],
   );
