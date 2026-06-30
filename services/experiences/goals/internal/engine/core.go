@@ -2,44 +2,308 @@ package engine
 
 import "fmt"
 
-// GoalCardType represents the type of goal workspace card.
-type GoalCardType string
+// CardType represents goal dashboard card types.
+type CardType string
+
 const (
-	GCOverview       GoalCardType = "GoalOverview"
-	GCFundingProgress GoalCardType = "FundingProgress"
-	GCTimeline       GoalCardType = "Timeline"
-	GCRecommendation GoalCardType = "Recommendation"
-	GCRisk           GoalCardType = "Risk"
-	GCMilestone      GoalCardType = "Milestone"
-	GCAchievement    GoalCardType = "Achievement"
+	CTOverview       CardType = "Overview"
+	CTProgress       CardType = "Progress"
+	CTFunding        CardType = "Funding"
+	CTProjection     CardType = "Projection"
+	CTRecommendation CardType = "Recommendation"
+	CTOptimization   CardType = "Optimization"
+	CTTimeline       CardType = "Timeline"
+	CTMilestone      CardType = "Milestone"
 )
 
-// GoalCard represents a single card in the goal workspace.
-type GoalCard struct {
-	CardID      string       `json:"card_id"`
-	CardType    GoalCardType `json:"card_type"`
-	Title       string       `json:"title"`
-	Summary     string       `json:"summary"`
-	ProgressPct int          `json:"progress_pct"`
-	Status      string       `json:"status"` // on_track, at_risk, behind, complete
-	Priority    int          `json:"priority"`
+// Card represents a goal dashboard card.
+type Card struct {
+	CardID   string   `json:"card_id"`
+	CardType CardType `json:"card_type"`
+	Title    string   `json:"title"`
+	Summary  string   `json:"summary"`
+	Data     interface{} `json:"data,omitempty"`
+	Priority int      `json:"priority"`
 }
 
-// GoalWorkspace represents the full workspace for a single goal.
-type GoalWorkspace struct {
-	GoalID    string     `json:"goal_id"`
-	GoalName  string     `json:"goal_name"`
-	Progress  int        `json:"progress"`
-	Status    string     `json:"status"`
-	Cards     []GoalCard `json:"cards"`
+// GoalDashboard is the full dashboard for a single goal.
+type GoalDashboard struct {
+	GoalID      string `json:"goal_id"`
+	GoalName    string `json:"goal_name"`
+	Progress    int    `json:"progress"`
+	Status      string `json:"status"`
+	Importance  string `json:"importance"`
+	GoalType    string `json:"goal_type"`
+	TargetAmount float64 `json:"target_amount"`
+	CurrentValue float64 `json:"current_value"`
+	FundingGap   float64 `json:"funding_gap"`
+	TargetDate   string `json:"target_date,omitempty"`
+	Age         int    `json:"age_days,omitempty"`
+	Cards       []Card `json:"cards"`
 }
 
-// GoalsList is the overview of all goals.
-type GoalsList struct {
+// GoalProgress tracks progress details.
+type GoalProgress struct {
+	GoalID            string  `json:"goal_id"`
+	GoalName          string  `json:"goal_name"`
+	ProgressPct       int     `json:"progress_pct"`
+	CurrentValue      float64 `json:"current_value"`
+	TargetAmount      float64 `json:"target_amount"`
+	RemainingAmount   float64 `json:"remaining_amount"`
+	Status            string  `json:"status"`
+	MonthlyContribution float64 `json:"monthly_contribution,omitempty"`
+	MonthsToTarget    int     `json:"months_to_target,omitempty"`
+}
+
+// GoalProjectionView wraps projection engine data.
+type GoalProjectionView struct {
+	GoalID              string  `json:"goal_id"`
+	ProjectedDate       string  `json:"projected_date,omitempty"`
+	ProjectedValue      float64 `json:"projected_value,omitempty"`
+	Confidence          string  `json:"confidence,omitempty"`
+	OnTrack             bool    `json:"on_track"`
+	MonthlyContribution float64 `json:"monthly_contribution,omitempty"`
+}
+
+// GoalRecommendationView wraps recommendation engine data.
+type GoalRecommendationView struct {
+	GoalID      string        `json:"goal_id"`
+	Recs        []RecItem     `json:"recommendations"`
+	TotalCount  int           `json:"total_count"`
+}
+
+type RecItem struct {
+	RecID    string `json:"rec_id"`
+	Title    string `json:"title"`
+	Summary  string `json:"summary"`
+	Priority int    `json:"priority"`
+	Impact   string `json:"impact"`
+}
+
+// GoalOptimizationView wraps optimization engine data.
+type GoalOptimizationView struct {
+	GoalID            string      `json:"goal_id"`
+	Opts              []OptItem   `json:"optimizations"`
+	TotalCount        int         `json:"total_count"`
+}
+
+type OptItem struct {
+	OptID    string  `json:"opt_id"`
+	Strategy string  `json:"strategy"`
+	Score    float64 `json:"score"`
+	Summary  string  `json:"summary"`
+}
+
+// GoalTimelineView wraps recent goal timeline events.
+type GoalTimelineView struct {
+	GoalID     string       `json:"goal_id"`
+	Events     []GoalEvent  `json:"events"`
+	TotalCount int          `json:"total_count"`
+}
+
+type GoalEvent struct {
+	EventID   string `json:"event_id"`
+	EventType string `json:"event_type"`
+	Title     string `json:"title"`
+	Timestamp string `json:"timestamp"`
+}
+
+// GoalMilestoneView wraps milestone data.
+type GoalMilestoneView struct {
+	GoalID     string       `json:"goal_id"`
+	Milestones []Milestone  `json:"milestones"`
+	TotalCount int          `json:"total_count"`
+}
+
+type Milestone struct {
+	MilestoneID string `json:"milestone_id"`
+	Title       string `json:"title"`
+	ProgressPct int    `json:"progress_pct"`
+	Reached     bool   `json:"reached"`
+}
+
+// Inputs aggregates all data for the goals experience.
+type Inputs struct {
+	UserID string     `json:"user_id"`
+	Goals  []GoalData `json:"goals"`
+}
+
+// GoalData wraps one goal with all engine outputs.
+type GoalData struct {
+	GoalID            string           `json:"goal_id"`
+	Name              string           `json:"name"`
+	TargetAmount      float64          `json:"target_amount"`
+	CurrentValue      float64          `json:"current_value"`
+	FundingGap        float64          `json:"funding_gap"`
+	Importance        string           `json:"importance"`
+	GoalType          string           `json:"goal_type"`
+	Priority          int              `json:"priority"`
+	Status            string           `json:"status"`
+	TargetDate        string           `json:"target_date,omitempty"`
+	CreatedAt         string           `json:"created_at,omitempty"`
+	MonthlyContribution float64        `json:"monthly_contribution,omitempty"`
+
+	ProjectedDate       string  `json:"projected_date,omitempty"`
+	ProjectedValue      float64 `json:"projected_value,omitempty"`
+	OnTrack             bool    `json:"on_track"`
+	HasRecommendation   bool    `json:"has_recommendation"`
+	HasOptimization     bool    `json:"has_optimization"`
+	HasRisk             bool    `json:"has_risk"`
+	RecCount            int     `json:"rec_count"`
+	OptCount            int     `json:"opt_count"`
+	MilestoneCount      int     `json:"milestone_count"`
+	EventCount          int     `json:"event_count"`
+}
+
+// Composer builds goal experience view models.
+type Composer struct{}
+
+func NewComposer() *Composer { return &Composer{} }
+
+// BuildList returns goal summaries.
+func (c *Composer) BuildList(inputs Inputs) *GoalSummaryList {
+	summaries := make([]GoalSummary, len(inputs.Goals))
+	for i, g := range inputs.Goals {
+		summaries[i] = c.toSummary(g)
+	}
+	return &GoalSummaryList{Goals: summaries}
+}
+
+// BuildDashboard returns the full dashboard for a single goal.
+func (c *Composer) BuildDashboard(goal GoalData) *GoalDashboard {
+	progress := c.calcProgress(goal)
+	cards := c.buildCards(goal, progress)
+	return &GoalDashboard{
+		GoalID: goal.GoalID, GoalName: goal.Name,
+		Progress: progress, Status: goal.Status,
+		Importance: goal.Importance, GoalType: goal.GoalType,
+		TargetAmount: goal.TargetAmount, CurrentValue: goal.CurrentValue,
+		FundingGap: goal.FundingGap, TargetDate: goal.TargetDate,
+		Cards: cards,
+	}
+}
+
+// BuildProgress returns progress details for a goal.
+func (c *Composer) BuildProgress(goal GoalData) *GoalProgress {
+	pct := c.calcProgress(goal)
+	remaining := goal.TargetAmount - goal.CurrentValue
+	if remaining < 0 { remaining = 0 }
+
+	months := 0
+	if goal.MonthlyContribution > 0 && remaining > 0 {
+		months = int(remaining / goal.MonthlyContribution)
+	}
+
+	return &GoalProgress{
+		GoalID: goal.GoalID, GoalName: goal.Name,
+		ProgressPct: pct, CurrentValue: goal.CurrentValue,
+		TargetAmount: goal.TargetAmount, RemainingAmount: remaining,
+		Status: goal.Status,
+		MonthlyContribution: goal.MonthlyContribution,
+		MonthsToTarget: months,
+	}
+}
+
+// BuildProjection returns projection view for a goal.
+func (c *Composer) BuildProjection(goal GoalData) *GoalProjectionView {
+	return &GoalProjectionView{
+		GoalID: goal.GoalID,
+		ProjectedDate: goal.ProjectedDate,
+		ProjectedValue: goal.ProjectedValue,
+		OnTrack: goal.OnTrack,
+		MonthlyContribution: goal.MonthlyContribution,
+	}
+}
+
+// BuildRecommendations returns rec view for a goal.
+func (c *Composer) BuildRecommendations(goal GoalData, recs []RecItem) *GoalRecommendationView {
+	return &GoalRecommendationView{
+		GoalID: goal.GoalID, Recs: recs, TotalCount: len(recs),
+	}
+}
+
+// BuildOptimization returns optimization view for a goal.
+func (c *Composer) BuildOptimization(goal GoalData, opts []OptItem) *GoalOptimizationView {
+	return &GoalOptimizationView{
+		GoalID: goal.GoalID, Opts: opts, TotalCount: len(opts),
+	}
+}
+
+// BuildTimeline returns timeline events for a goal.
+func (c *Composer) BuildTimeline(goal GoalData, evts []GoalEvent) *GoalTimelineView {
+	return &GoalTimelineView{
+		GoalID: goal.GoalID, Events: evts, TotalCount: len(evts),
+	}
+}
+
+// BuildMilestones returns milestones for a goal.
+func (c *Composer) BuildMilestones(goal GoalData, milestones []Milestone) *GoalMilestoneView {
+	return &GoalMilestoneView{
+		GoalID: goal.GoalID, Milestones: milestones, TotalCount: len(milestones),
+	}
+}
+
+func (c *Composer) calcProgress(goal GoalData) int {
+	if goal.TargetAmount <= 0 { return 0 }
+	p := int(goal.CurrentValue / goal.TargetAmount * 100)
+	if p > 100 { p = 100 }
+	return p
+}
+
+func (c *Composer) toSummary(g GoalData) GoalSummary {
+	return GoalSummary{
+		GoalID: g.GoalID, Name: g.Name, Progress: c.calcProgress(g),
+		Status: g.Status, Importance: g.Importance, Priority: g.Priority,
+		HasRecommendation: g.HasRecommendation,
+	}
+}
+
+func (c *Composer) buildCards(goal GoalData, progress int) []Card {
+	cards := []Card{
+		{CardID: "ov", CardType: CTOverview, Title: goal.Name,
+			Summary:  fmt.Sprintf("%d%% funded — %s", progress, goal.Status),
+			Data:     map[string]interface{}{"target": goal.TargetAmount, "current": goal.CurrentValue},
+			Priority: 1},
+		{CardID: "prog", CardType: CTProgress, Title: "Progress",
+			Summary:  fmt.Sprintf("₹%.0f / ₹%.0f", goal.CurrentValue, goal.TargetAmount),
+			Data:     map[string]interface{}{"pct": progress, "remaining": goal.FundingGap},
+			Priority: 2},
+		{CardID: "fund", CardType: CTFunding, Title: "Funding Status",
+			Summary:  fmt.Sprintf("Gap: ₹%.0f", goal.FundingGap),
+			Data:     map[string]interface{}{"gap": goal.FundingGap, "monthly": goal.MonthlyContribution},
+			Priority: 3},
+		{CardID: "proj", CardType: CTProjection, Title: "Projection",
+			Summary:  fmt.Sprintf("On track: %t", goal.OnTrack),
+			Data:     map[string]interface{}{"projected_date": goal.ProjectedDate, "projected_value": goal.ProjectedValue},
+			Priority: 4},
+	}
+	if goal.HasRecommendation {
+		cards = append(cards, Card{CardID: "rec", CardType: CTRecommendation,
+			Title: "Recommendations", Summary: fmt.Sprintf("%d available", goal.RecCount),
+			Data: map[string]interface{}{"count": goal.RecCount}, Priority: 5})
+	}
+	if goal.HasOptimization {
+		cards = append(cards, Card{CardID: "opt", CardType: CTOptimization,
+			Title: "Optimization", Summary: fmt.Sprintf("%d strategies", goal.OptCount),
+			Data: map[string]interface{}{"count": goal.OptCount}, Priority: 6})
+	}
+	if goal.EventCount > 0 {
+		cards = append(cards, Card{CardID: "tl", CardType: CTTimeline,
+			Title: "Timeline", Summary: fmt.Sprintf("%d events", goal.EventCount),
+			Data: map[string]interface{}{"count": goal.EventCount}, Priority: 7})
+	}
+	if goal.MilestoneCount > 0 {
+		cards = append(cards, Card{CardID: "ms", CardType: CTMilestone,
+			Title: "Milestones", Summary: fmt.Sprintf("%d milestones", goal.MilestoneCount),
+			Data: map[string]interface{}{"count": goal.MilestoneCount}, Priority: 8})
+	}
+	return cards
+}
+
+type GoalSummaryList struct {
 	Goals []GoalSummary `json:"goals"`
 }
 
-// GoalSummary is a compact view of a goal.
 type GoalSummary struct {
 	GoalID           string `json:"goal_id"`
 	Name             string `json:"name"`
@@ -47,74 +311,5 @@ type GoalSummary struct {
 	Status           string `json:"status"`
 	Importance       string `json:"importance"`
 	Priority         int    `json:"priority"`
-	FundingGap       string `json:"funding_gap,omitempty"`
 	HasRecommendation bool  `json:"has_recommendation"`
-}
-
-// Inputs represents data consumed by the goals experience.
-type Inputs struct {
-	UserID      string `json:"user_id"`
-	Goals       []GoalInput `json:"goals"`
-	HealthScore int    `json:"health_score"`
-	RiskScore   int    `json:"risk_score"`
-}
-
-// GoalInput represents a single goal's data from the domain.
-type GoalInput struct {
-	GoalID          string  `json:"goal_id"`
-	Name            string  `json:"name"`
-	TargetAmount    int64   `json:"target_amount"`
-	CurrentValue    int64   `json:"current_value"`
-	Importance      string  `json:"importance"`
-	Priority        int     `json:"priority"`
-	Status          string  `json:"status"`
-	FundingGap      int64   `json:"funding_gap"`
-	HasRec          bool    `json:"has_recommendation"`
-	HasRisk         bool    `json:"has_risk"`
-}
-
-// Engine composes the goals experience view models.
-type Engine struct{}
-func NewEngine() *Engine { return &Engine{} }
-
-func (e *Engine) BuildList(inputs Inputs) *GoalsList {
-	summaries := make([]GoalSummary, 0, len(inputs.Goals))
-	for _, g := range inputs.Goals {
-		progress := 0
-		if g.TargetAmount > 0 { progress = int(float64(g.CurrentValue) / float64(g.TargetAmount) * 100) }
-		if progress > 100 { progress = 100 }
-
-		gap := ""
-		if g.FundingGap > 0 { gap = fmt.Sprintf("₹%d", g.FundingGap) }
-
-		summaries = append(summaries, GoalSummary{
-			GoalID: g.GoalID, Name: g.Name, Progress: progress,
-			Status: g.Status, Importance: g.Importance, Priority: g.Priority,
-			FundingGap: gap, HasRecommendation: g.HasRec,
-		})
-	}
-	return &GoalsList{Goals: summaries}
-}
-
-func (e *Engine) BuildWorkspace(goal GoalInput) *GoalWorkspace {
-	progress := 0
-	if goal.TargetAmount > 0 { progress = int(float64(goal.CurrentValue) / float64(goal.TargetAmount) * 100) }
-	if progress > 100 { progress = 100 }
-
-	cards := []GoalCard{
-		{CardID: "g-ov", CardType: GCOverview, Title: goal.Name, Summary: fmt.Sprintf("%d%% funded", progress), ProgressPct: progress, Status: goal.Status, Priority: 1},
-		{CardID: "g-fund", CardType: GCFundingProgress, Title: "Funding Progress", Summary: fmt.Sprintf("₹%d / ₹%d", goal.CurrentValue, goal.TargetAmount), ProgressPct: progress, Priority: 2},
-	}
-
-	if goal.HasRec {
-		cards = append(cards, GoalCard{CardID: "g-rec", CardType: GCRecommendation, Title: "Recommendation", Summary: "Improve this goal", Priority: 3})
-	}
-	if goal.HasRisk {
-		cards = append(cards, GoalCard{CardID: "g-risk", CardType: GCRisk, Title: "Risk Alert", Summary: "Goal at risk", Priority: 4})
-	}
-
-	return &GoalWorkspace{
-		GoalID: goal.GoalID, GoalName: goal.Name,
-		Progress: progress, Status: goal.Status, Cards: cards,
-	}
 }

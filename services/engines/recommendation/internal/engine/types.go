@@ -62,4 +62,5 @@ type Recommendation struct {
 	ExpirationTime      string            `json:"expiration_time"`
 	Status              RecStatus         `json:"status"`
 	Scores              ScoringDimensions `json:"scores"`
+	CreatedAt           string            `json:"created_at,omitempty"`
 }

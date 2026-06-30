@@ -1,12 +1,23 @@
 package events
 
-import "time"
+import (
+	"time"
+)
 
 type DomainEvent interface{ EventName() string; EntityID() string }
 type Publisher interface{ Publish(event DomainEvent) error }
-type BaseEvent struct{ Type, ID string; Time time.Time }
-func NewBase(evt, eid string) BaseEvent { return BaseEvent{Type: evt, ID: eid, Time: time.Now().UTC()} }
-func (b BaseEvent) EventName() string { return b.Type }; func (b BaseEvent) EntityID() string { return b.ID }
 
-type HealthScoreUpdated struct{ BaseEvent; OverallScore int; ScoreGrade string }
-func NewHealthScoreUpdated(id string, score int, grade string) HealthScoreUpdated { return HealthScoreUpdated{BaseEvent: NewBase("HealthScoreUpdated", id), OverallScore: score, ScoreGrade: grade} }
+type BaseDomainEvent struct{ Type, ID string; Time time.Time }
+func NewBase(evt, eid string) BaseDomainEvent { return BaseDomainEvent{Type: evt, ID: eid, Time: time.Now().UTC()} }
+func (b BaseDomainEvent) EventName() string { return b.Type }
+func (b BaseDomainEvent) EntityID() string  { return b.ID }
+
+type HealthScoreCalculated struct{ BaseDomainEvent; OverallScore int; ScoreGrade string }
+func NewHealthScoreCalculated(id string, score int, grade string) HealthScoreCalculated {
+	return HealthScoreCalculated{BaseDomainEvent: NewBase("HealthScoreCalculated", id), OverallScore: score, ScoreGrade: grade}
+}
+
+type HealthScoreDeclined struct{ BaseDomainEvent; OldScore int; NewScore int }
+func NewHealthScoreDeclined(id string, old, new int) HealthScoreDeclined {
+	return HealthScoreDeclined{BaseDomainEvent: NewBase("HealthScoreDeclined", id), OldScore: old, NewScore: new}
+}

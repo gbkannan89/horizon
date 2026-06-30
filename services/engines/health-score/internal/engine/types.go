@@ -18,10 +18,11 @@ type DimensionScore struct {
 
 // HealthScoreOutput is the result of a health score computation.
 type HealthScoreOutput struct {
-	OverallScore    int              `json:"overall_score"`
-	ScoreGrade      ScoreGrade       `json:"score_grade"`
-	Trend           Trend            `json:"trend"`
-	Dimensions      []DimensionScore `json:"dimensions"`
-	PreviousScore   int              `json:"previous_score"`
-	Confidence      string           `json:"confidence"`
+	ScoreID       string           `json:"score_id"`
+	OverallScore  int              `json:"overall_score"`
+	ScoreGrade    ScoreGrade       `json:"score_grade"`
+	Trend         Trend            `json:"trend"`
+	Dimensions    []DimensionScore `json:"dimensions"`
+	PreviousScore int              `json:"previous_score"`
+	Confidence    string           `json:"confidence"`
 }

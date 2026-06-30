@@ -35,6 +35,7 @@ type StressTestResult struct {
 
 // RiskOutput is the complete risk assessment result.
 type RiskOutput struct {
+	AssessmentID   string              `json:"assessment_id"`
 	CompositeScore int                 `json:"composite_score"`
 	CompositeLevel RiskLevel           `json:"composite_level"`
 	Indicators     []RiskIndicator     `json:"indicators"`

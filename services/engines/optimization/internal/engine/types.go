@@ -37,11 +37,12 @@ type Solution struct {
 
 // OptimizationOutput is the complete optimization result.
 type OptimizationOutput struct {
-	Objectives           []Objective  `json:"objectives"`
-	Constraints          []Constraint `json:"constraints"`
-	SelectedSolution     Solution     `json:"selected_solution"`
-	Alternatives         []Solution   `json:"alternatives"`
-	CandidatesEvaluated  int          `json:"candidates_evaluated"`
-	CandidatesValid      int          `json:"candidates_valid"`
-	Status               OptimizationStatus `json:"status"`
+	OptimizationID       string             `json:"optimization_id"`
+	Objectives           []Objective        `json:"objectives"`
+	Constraints          []Constraint       `json:"constraints"`
+	SelectedSolution     Solution            `json:"selected_solution"`
+	Alternatives         []Solution          `json:"alternatives"`
+	CandidatesEvaluated  int                 `json:"candidates_evaluated"`
+	CandidatesValid      int                 `json:"candidates_valid"`
+	Status               OptimizationStatus  `json:"status"`
 }
