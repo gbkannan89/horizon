@@ -17,6 +17,13 @@ import 'package:horizon_mobile/features/timeline/pages/timeline_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_detail_page.dart';
 import 'package:horizon_mobile/features/goals/pages/goal_detail_page.dart';
 import 'package:horizon_mobile/features/accounts/pages/account_detail_page.dart';
+import 'package:horizon_mobile/features/settings/pages/settings_page.dart';
+import 'package:horizon_mobile/features/settings/pages/profile_page.dart';
+import 'package:horizon_mobile/features/settings/pages/edit_profile_page.dart';
+import 'package:horizon_mobile/features/settings/pages/preferences_page.dart';
+import 'package:horizon_mobile/features/settings/pages/privacy_page.dart';
+import 'package:horizon_mobile/features/settings/pages/security_page.dart';
+import 'package:horizon_mobile/features/settings/pages/about_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
@@ -65,6 +72,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: ':id', builder: (_, state) => AccountDetailPage(accountId: state.pathParameters['id'] ?? '')),
       ]),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfilePage()),
+      GoRoute(path: '/settings/profile/edit', builder: (_, __) => const EditProfilePage()),
+      GoRoute(path: '/settings/preferences', builder: (_, __) => const PreferencesPage()),
+      GoRoute(path: '/settings/privacy', builder: (_, __) => const PrivacyPage()),
+      GoRoute(path: '/settings/security', builder: (_, __) => const SecurityPage()),
+      GoRoute(path: '/settings/about', builder: (_, __) => const AboutPage()),
     ],
   );
 });
@@ -80,6 +94,7 @@ class _MorePage extends ConsumerWidget {
         ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
         ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
         ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),
+        ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('Settings'), onTap: () => context.push('/settings')),
         const Divider(),
         ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Sign Out', style: TextStyle(color: Colors.red)), onTap: () async {
           final repo = ref.read(authRepositoryProvider);
