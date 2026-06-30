@@ -15,6 +15,7 @@ import 'package:horizon_mobile/features/planning/pages/planning_page.dart';
 import 'package:horizon_mobile/features/accounts/pages/accounts_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_detail_page.dart';
+import 'package:horizon_mobile/features/goals/pages/goal_detail_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
@@ -48,7 +49,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [GoRoute(path: '/dashboard', builder: (_, __) => const DashboardPage(), routes: [
             GoRoute(path: 'notifications', builder: (_, __) => const NotificationsPage()),
           ])]),
-          StatefulShellBranch(routes: [GoRoute(path: '/goals', builder: (_, __) => const GoalsPage())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/goals', builder: (_, __) => const GoalsPage(), routes: [
+            GoRoute(path: ':id', builder: (_, state) => GoalDetailPage(goalId: state.pathParameters['id'] ?? '')),
+          ])]),
           StatefulShellBranch(routes: [GoRoute(path: '/portfolio', builder: (_, __) => const PortfolioPage())]),
           StatefulShellBranch(routes: [GoRoute(path: '/timeline', builder: (_, __) => const TimelinePage(), routes: [
             GoRoute(path: ':id', builder: (_, state) => TimelineDetailPage(timelineId: state.pathParameters['id'] ?? '')),
