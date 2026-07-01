@@ -91,7 +91,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // Logout invalidates the current session.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// For MVP, logout is client-side (discard tokens)
-	// Phase 5 will implement token blacklisting via Redis
 	respondNoContent(c)
 }
 

@@ -4,7 +4,6 @@ package config
 type Config struct {
 	JWTSecret         string `env:"JWT_SECRET,required"`
 	DatabaseURL       string `env:"DATABASE_URL,required"`
-	RedisAddr         string `env:"REDIS_ADDR,required"`
 	NATSURL           string `env:"NATS_URL,required"`
 	LogLevel          string `env:"LOG_LEVEL" default:"info"`
 	RateLimitPerMin   int    `env:"RATE_LIMIT_PER_MIN" default:"1000"`
@@ -16,7 +15,6 @@ func DefaultConfig() Config {
 	return Config{
 		JWTSecret:       "dev-secret-key-do-not-use-in-production",
 		DatabaseURL:     "postgres://horizon:horizon@localhost:5432/horizon?sslmode=disable",
-		RedisAddr:       "localhost:6379",
 		NATSURL:         "nats://localhost:4222",
 		LogLevel:        "debug",
 		RateLimitPerMin: 1000,
