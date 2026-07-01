@@ -63,4 +63,16 @@ class TransactionRepository {
     final response = await apiClient.post('/events/$id/archive', data: body);
     return (response.data as Map<String, dynamic>?) ?? {};
   }
+
+  Future<Map<String, dynamic>> updateTransaction({String? userId, required String id, required Map<String, dynamic> data}) async {
+    final body = <String, dynamic>{...data};
+    if (userId != null) body['user_id'] = userId;
+    final response = await apiClient.put('/transactions/$id', data: body);
+    return (response.data as Map<String, dynamic>?) ?? {};
+  }
+
+  Future<Map<String, dynamic>> deleteTransaction({String? userId, required String id}) async {
+    final response = await apiClient.delete('/transactions/$id');
+    return (response.data as Map<String, dynamic>?) ?? {};
+  }
 }

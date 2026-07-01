@@ -27,6 +27,13 @@ class TransactionDetailPage extends ConsumerWidget {
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) async {
+              if (value == 'edit') {
+                if (context.mounted) {
+                  final result = await context.push<bool>('/transactions/add', extra: transactionId);
+                  if (result == true && context.mounted) context.pop(true);
+                }
+                return;
+              }
               if (value == 'archive') {
                 try {
                   final repo = ref.read(transactionRepositoryProvider);
@@ -45,9 +52,33 @@ class TransactionDetailPage extends ConsumerWidget {
                   }
                 }
               }
+              if (value == 'delete') {
+                final confirmed = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                  title: const Text('Delete Transaction'),
+                  content: const Text('Are you sure? This action cannot be undone.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: Colors.red), child: const Text('Delete')),
+                  ],
+                ));
+                if (confirmed == true) {
+                  try {
+                    final repo = ref.read(transactionRepositoryProvider);
+                    await repo.deleteTransaction(id: transactionId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction deleted'), behavior: SnackBarBehavior.floating));
+                      context.pop();
+                    }
+                  } catch (e) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), behavior: SnackBarBehavior.floating));
+                  }
+                }
+              }
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text('Edit'))),
               const PopupMenuItem(value: 'archive', child: ListTile(leading: Icon(Icons.archive), title: Text('Archive'))),
+              const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('Delete', style: TextStyle(color: Colors.red)))),
             ],
           ),
         ],

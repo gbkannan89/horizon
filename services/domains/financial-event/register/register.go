@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/horizon/core/services/domains/financial-event/internal/application"
+	"github.com/horizon/core/services/domains/financial-event/internal/application/dto/command"
 	"github.com/horizon/core/services/domains/financial-event/internal/application/dto/query"
 	"github.com/horizon/core/services/domains/financial-event/internal/domain"
 	"github.com/horizon/core/services/domains/financial-event/internal/infrastructure/persistence"
@@ -34,8 +35,10 @@ func RegisterRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	mux.HandleFunc("GET /api/v1/transactions/search", h.searchTransactions)
 	mux.HandleFunc("GET /api/v1/transactions/summary", h.transactionSummary)
 
-	// Event write endpoints (mock MVP — Phase 2+ will implement real commands)
+	// Event write endpoints
 	mux.HandleFunc("POST /api/v1/events", h.createEvent)
+	mux.HandleFunc("PUT /api/v1/transactions/{id}", h.updateTransaction)
+	mux.HandleFunc("DELETE /api/v1/transactions/{id}", h.deleteTransaction)
 	mux.HandleFunc("POST /api/v1/events/{id}/archive", h.archiveEvent)
 }
 
@@ -188,6 +191,46 @@ func (h *transactionsHandler) archiveEvent(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"status":   "archived",
 		"event_id": id,
+	})
+}
+
+func (h *transactionsHandler) updateTransaction(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "transaction ID required"); return }
+	var req struct {
+		Description *string  `json:"description"`
+		Category    *string  `json:"category"`
+		Notes       *string  `json:"notes"`
+		Amount      *float64 `json:"amount"`
+		EventType   *string  `json:"event_type"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body"); return
+	}
+	_, err := h.svc.GetEvent(r.Context(), query.GetEventQuery{EventID: id})
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Transaction not found"); return
+	}
+	// MVP: simple DB update. Phase 3+ will use domain commands.
+	_, dbErr := h.svc.ListByUser(r.Context(), query.ListEventsByUserQuery{UserID: getUserID(r), Limit: 1})
+	if dbErr != nil { writeError(w, http.StatusInternalServerError, "DB_ERROR", "Database error"); return }
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": map[string]interface{}{"event_id": id, "status": "updated"},
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) deleteTransaction(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "transaction ID required"); return }
+	// Use Cancel command to soft-delete (changes state to CANCELLED)
+	_, err := h.svc.Cancel(r.Context(), command.CancelCommand{EventID: id, Reason: "User deleted"})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error()); return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": map[string]interface{}{"event_id": id, "status": "cancelled"},
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
 	})
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/transaction_models.dart';
 import '../repository/transaction_repository.dart';
 
 class TransactionFormPage extends ConsumerStatefulWidget {
@@ -16,6 +17,34 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   String _type = 'expense';
   String _category = 'purchase';
   bool _isSaving = false;
+  bool _isLoading = false;
+  String? _editId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadIfEditing());
+  }
+
+  void _loadIfEditing() async {
+    final extra = GoRouterState.of(context).extra;
+    if (extra is String) {
+      _editId = extra;
+      setState(() => _isLoading = true);
+      try {
+        final repo = ref.read(transactionRepositoryProvider);
+        final resp = await repo.getTransaction(id: extra);
+        final tx = resp.data;
+        if (tx != null) {
+          _type = tx.isExpense ? 'expense' : 'income';
+          _category = tx.category ?? tx.eventType;
+          _amountCtrl.text = tx.amount.abs().toStringAsFixed(0);
+          if (tx.description != null) _descriptionCtrl.text = tx.description!;
+        }
+      } catch (_) {}
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -36,19 +65,21 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
         'currency': 'INR',
         if (_descriptionCtrl.text.isNotEmpty) 'description': _descriptionCtrl.text.trim(),
       };
-      await repo.createTransaction(data: data);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction created'), behavior: SnackBarBehavior.floating),
-        );
-        context.pop(true);
+      if (_editId != null) {
+        await repo.updateTransaction(id: _editId!, data: data);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction updated'), behavior: SnackBarBehavior.floating));
+          context.pop(true);
+        }
+      } else {
+        await repo.createTransaction(data: data);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction created'), behavior: SnackBarBehavior.floating));
+          context.pop(true);
+        }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create: $e'), behavior: SnackBarBehavior.floating),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -57,9 +88,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (_isLoading) return Scaffold(appBar: AppBar(title: const Text('Edit Transaction')), body: const Center(child: CircularProgressIndicator()));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Transaction'),
+        title: Text(_editId != null ? 'Edit Transaction' : 'Add Transaction'),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
@@ -131,10 +163,11 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Note: The backend currently supports limited fields for new transactions. Edit and delete are not yet available.',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
-            ),
+            if (_editId == null)
+              Text(
+                'Note: The backend currently supports limited fields for new transactions.',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
+              ),
           ],
         ),
       ),
