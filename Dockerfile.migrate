@@ -1,0 +1,17 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+COPY packages/ ./packages/
+COPY services/ ./services/
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+RUN go build -o /migrate ./cmd/migrate
+
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates tzdata
+COPY --from=builder /migrate /usr/local/bin/migrate
+COPY --from=builder /app/services/infra/migrations /app/services/infra/migrations
+WORKDIR /app
+CMD ["migrate"]
