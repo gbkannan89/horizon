@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/settings_models.dart';
 import '../repository/settings_repository.dart';
 
@@ -19,8 +20,8 @@ class PrivacyPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Privacy & Data')),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const SharedLoadingView(),
+        error: (e, _) => SharedErrorView(message: e.toString()),
         data: (p) => ListView(
           padding: const EdgeInsets.all(16),
           children: [

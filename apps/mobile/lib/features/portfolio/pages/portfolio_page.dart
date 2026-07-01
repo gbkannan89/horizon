@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:horizon_mobile/app/theme.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/pf_models.dart';
 import '../repository/pf_repository.dart';
 import '../widgets/pf_widgets.dart';
@@ -73,14 +75,10 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
   }
 
   Widget _buildBody(ThemeData theme, PfState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load portfolio'),
-        const SizedBox(height: 16),
-        FilledButton.icon(onPressed: () => ref.read(pfStateProvider.notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const SharedLoadingView();
+    if (state.error != null) return SharedErrorView(
+      message: state.error,
+      onRetry: () => ref.read(pfStateProvider.notifier).load(),
     );
 
     return RefreshIndicator(

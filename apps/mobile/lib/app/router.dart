@@ -30,6 +30,7 @@ import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
 import 'package:horizon_mobile/features/transactions/pages/transactions_page.dart';
 import 'package:horizon_mobile/features/transactions/pages/transaction_detail_page.dart';
 import 'package:horizon_mobile/features/transactions/pages/transaction_form_page.dart';
+import 'package:horizon_mobile/features/search/pages/search_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -78,6 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: ':id', builder: (_, state) => TransactionDetailPage(transactionId: state.pathParameters['id'] ?? '')),
       ]),
       GoRoute(path: '/transactions/add', builder: (_, __) => const TransactionFormPage()),
+      GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
       GoRoute(path: '/settings/profile', builder: (_, __) => const ProfilePage()),

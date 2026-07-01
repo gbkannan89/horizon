@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../repository/settings_repository.dart';
 
 final profileProvider = FutureProvider<UserProfileState>((ref) async {
@@ -28,8 +29,8 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Could not load profile: $e')),
+        loading: () => const SharedLoadingView(message: 'Loading profile...'),
+        error: (e, _) => SharedErrorView(message: e.toString()),
         data: (state) {
           if (state.error != null) return Center(child: Text(state.error!));
           final p = state.profile;

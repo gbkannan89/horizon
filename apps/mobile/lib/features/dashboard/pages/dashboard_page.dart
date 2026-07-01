@@ -36,6 +36,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ],
         ),
         actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: () => context.push('/search')),
           IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => context.push('/dashboard/notifications')),
           IconButton(icon: const Icon(Icons.auto_awesome), onPressed: () => context.push('/advisor')),
         ],

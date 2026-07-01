@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../state/timeline_state.dart';
 import '../widgets/timeline_widgets.dart';
 
@@ -104,14 +106,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   }
 
   Widget _buildSkeleton() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 8,
-      itemBuilder: (_, __) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Card(child: SizedBox(height: 72, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey.withValues(alpha: 0.3))))),
-      ),
-    );
+    return const SharedSkeletonList(itemCount: 8, itemHeight: 72);
   }
 
   Widget _buildList(BuildContext context, ThemeData theme, TimelineState state) {
@@ -147,45 +142,21 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   }
 
   Widget _buildEmpty(ThemeData theme, TimelineState state) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-          const SizedBox(height: 16),
-          Text(state.activeFilters.q != null ? 'No results found' : 'No timeline events', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(state.activeFilters.q != null ? 'Try a different search term' : 'Events will appear here as they happen', textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ],
-      ),
+    return SharedEmptyView(
+      icon: Icons.history,
+      title: state.activeFilters.q != null ? 'No results found' : 'No timeline events',
+      subtitle: state.activeFilters.q != null ? 'Try a different search term' : 'Events will appear here as they happen',
     );
   }
 
   Widget _buildError(ThemeData theme, TimelineState state) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_off, size: 64, color: theme.colorScheme.error),
-          const SizedBox(height: 16),
-          Text('Could not load timeline', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 24),
-          FilledButton.icon(onPressed: () => ref.read(timelineStateProvider.notifier).refresh(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-        ],
-      ),
+    return SharedErrorView(
+      message: state.error,
+      onRetry: () => ref.read(timelineStateProvider.notifier).refresh(),
     );
   }
 
   Widget _buildOffline(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.wifi_off, size: 64, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(height: 16),
-          Text('You\'re offline', style: theme.textTheme.titleMedium),
-        ],
-      ),
-    );
+    return const SharedOfflineView();
   }
 }

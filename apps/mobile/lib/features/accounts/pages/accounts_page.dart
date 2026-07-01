@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/acct_models.dart';
 import '../repository/acct_repository.dart';
 import '../widgets/acct_widgets.dart';
@@ -78,13 +80,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
   }
 
   Widget _buildBody(ThemeData theme, AcctState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load accounts'),
-        FilledButton.icon(onPressed: () => ref.read(acctStateProvider.notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const SharedLoadingView();
+    if (state.error != null) return SharedErrorView(
+      message: state.error,
+      onRetry: () => ref.read(acctStateProvider.notifier).load(),
     );
 
     final accts = state.filteredAccounts;
@@ -158,12 +157,12 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
   }
 
   Widget _filterChip(String label, String value, String current) {
-    final selected = current == value;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label), selected: selected,
-        onSelected: (_) => ref.read(acctStateProvider.notifier).filterByType(value),
+      child: SharedFilterChipWidget(
+        label: label,
+        selected: current == value,
+        onTap: () => ref.read(acctStateProvider.notifier).filterByType(value),
       ),
     );
   }

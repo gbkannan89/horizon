@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/settings_models.dart';
 import '../repository/settings_repository.dart';
 
@@ -47,8 +48,8 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Preferences')),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const SharedLoadingView(),
+        error: (e, _) => SharedErrorView(message: e.toString()),
         data: (prefs) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -72,7 +73,7 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
   Widget _section(ThemeData t, String title, List<Widget> children) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(title, style: TextStyle(color: t.colorScheme.primary, fontWeight: FontWeight.w600))),
+      SharedSectionHeader(title: title),
       Card(child: Column(children: children)),
       const SizedBox(height: 16),
     ],

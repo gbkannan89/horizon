@@ -32,6 +32,10 @@ func RegisterRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	mux.HandleFunc("GET /api/v1/transactions/{id}", h.getTransaction)
 	mux.HandleFunc("GET /api/v1/transactions/search", h.searchTransactions)
 	mux.HandleFunc("GET /api/v1/transactions/summary", h.transactionSummary)
+
+	// Event write endpoints (mock MVP — Phase 2+ will implement real commands)
+	mux.HandleFunc("POST /api/v1/events", h.createEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/archive", h.archiveEvent)
 }
 
 func (h *transactionsHandler) listTransactions(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +161,32 @@ func (h *transactionsHandler) transactionSummary(w http.ResponseWriter, r *http.
 			"total_count":     incomeCount + expenseCount,
 		},
 		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) createEvent(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Type     string  `json:"type"`
+		Amount   float64 `json:"amount"`
+		Currency string  `json:"currency"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_INPUT", "invalid request body")
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]interface{}{
+		"id":       "evt-mock",
+		"type":     req.Type,
+		"amount":   req.Amount,
+		"currency": req.Currency,
+	})
+}
+
+func (h *transactionsHandler) archiveEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":   "archived",
+		"event_id": id,
 	})
 }
 
