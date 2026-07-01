@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/settings_models.dart';
 import '../repository/settings_repository.dart';
 
@@ -23,10 +24,10 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Preferences')),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(message: 'Error: $e'),
         data: (prefs) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppTheme.spacingLg),
           children: [
             _section(theme, 'Display', [
               ListTile(title: const Text('Currency'), subtitle: Text(prefs.baseCurrency), trailing: const Icon(Icons.chevron_right, size: 18)),
@@ -48,9 +49,9 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
   Widget _section(ThemeData t, String title, List<Widget> children) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(title, style: TextStyle(color: t.colorScheme.primary, fontWeight: FontWeight.w600))),
+      Padding(padding: const EdgeInsets.only(bottom: AppTheme.spacingSm), child: Text(title, style: TextStyle(color: t.colorScheme.primary, fontWeight: FontWeight.w600))),
       Card(child: Column(children: children)),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppTheme.spacingLg),
     ],
   );
 }

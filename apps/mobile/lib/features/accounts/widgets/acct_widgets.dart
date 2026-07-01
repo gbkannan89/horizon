@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/acct_models.dart';
-String _fmt(int v) { if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr'; if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L'; return '₹$v'; }
 
 Color _typeColor(String type) {
   switch (type) {
@@ -12,10 +12,6 @@ Color _typeColor(String type) {
     case 'Insurance': return Colors.orange;
     default: return Colors.grey;
   }
-}
-
-Color _healthColor(String h) {
-  switch (h) { case 'healthy': case 'good': return Colors.green; case 'warning': return Colors.orange; case 'critical': return Colors.red; default: return Colors.grey; }
 }
 
 class AcctCard extends StatelessWidget {
@@ -45,15 +41,11 @@ class AcctCard extends StatelessWidget {
                 children: [
                   Row(children: [
                     Expanded(child: Text(acct.accountName, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                      child: Text(acct.accountType, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
-                    ),
+                    StatusChip(label: acct.accountType, color: color, fontSize: 10),
                   ]),
                   const SizedBox(height: 4),
                   Row(children: [
-                    Expanded(child: Text('${AcctFmt(acct.currentBalance)}  •  ${acct.currency}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+                    Expanded(child: Text('${formatMoney(acct.currentBalance)}  •  ${acct.currency}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
                     if (acct.institutionName != null)
                       Text(acct.institutionName!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ]),
@@ -89,14 +81,16 @@ class AcctBalanceCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppTheme.cardPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Balance Summary', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spacingMd),
             Row(children: [
-              _stat('Total', AcctFmt(total), theme), _stat('Available', AcctFmt(available), theme), _stat('Spendable', AcctFmt(spendable), theme),
+              _stat('Total', formatMoney(total), theme),
+              _stat('Available', formatMoney(available), theme),
+              _stat('Spendable', formatMoney(spendable), theme),
             ]),
           ],
         ),
@@ -105,7 +99,8 @@ class AcctBalanceCard extends StatelessWidget {
   }
 
   Widget _stat(String label, String value, ThemeData t) => Expanded(child: Column(children: [
-    Text(value, style: t.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)), Text(label, style: t.textTheme.bodySmall),
+    Text(value, style: t.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+    Text(label, style: t.textTheme.bodySmall),
   ]));
 }
 
@@ -115,26 +110,6 @@ class AcctCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          Container(width: 36, height: 36, decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: color, size: 18)),
-          const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            Text(summary, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ])),
-        ]),
-      ),
-    );
+    return IconCard(title: title, subtitle: summary, icon: icon, color: color);
   }
-}
-
-String AcctFmt(int v) {
-  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr';
-  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L';
-  return '₹$v';
 }

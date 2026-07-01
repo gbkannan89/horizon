@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/timeline_models.dart';
 import '../widgets/timeline_widgets.dart';
 import '../repository/timeline_repository.dart';
@@ -39,28 +40,17 @@ class _TimelineDetailPageState extends ConsumerState<TimelineDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Event Details')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingView()
           : _item == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 64, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text('Event not found', style: theme.textTheme.titleMedium),
-                    ],
-                  ),
-                )
+              ? EmptyState(icon: Icons.search_off, title: 'Event not found')
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppTheme.spacingLg),
                   children: [
                     TimelineDetailCard(item: _item!),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppTheme.spacingLg),
                     OutlinedButton.icon(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),

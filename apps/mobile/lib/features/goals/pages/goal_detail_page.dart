@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/goal_models.dart';
 import '../repository/goal_repository.dart';
 import '../widgets/goal_widgets.dart';
@@ -73,53 +73,46 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
   }
 
   Widget _buildBody(ThemeData theme, GoalDetailState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load goal details'),
-        const SizedBox(height: 16),
-        FilledButton.icon(onPressed: () => ref.read(goalDetailProvider(widget.goalId).notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const LoadingView();
+    if (state.error != null) return ErrorView(
+      message: 'Could not load goal details',
+      onRetry: () => ref.read(goalDetailProvider(widget.goalId).notifier).load(),
     );
-    if (state.dashboard == null) return const Center(child: Text('No data'));
+    if (state.dashboard == null) return const EmptyState(icon: Icons.search_off, title: 'No data');
 
     return RefreshIndicator(
       onRefresh: () => ref.read(goalDetailProvider(widget.goalId).notifier).load(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacingLg),
         children: [
           GoalHeaderCard(goal: state.dashboard!),
-          const SizedBox(height: 16),
-          Text('Dashboard', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spacingLg),
+          SectionHeader(title: 'Dashboard'),
+          const SizedBox(height: AppTheme.spacingSm),
           ...state.dashboard!.cards.map((c) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: GoalDashboardCard(
-              title: c.title, summary: c.summary, value: c.formattedValue,
+            child: IconCard(
+              title: c.title, subtitle: c.summary, trailing: c.formattedValue,
               icon: _cardIcon(c.cardType), color: _cardColor(c.cardType),
             ),
           )),
           if (state.projection != null) ...[
-            const SizedBox(height: 16),
-            Text('Projection', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Card(child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _row('On Track', state.projection!.onTrack ? 'Yes' : 'No'),
-                  _row('Projected Date', state.projection!.projectedDate ?? '--'),
-                  _row('Monthly', '₹${state.projection!.monthlyContribution.toInt()}'),
-                ],
-              ),
+            const SizedBox(height: AppTheme.spacingLg),
+            SectionHeader(title: 'Projection'),
+            const SizedBox(height: AppTheme.spacingSm),
+            AppCard(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InfoRow(label: 'On Track', value: state.projection!.onTrack ? 'Yes' : 'No'),
+                InfoRow(label: 'Projected Date', value: state.projection!.projectedDate ?? '--'),
+                InfoRow(label: 'Monthly', value: '₹${state.projection!.monthlyContribution.toInt()}'),
+              ],
             )),
           ],
           if (state.recs != null && state.recs!.recs.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Recommendations', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingLg),
+            SectionHeader(title: 'Recommendations'),
+            const SizedBox(height: AppTheme.spacingSm),
             ...state.recs!.recs.map((r) => Card(child: ListTile(
               leading: Icon(Icons.lightbulb, color: Colors.amber),
               title: Text(r.title), subtitle: Text(r.summary),
@@ -127,9 +120,9 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
             ))),
           ],
           if (state.opts != null && state.opts!.opts.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Optimization', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingLg),
+            SectionHeader(title: 'Optimization'),
+            const SizedBox(height: AppTheme.spacingSm),
             ...state.opts!.opts.map((o) => Card(child: ListTile(
               leading: Icon(Icons.auto_graph, color: Colors.cyan),
               title: Text(o.strategy), subtitle: Text(o.summary),
@@ -137,9 +130,9 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
             ))),
           ],
           if (state.timeline != null && state.timeline!.events.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Timeline', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingLg),
+            SectionHeader(title: 'Timeline'),
+            const SizedBox(height: AppTheme.spacingSm),
             ...state.timeline!.events.take(5).map((e) => Card(child: ListTile(
               leading: Icon(Icons.circle, size: 12, color: theme.colorScheme.primary),
               title: Text(e.title, style: theme.textTheme.bodyMedium),
@@ -147,9 +140,9 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
             ))),
           ],
           if (state.milestones != null && state.milestones!.milestones.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Milestones', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingLg),
+            SectionHeader(title: 'Milestones'),
+            const SizedBox(height: AppTheme.spacingSm),
             ...state.milestones!.milestones.map((m) => Card(child: ListTile(
               leading: Icon(m.reached ? Icons.check_circle : Icons.radio_button_unchecked, color: m.reached ? Colors.green : Colors.grey),
               title: Text(m.title),
@@ -160,11 +153,6 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
       ),
     );
   }
-
-  Widget _row(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(children: [SizedBox(width: 120, child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))), Text(value)]),
-  );
 
   IconData _cardIcon(String type) {
     switch (type) {

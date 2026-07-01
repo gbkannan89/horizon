@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/pf_models.dart';
 import '../repository/pf_repository.dart';
 import '../widgets/pf_widgets.dart';
@@ -67,42 +69,43 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portfolio')),
+      appBar: AppBar(
+        title: const Text('Portfolio'),
+        actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: () => context.push('/search')),
+        ],
+      ),
       body: _buildBody(theme, state),
     );
   }
 
   Widget _buildBody(ThemeData theme, PfState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load portfolio'),
-        const SizedBox(height: 16),
-        FilledButton.icon(onPressed: () => ref.read(pfStateProvider.notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const LoadingView();
+    if (state.error != null) return ErrorView(
+      message: 'Could not load portfolio',
+      onRetry: () => ref.read(pfStateProvider.notifier).load(),
     );
 
     return RefreshIndicator(
       onRefresh: () => ref.read(pfStateProvider.notifier).load(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacingLg),
         children: [
           if (state.dash != null) PfSummaryCard(dash: state.dash!),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spacingLg),
           if (state.dash != null) ...state.dash!.cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PortfolioCard(card: c))),
-          if (state.alloc != null) ...[const SizedBox(height: 8), AllocationCard(alloc: state.alloc!)],
+          if (state.alloc != null) ...[const SizedBox(height: AppTheme.spacingSm), AllocationCard(alloc: state.alloc!)],
           if (state.perf != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Performance', icon: Icons.trending_up, color: Colors.green, rows: [
               MapEntry('Period Return', '${state.perf!.periodReturnPct.toStringAsFixed(1)}%'),
               MapEntry('Benchmark', '${state.perf!.benchmarkReturn.toStringAsFixed(1)}%'),
-              MapEntry('Unrealized G/L', _fmt(state.perf!.unrealizedGL)),
-              MapEntry('Realized G/L', _fmt(state.perf!.realizedGL)),
+              MapEntry('Unrealized G/L', formatMoney(state.perf!.unrealizedGL)),
+              MapEntry('Realized G/L', formatMoney(state.perf!.realizedGL)),
             ]),
           ],
           if (state.risk != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Risk Assessment', icon: Icons.shield, color: Colors.amber, rows: [
               MapEntry('Score', '${state.risk!.riskScore} (${state.risk!.riskLevel})'),
               MapEntry('VaR', '${state.risk!.var_.toStringAsFixed(1)}%'),
@@ -112,38 +115,32 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
             ]),
           ],
           if (state.proj != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Projection', icon: Icons.query_stats, color: Colors.cyan, rows: [
-              MapEntry('Projected Value', _fmt(state.proj!.projectedValue.toInt())),
+              MapEntry('Projected Value', formatMoney(state.proj!.projectedValue.toInt())),
               MapEntry('Confidence', state.proj!.confidence),
               MapEntry('Horizon', '${state.proj!.horizonYears} years'),
               MapEntry('Annual Return', '${state.proj!.annualReturn.toStringAsFixed(1)}%'),
             ]),
           ],
           if (state.recs != null && state.recs!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Recommendations', icon: Icons.lightbulb, color: Colors.amber, rows: state.recs!.items.map((i) => MapEntry(i.title, i.value)).toList()),
           ],
           if (state.opts != null && state.opts!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Optimizations', icon: Icons.auto_graph, color: Colors.purple, rows: state.opts!.items.map((i) => MapEntry(i.title, i.value)).toList()),
           ],
           if (state.sims != null && state.sims!.simulations.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Simulations', icon: Icons.science, color: Colors.deepOrange, rows: state.sims!.simulations.map((s) => MapEntry(s.scenario, s.outcome)).toList()),
           ],
           if (state.tl != null && state.tl!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             PfSectionCard(title: 'Timeline', icon: Icons.history, color: Colors.brown, rows: state.tl!.items.map((i) => MapEntry(i.title, i.value)).toList()),
           ],
         ],
       ),
     );
   }
-}
-
-String _fmt(int v) {
-  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr';
-  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L';
-  return '₹$v';
 }

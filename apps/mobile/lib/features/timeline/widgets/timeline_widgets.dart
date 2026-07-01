@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/timeline_models.dart';
 
 IconData categoryIcon(String category) {
@@ -57,11 +58,9 @@ class SeverityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = severityColor(severity);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(severity[0].toUpperCase() + severity.substring(1), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+    return StatusChip(
+      label: severity[0].toUpperCase() + severity.substring(1),
+      color: severityColor(severity),
     );
   }
 }
@@ -74,11 +73,7 @@ class CategoryBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = categoryColor(category);
     final label = category.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(1)}').trim();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500)),
-    );
+    return StatusChip(label: label, color: color, fontSize: 10);
   }
 }
 
@@ -104,7 +99,7 @@ class TimelineCard extends StatelessWidget {
             children: [
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
                 child: Icon(categoryIcon(item.category), color: color, size: 20),
               ),
               const SizedBox(width: 12),
@@ -131,7 +126,7 @@ class TimelineCard extends StatelessWidget {
                         SeverityBadge(severity: item.severity),
                         if (item.amount != 0) ...[
                           const Spacer(),
-                          Text(_formatAmount(item.amount), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: item.amount > 0 ? Colors.green : Colors.red)),
+                          Text(formatMoney(item.amount), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: item.amount > 0 ? Colors.green : Colors.red)),
                         ],
                       ],
                     ),
@@ -144,12 +139,6 @@ class TimelineCard extends StatelessWidget {
       ),
     );
   }
-
-  String _formatAmount(int amt) {
-    if (amt >= 10000000) return '₹${(amt / 10000000).toStringAsFixed(2)}Cr';
-    if (amt >= 100000) return '₹${(amt / 100000).toStringAsFixed(2)}L';
-    return '₹$amt';
-  }
 }
 
 class TimelineDetailCard extends StatelessWidget {
@@ -160,73 +149,51 @@ class TimelineDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = categoryColor(item.category);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                child: Icon(categoryIcon(item.category), color: color, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text(item.eventType, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                ],
-              )),
-            ]),
-            const SizedBox(height: 16),
-            if (item.description.isNotEmpty) ...[
-              Text('Description', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(item.description, style: theme.textTheme.bodyMedium),
-              const SizedBox(height: 12),
-            ],
-            _detailRow(theme, 'Category', item.category),
-            _detailRow(theme, 'Severity', item.severity[0].toUpperCase() + item.severity.substring(1)),
-            _detailRow(theme, 'Event Type', item.eventType),
-            _detailRow(theme, 'Timestamp', item.timestamp),
-            if (item.relatedEntity != null) _detailRow(theme, 'Entity ID', item.relatedEntity!),
-            if (item.relatedGoal != null) _detailRow(theme, 'Related Goal', item.relatedGoal!),
-            if (item.relatedAccount != null) _detailRow(theme, 'Related Account', item.relatedAccount!),
-            if (item.relatedAsset != null) _detailRow(theme, 'Related Asset', item.relatedAsset!),
-            if (item.relatedAgg != null) _detailRow(theme, 'Related Aggregate', item.relatedAgg!),
-            if (item.amount != 0) _detailRow(theme, 'Amount', _formatAmount(item.amount)),
-            if (item.metadata != null && item.metadata!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Metadata', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              ...item.metadata!.entries.map((e) => _detailRow(theme, e.key, '${e.value}')),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(ThemeData theme, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
+    return AppCard(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+          Row(children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(categoryIcon(item.category), color: color, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(item.eventType, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            )),
+          ]),
+          const SizedBox(height: AppTheme.spacingLg),
+          if (item.description.isNotEmpty) ...[
+            SectionHeader(title: 'Description'),
+            const SizedBox(height: AppTheme.spacingXs),
+            Text(item.description, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: AppTheme.spacingMd),
+          ],
+          InfoRow(label: 'Category', value: item.category),
+          InfoRow(label: 'Severity', value: item.severity[0].toUpperCase() + item.severity.substring(1)),
+          InfoRow(label: 'Event Type', value: item.eventType),
+          InfoRow(label: 'Timestamp', value: item.timestamp),
+          if (item.relatedEntity != null) InfoRow(label: 'Entity ID', value: item.relatedEntity!),
+          if (item.relatedGoal != null) InfoRow(label: 'Related Goal', value: item.relatedGoal!),
+          if (item.relatedAccount != null) InfoRow(label: 'Related Account', value: item.relatedAccount!),
+          if (item.relatedAsset != null) InfoRow(label: 'Related Asset', value: item.relatedAsset!),
+          if (item.relatedAgg != null) InfoRow(label: 'Related Aggregate', value: item.relatedAgg!),
+          if (item.amount != 0) InfoRow(label: 'Amount', value: formatMoney(item.amount)),
+          if (item.metadata != null && item.metadata!.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spacingSm),
+            SectionHeader(title: 'Metadata'),
+            const SizedBox(height: AppTheme.spacingXs),
+            ...item.metadata!.entries.map((e) => InfoRow(label: e.key, value: '${e.value}')),
+          ],
         ],
       ),
     );
-  }
-
-  String _formatAmount(int amt) {
-    if (amt >= 10000000) return '₹${(amt / 10000000).toStringAsFixed(2)}Cr';
-    if (amt >= 100000) return '₹${(amt / 100000).toStringAsFixed(2)}L';
-    return '₹$amt';
   }
 }
 
@@ -274,14 +241,14 @@ class _FilterSheetState extends State<FilterSheet> {
         maxChildSize: 0.9,
         expand: false,
         builder: (_, scrollCtrl) => Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppTheme.spacingLg),
           child: ListView(
             controller: scrollCtrl,
             children: [
               Text('Filter Timeline', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Text('Categories', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spacingLg),
+              SectionHeader(title: 'Categories'),
+              const SizedBox(height: AppTheme.spacingSm),
               Wrap(
                 spacing: 8, runSpacing: 4,
                 children: _categories.map((c) => FilterChip(
@@ -291,9 +258,9 @@ class _FilterSheetState extends State<FilterSheet> {
                   }),
                 )).toList(),
               ),
-              const SizedBox(height: 16),
-              Text('Severity', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spacingLg),
+              SectionHeader(title: 'Severity'),
+              const SizedBox(height: AppTheme.spacingSm),
               Wrap(
                 spacing: 8,
                 children: _severities.map((s) => FilterChip(
@@ -302,13 +269,13 @@ class _FilterSheetState extends State<FilterSheet> {
                   onSelected: (v) => setState(() => _selectedSeverity = v ? s : ''),
                 )).toList(),
               ),
-              const SizedBox(height: 16),
-              Text('Date Range', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spacingLg),
+              SectionHeader(title: 'Date Range'),
+              const SizedBox(height: AppTheme.spacingSm),
               TextField(controller: _startCtrl, decoration: const InputDecoration(labelText: 'Start Date (YYYY-MM-DD)', prefixIcon: Icon(Icons.calendar_today))),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spacingSm),
               TextField(controller: _endCtrl, decoration: const InputDecoration(labelText: 'End Date (YYYY-MM-DD)', prefixIcon: Icon(Icons.calendar_today))),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spacingXl),
               FilledButton(
                 onPressed: () {
                   widget.onApply(FilterParams(

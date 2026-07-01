@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/acct_models.dart';
 import '../repository/acct_repository.dart';
 import '../widgets/acct_widgets.dart';
-
-String _fmt(int v) { if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr'; if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L'; return '₹$v'; }
 
 final acctStateProvider = StateNotifierProvider<AcctStateNotifier, AcctState>((ref) {
   return AcctStateNotifier(ref.read(acctRepositoryProvider));
@@ -72,98 +71,83 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     final state = ref.watch(acctStateProvider);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts')),
+      appBar: AppBar(
+        title: const Text('Accounts'),
+        actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: () => context.push('/search')),
+        ],
+      ),
       body: _buildBody(theme, state),
     );
   }
 
   Widget _buildBody(ThemeData theme, AcctState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load accounts'),
-        FilledButton.icon(onPressed: () => ref.read(acctStateProvider.notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const LoadingView();
+    if (state.error != null) return ErrorView(
+      message: 'Could not load accounts',
+      onRetry: () => ref.read(acctStateProvider.notifier).load(),
     );
 
     final accts = state.filteredAccounts;
     return RefreshIndicator(
       onRefresh: () => ref.read(acctStateProvider.notifier).load(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacingLg),
         children: [
           if (state.balances != null) AcctBalanceCard(total: state.balances!.totalBalance, available: state.balances!.totalAvailable, spendable: state.balances!.totalSpendable),
           if (state.dash != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spacingMd),
             ...state.dash!.cards.map((c) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: AcctCardWidget(title: c.title, summary: c.summary, icon: _cardIcon(c.cardType), color: _cardColor(c.cardType)),
+              child: IconCard(title: c.title, subtitle: c.summary, icon: _cardIcon(c.cardType), color: _cardColor(c.cardType)),
             )),
           ],
           if (state.cashFlow != null) ...[
-            const SizedBox(height: 8),
-            Card(child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Cash Flow', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                _cfRow('Inflow', AcctFmt(state.cashFlow!.periodInflow), Colors.green, theme),
-                _cfRow('Outflow', AcctFmt(state.cashFlow!.periodOutflow), Colors.red, theme),
-                const Divider(height: 16),
-                _cfRow('Net', AcctFmt(state.cashFlow!.netFlow), state.cashFlow!.netFlow >= 0 ? Colors.green : Colors.red, theme),
-                _cfRow('Projected', AcctFmt(state.cashFlow!.projectedFlow), Colors.blue, theme),
-              ]),
-            )),
+            const SizedBox(height: AppTheme.spacingSm),
+            AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SectionHeader(title: 'Cash Flow'),
+              const SizedBox(height: AppTheme.spacingSm),
+              _cfRow('Inflow', formatMoney(state.cashFlow!.periodInflow), Colors.green, theme),
+              _cfRow('Outflow', formatMoney(state.cashFlow!.periodOutflow), Colors.red, theme),
+              const Divider(height: 16),
+              _cfRow('Net', formatMoney(state.cashFlow!.netFlow), state.cashFlow!.netFlow >= 0 ? Colors.green : Colors.red, theme),
+              _cfRow('Projected', formatMoney(state.cashFlow!.projectedFlow), Colors.blue, theme),
+            ])),
           ],
           if (state.health != null) ...[
-            const SizedBox(height: 8),
-            Card(child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Account Health', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Text('Healthy: ${state.health!.healthyPct.toStringAsFixed(0)}%', style: theme.textTheme.bodyMedium),
-                ...state.health!.accountsByHealth.entries.map((e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text('${e.key}: ${e.value}', style: theme.textTheme.bodySmall),
-                )),
-              ]),
-            )),
+            const SizedBox(height: AppTheme.spacingSm),
+            AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              SectionHeader(title: 'Account Health'),
+              const SizedBox(height: AppTheme.spacingSm),
+              Text('Healthy: ${state.health!.healthyPct.toStringAsFixed(0)}%', style: theme.textTheme.bodyMedium),
+              ...state.health!.accountsByHealth.entries.map((e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text('${e.key}: ${e.value}', style: theme.textTheme.bodySmall),
+              )),
+            ])),
           ],
           if (accts.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            // Quick filter chips
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: [
-                _filterChip('All', '', state.filterType),
-                _filterChip('Savings', 'Savings', state.filterType),
-                _filterChip('Checking', 'Checking', state.filterType),
-                _filterChip('Credit', 'Credit', state.filterType),
-                _filterChip('Investment', 'Investment', state.filterType),
-              ]),
+            const SizedBox(height: AppTheme.spacingMd),
+            SectionHeader(title: 'Accounts (${accts.length})'),
+            const SizedBox(height: AppTheme.spacingSm),
+            FilterChipRow(
+              options: const [
+                FilterChipOption(label: 'All', value: ''),
+                FilterChipOption(label: 'Savings', value: 'Savings'),
+                FilterChipOption(label: 'Checking', value: 'Checking'),
+                FilterChipOption(label: 'Credit', value: 'Credit'),
+                FilterChipOption(label: 'Investment', value: 'Investment'),
+              ],
+              selected: state.filterType,
+              onSelected: (v) => ref.read(acctStateProvider.notifier).filterByType(v),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spacingSm),
             ...accts.map((a) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: AcctCard(acct: a, onTap: () => context.push('/accounts/${a.accountId}')),
             )),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _filterChip(String label, String value, String current) {
-    final selected = current == value;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label), selected: selected,
-        onSelected: (_) => ref.read(acctStateProvider.notifier).filterByType(value),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/pf_models.dart';
 
 Color _riskColor(int score) {
@@ -46,27 +47,9 @@ class PortfolioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = _cardColor(card.cardType);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-            child: Icon(_cardIcon(card.cardType), color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(card.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-              Text(card.summary, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
-            ],
-          )),
-        ]),
-      ),
+    return IconCard(
+      title: card.title, subtitle: card.summary,
+      icon: _cardIcon(card.cardType), color: _cardColor(card.cardType),
     );
   }
 }
@@ -79,33 +62,26 @@ class PfSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = _riskColor(dash.riskScore);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.account_balance, color: theme.colorScheme.primary, size: 24),
-              const SizedBox(width: 8),
-              Text('Portfolio', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 16),
-            Text(_fmt(dash.portfolioValue), style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Row(children: [
-              Icon(dash.totalReturn >= 0 ? Icons.trending_up : Icons.trending_down, size: 16, color: dash.totalReturn >= 0 ? Colors.green : Colors.red),
-              const SizedBox(width: 4),
-              Text('${dash.totalReturnPct.toStringAsFixed(1)}% (${_fmt(dash.totalReturn.toInt())})', style: TextStyle(color: dash.totalReturn >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                child: Text('Risk: ${dash.riskScore} (${dash.riskLevel})', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
-              ),
-            ]),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.account_balance, color: theme.colorScheme.primary, size: AppTheme.iconLg),
+            const SizedBox(width: 8),
+            Text('Portfolio', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: AppTheme.spacingLg),
+          Text(formatMoney(dash.portfolioValue), style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: AppTheme.spacingXs),
+          Row(children: [
+            Icon(dash.totalReturn >= 0 ? Icons.trending_up : Icons.trending_down, size: AppTheme.iconSm, color: dash.totalReturn >= 0 ? Colors.green : Colors.red),
+            const SizedBox(width: 4),
+            Text('${dash.totalReturnPct.toStringAsFixed(1)}% (${formatMoney(dash.totalReturn.toInt())})', style: TextStyle(color: dash.totalReturn >= 0 ? Colors.green : Colors.red, fontWeight: FontWeight.w600)),
+            const SizedBox(width: AppTheme.spacingMd),
+            StatusChip(label: 'Risk: ${dash.riskScore} (${dash.riskLevel})', color: color, fontSize: 11),
+          ]),
+        ],
       ),
     );
   }
@@ -118,35 +94,31 @@ class AllocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Asset Allocation', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text('Diversification: ${alloc.diversification.toStringAsFixed(1)}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 12),
-            ...alloc.allocations.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text(a.label, style: theme.textTheme.bodyMedium),
-                    Text('${a.percent.toStringAsFixed(1)}%', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                  ]),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(value: a.percent / 100.0, minHeight: 6, color: Colors.blue.shade300, backgroundColor: Colors.grey.withValues(alpha: 0.15)),
-                  ),
-                ],
-              ),
-            )),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(title: 'Asset Allocation'),
+          Text('Diversification: ${alloc.diversification.toStringAsFixed(1)}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          const SizedBox(height: AppTheme.spacingMd),
+          ...alloc.allocations.map((a) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text(a.label, style: theme.textTheme.bodyMedium),
+                  Text('${a.percent.toStringAsFixed(1)}%', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                ]),
+                const SizedBox(height: AppTheme.spacingXs),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm - 1),
+                  child: LinearProgressIndicator(value: a.percent / 100.0, minHeight: 6, color: Colors.blue.shade300, backgroundColor: Colors.grey.withOpacity(0.15)),
+                ),
+              ],
+            ),
+          )),
+        ],
       ),
     );
   }
@@ -159,34 +131,25 @@ class PfSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 8),
-              Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          ]),
+          const SizedBox(height: AppTheme.spacingMd),
+          ...rows.map((r) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text(r.key, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(r.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             ]),
-            const SizedBox(height: 12),
-            ...rows.map((r) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(r.key, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                Text(r.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-              ]),
-            )),
-          ],
-        ),
+          )),
+        ],
       ),
     );
   }
-}
-
-String _fmt(int v) {
-  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr';
-  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L';
-  return '₹$v';
 }

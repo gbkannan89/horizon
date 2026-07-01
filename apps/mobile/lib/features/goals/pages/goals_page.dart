@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import '../models/goal_models.dart';
 import '../repository/goal_repository.dart';
 import '../widgets/goal_widgets.dart';
@@ -57,14 +58,10 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
     return Scaffold(
       appBar: AppBar(
         title: _searching
-            ? TextField(
-                controller: _searchCtrl,
-                autofocus: true,
-                decoration: InputDecoration(hintText: 'Search goals...', border: InputBorder.none,
-                  suffixIcon: IconButton(icon: const Icon(Icons.close), onPressed: () {
-                    setState(() { _searching = false; _searchCtrl.clear(); });
-                  }),
-                ),
+            ? HorizonSearchBar(
+                hintText: 'Search goals...',
+                onSearch: (_) => setState(() {}),
+                onClose: () => setState(() { _searching = false; _searchCtrl.clear(); }),
               )
             : const Text('Goals'),
         actions: [
@@ -76,21 +73,15 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
   }
 
   Widget _buildBody(ThemeData theme, GoalsListState state) {
-    if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.cloud_off, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load goals', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 16),
-        FilledButton.icon(onPressed: () => ref.read(goalsListProvider.notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
-      ]),
+    if (state.loading) return const LoadingView();
+    if (state.error != null) return ErrorView(
+      message: 'Could not load goals',
+      onRetry: () => ref.read(goalsListProvider.notifier).load(),
     );
-    if (state.goals.isEmpty) return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.flag_outlined, size: 64, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
-        const SizedBox(height: 16), Text('No goals yet', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8), Text('Create your first financial goal', style: theme.textTheme.bodySmall),
-      ]),
+    if (state.goals.isEmpty) return EmptyState(
+      icon: Icons.flag_outlined,
+      title: 'No goals yet',
+      subtitle: 'Create your first financial goal',
     );
 
     final filtered = _searchCtrl.text.isEmpty ? state.goals : state.goals.where((g) =>
@@ -99,10 +90,10 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
     return RefreshIndicator(
       onRefresh: () => ref.read(goalsListProvider.notifier).load(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacingLg),
         itemCount: filtered.length,
         itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: AppTheme.spacingMd),
           child: GoalListCard(goal: filtered[i], onTap: () => context.push('/goals/${filtered[i].goalId}')),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/index.dart';
 import 'package:horizon_mobile/shared/providers/app_state.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
@@ -48,7 +49,7 @@ class SettingsPage extends ConsumerWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        padding: const EdgeInsets.fromLTRB(AppTheme.spacingLg, AppTheme.spacingXl, AppTheme.spacingLg, AppTheme.spacingSm),
         child: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary, fontSize: 13)),
       ),
       ...children,

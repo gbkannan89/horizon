@@ -27,6 +27,7 @@ import 'package:horizon_mobile/features/settings/pages/about_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
+import 'package:horizon_mobile/features/search/pages/search_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -51,6 +52,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/reset-password', builder: (_, state) => ResetPasswordPage(token: state.uri.queryParameters['token'] ?? '')),
       GoRoute(path: '/session-expired', builder: (_, __) => const SessionExpiredPage()),
       GoRoute(path: '/advisor', builder: (_, __) => const AdvisorPage()),
+      GoRoute(path: '/search', builder: (_, state) {
+        final query = state.uri.queryParameters['q'] ?? '';
+        return SearchPage(initialQuery: query);
+      }),
       StatefulShellRoute.indexedStack(
         builder: (_, __, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
@@ -90,6 +95,7 @@ class _MorePage extends ConsumerWidget {
     appBar: AppBar(title: const Text('More')),
     body: ListView(
       children: [
+        ListTile(leading: const Icon(Icons.search), title: const Text('Search'), onTap: () => context.push('/search')),
         ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
         ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
         ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),

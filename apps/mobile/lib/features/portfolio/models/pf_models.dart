@@ -181,8 +181,4 @@ class CardViewItem {
   );
 }
 
-String _fmt(int v) {
-  if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr';
-  if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L';
-  return '₹$v';
-}
+
