@@ -68,7 +68,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
               const SizedBox(height: AppSpacing.sm),
               ..._currentItems(state).map((item) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                child: InsightCard(insight: item, onTap: () => context.push('/insights/${item.id}')!),
+                child: InsightCard(insight: item, onTap: () => context.push('/insights/${item.id}')),
               )),
               if (state.trends != null) ...[
                 const SizedBox(height: AppSpacing.sm),

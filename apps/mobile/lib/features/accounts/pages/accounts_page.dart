@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/acct_models.dart';
 import '../repository/acct_repository.dart';
