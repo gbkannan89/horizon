@@ -75,6 +75,7 @@ func New(providers DataProviders, cache Cache) *DashboardAggregator {
 }
 
 // Aggregate fetches all dashboard data in parallel goroutines.
+// Errors from individual providers are silently skipped (best-effort).
 func (a *DashboardAggregator) Aggregate(ctx context.Context, userID string) (*engine.Inputs, error) {
 	if cached, ok := a.cache.Get(ctx, userID); ok {
 		return cached, nil
@@ -83,104 +84,97 @@ func (a *DashboardAggregator) Aggregate(ctx context.Context, userID string) (*en
 	inputs := &engine.Inputs{UserID: userID}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	errs := make(chan error, 12)
 
-	fetch := func(fn func() error) { defer wg.Done(); if err := fn(); err != nil { errs <- err } }
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if b, err := a.providers.Accounts.HasAccounts(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasAccounts = b; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		b, err := a.providers.Accounts.HasAccounts(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.HasAccounts = b; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if v, err := a.providers.Accounts.GetCashBalance(ctx, userID); err == nil {
+			mu.Lock(); inputs.CashBalance = v; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		v, err := a.providers.Accounts.GetCashBalance(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.CashBalance = v; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if v, err := a.providers.Assets.GetTotalAssets(ctx, userID); err == nil {
+			mu.Lock(); inputs.TotalAssets = v; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		v, err := a.providers.Assets.GetTotalAssets(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.TotalAssets = v; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if v, err := a.providers.Liabilities.GetTotalLiabilities(ctx, userID); err == nil {
+			mu.Lock(); inputs.TotalLiabilities = v; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		v, err := a.providers.Liabilities.GetTotalLiabilities(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.TotalLiabilities = v; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if onTrack, atRisk, total, hasGoals, err := a.providers.Goals.GetGoalCounts(ctx, userID); err == nil {
+			mu.Lock()
+			inputs.GoalsOnTrack = onTrack
+			inputs.GoalsAtRisk = atRisk
+			inputs.GoalCount = total
+			inputs.HasGoals = hasGoals
+			mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		onTrack, atRisk, total, hasGoals, err := a.providers.Goals.GetGoalCounts(ctx, userID)
-		if err != nil { return err }
-		mu.Lock()
-		inputs.GoalsOnTrack = onTrack
-		inputs.GoalsAtRisk = atRisk
-		inputs.GoalCount = total
-		inputs.HasGoals = hasGoals
-		mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if cnt, has, err := a.providers.Events.GetRecentCount(ctx, userID); err == nil {
+			mu.Lock(); inputs.RecentEvents = cnt; inputs.HasEvents = has; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		cnt, has, err := a.providers.Events.GetRecentCount(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.RecentEvents = cnt; inputs.HasEvents = has; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if v, err := a.providers.Portfolio.GetPortfolioValue(ctx, userID); err == nil {
+			mu.Lock(); inputs.PortfolioValue = v; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		v, err := a.providers.Portfolio.GetPortfolioValue(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.PortfolioValue = v; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if score, grade, err := a.providers.Health.GetHealthScore(ctx, userID); err == nil {
+			mu.Lock(); inputs.HealthScore = score; inputs.HealthGrade = grade; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		score, grade, err := a.providers.Health.GetHealthScore(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.HealthScore = score; inputs.HealthGrade = grade; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if score, level, err := a.providers.Risk.GetRiskScore(ctx, userID); err == nil {
+			mu.Lock(); inputs.RiskScore = score; inputs.RiskLevel = level; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		score, level, err := a.providers.Risk.GetRiskScore(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.RiskScore = score; inputs.RiskLevel = level; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if has, cnt, err := a.providers.Recs.HasRecommendations(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasRecommendation = has; inputs.RecCount = cnt; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		has, cnt, err := a.providers.Recs.HasRecommendations(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.HasRecommendation = has; inputs.RecCount = cnt; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if income, expenses, err := a.providers.Projection.GetMonthlyIncomeExpenses(ctx, userID); err == nil {
+			mu.Lock(); inputs.MonthlyIncome = income; inputs.MonthlyExpenses = expenses; mu.Unlock()
+		}
+	}()
 
-	wg.Add(1); go fetch(func() error {
-		income, expenses, err := a.providers.Projection.GetMonthlyIncomeExpenses(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.MonthlyIncome = income; inputs.MonthlyExpenses = expenses; mu.Unlock()
-		return nil
-	})
-
-	wg.Add(1); go fetch(func() error {
-		hasSim, err := a.providers.Simulation.HasSimulations(ctx, userID)
-		if err != nil { return err }
-		mu.Lock(); inputs.HasSimulation = hasSim; mu.Unlock()
-		return nil
-	})
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if hasSim, err := a.providers.Simulation.HasSimulations(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasSimulation = hasSim; mu.Unlock()
+		}
+	}()
 
 	wg.Wait()
-	close(errs)
-	for e := range errs {
-		if e != nil { return nil, e }
-	}
 
 	inputs.NetWorth = inputs.TotalAssets + inputs.CashBalance - inputs.TotalLiabilities
 	if inputs.CashBalance > 0 || inputs.TotalAssets > 0 {

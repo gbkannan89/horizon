@@ -76,81 +76,78 @@ func (a *Aggregator) Aggregate(ctx context.Context, userID string) (*engine.Inpu
 	inputs := &engine.Inputs{UserID: userID}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	errs := make(chan error, 12)
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		val, ret, retPct, err := a.providers.Portfolio.GetPortfolioSummary(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.PortfolioValue = val; inputs.TotalReturn = ret; inputs.TotalReturnPct = retPct; mu.Unlock()
+		if val, ret, retPct, err := a.providers.Portfolio.GetPortfolioSummary(ctx, userID); err == nil {
+			mu.Lock(); inputs.PortfolioValue = val; inputs.TotalReturn = ret; inputs.TotalReturnPct = retPct; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		allocs, err := a.providers.Assets.GetAllocations(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.Allocations = allocs; mu.Unlock()
+		if allocs, err := a.providers.Assets.GetAllocations(ctx, userID); err == nil {
+			mu.Lock(); inputs.Allocations = allocs; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		periodRet, periodRetPct, benchRet, unrealizedGL, realizedGL, err := a.providers.Performance.GetPerformance(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.PeriodReturn = periodRet; inputs.PeriodReturnPct = periodRetPct; inputs.BenchmarkRet = benchRet; inputs.UnrealizedGL = unrealizedGL; inputs.RealizedGL = realizedGL; mu.Unlock()
+		if periodRet, periodRetPct, benchRet, unrealizedGL, realizedGL, err := a.providers.Performance.GetPerformance(ctx, userID); err == nil {
+			mu.Lock(); inputs.PeriodReturn = periodRet; inputs.PeriodReturnPct = periodRetPct; inputs.BenchmarkRet = benchRet; inputs.UnrealizedGL = unrealizedGL; inputs.RealizedGL = realizedGL; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		score, level, sharpe, vol, mdd, valueAtRisk, err := a.providers.Risk.GetPortfolioRisk(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.RiskScore = score; inputs.RiskLevel = level; inputs.SharpeRatio = sharpe; inputs.Volatility = vol; inputs.MaxDrawdown = mdd; inputs.Var = valueAtRisk; mu.Unlock()
+		if score, level, sharpe, vol, mdd, valueAtRisk, err := a.providers.Risk.GetPortfolioRisk(ctx, userID); err == nil {
+			mu.Lock(); inputs.RiskScore = score; inputs.RiskLevel = level; inputs.SharpeRatio = sharpe; inputs.Volatility = vol; inputs.MaxDrawdown = mdd; inputs.Var = valueAtRisk; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		projVal, conf, horizon, annRet, err := a.providers.Projection.GetPortfolioProjection(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.ProjectedVal = projVal; inputs.ProjectionConf = conf; inputs.HorizonYears = horizon; inputs.AnnualReturn = annRet; mu.Unlock()
+		if projVal, conf, horizon, annRet, err := a.providers.Projection.GetPortfolioProjection(ctx, userID); err == nil {
+			mu.Lock(); inputs.ProjectedVal = projVal; inputs.ProjectionConf = conf; inputs.HorizonYears = horizon; inputs.AnnualReturn = annRet; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		has, cnt, err := a.providers.Recs.HasRecommendations(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.HasRecs = has; inputs.RecCount = cnt; mu.Unlock()
+		if has, cnt, err := a.providers.Recs.HasRecommendations(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasRecs = has; inputs.RecCount = cnt; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		has, cnt, err := a.providers.Optimize.HasOptimizations(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.HasOpts = has; inputs.OptCount = cnt; mu.Unlock()
+		if has, cnt, err := a.providers.Optimize.HasOptimizations(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasOpts = has; inputs.OptCount = cnt; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		has, cnt, err := a.providers.Simulation.HasSimulations(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.HasSims = has; inputs.SimCount = cnt; mu.Unlock()
+		if has, cnt, err := a.providers.Simulation.HasSimulations(ctx, userID); err == nil {
+			mu.Lock(); inputs.HasSims = has; inputs.SimCount = cnt; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		cnt, err := a.providers.Events.GetEventCount(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.EventCount = cnt; mu.Unlock()
+		if cnt, err := a.providers.Events.GetEventCount(ctx, userID); err == nil {
+			mu.Lock(); inputs.EventCount = cnt; mu.Unlock()
+		}
 	}()
 
 	wg.Add(1); go func() {
 		defer wg.Done()
-		cnt, err := a.providers.Events.GetMilestoneCount(ctx, userID)
-		if err != nil { errs <- err; return }
-		mu.Lock(); inputs.MilestoneCount = cnt; mu.Unlock()
+		if cnt, err := a.providers.Events.GetMilestoneCount(ctx, userID); err == nil {
+			mu.Lock(); inputs.MilestoneCount = cnt; mu.Unlock()
+		}
 	}()
 
 	wg.Wait()
-	close(errs)
-	for e := range errs { if e != nil { return nil, e } }
 
 	a.cache.Set(ctx, cacheKey, inputs)
 	return inputs, nil

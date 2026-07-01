@@ -134,7 +134,7 @@ func (p *DashboardPGProvider) GetPortfolioValue(ctx context.Context, userID stri
 		`SELECT COALESCE(SUM(a.unit_price * COALESCE(a.quantity, 1)), 0)
 		FROM portfolio_members pm
 		JOIN portfolios pf ON pm.portfolio_id = pf.portfolio_id
-		JOIN assets a ON pm.entity_id = a.asset_id
+		JOIN assets a ON pm.entity_id::uuid = a.asset_id
 		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value)
 	if err != nil {
 		return 0, fmt.Errorf("get portfolio value: %w", err)
