@@ -25,6 +25,8 @@ import 'package:horizon_mobile/features/settings/pages/preferences_page.dart';
 import 'package:horizon_mobile/features/settings/pages/privacy_page.dart';
 import 'package:horizon_mobile/features/settings/pages/security_page.dart';
 import 'package:horizon_mobile/features/settings/pages/about_page.dart';
+import 'package:horizon_mobile/features/settings/pages/ai_settings_page.dart';
+import 'package:horizon_mobile/features/settings/pages/data_management_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insight_detail_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
@@ -94,6 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/privacy', builder: (_, __) => const PrivacyPage()),
       GoRoute(path: '/settings/security', builder: (_, __) => const SecurityPage()),
       GoRoute(path: '/settings/about', builder: (_, __) => const AboutPage()),
+      GoRoute(path: '/settings/ai', builder: (_, __) => const AiSettingsPage()),
+      GoRoute(path: '/settings/data', builder: (_, __) => const DataManagementPage()),
     ],
   );
 });

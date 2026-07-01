@@ -16,6 +16,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   bool _isLoading = false;
   bool _isSaving = false;
   String? _error;
+  String? _dateOfBirth;
 
   @override
   void initState() {
@@ -102,7 +103,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             TextFormField(controller: _phoneCtrl, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone_outlined)),
               keyboardType: TextInputType.phone),
             const SizedBox(height: 16),
-            TextFormField(decoration: const InputDecoration(labelText: 'Date of Birth', prefixIcon: Icon(Icons.calendar_today)), readOnly: true),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Date of Birth', prefixIcon: const Icon(Icons.calendar_today), hintText: _dateOfBirth ?? 'Tap to select'),
+              readOnly: true,
+              onTap: () async {
+                final picked = await showDatePicker(context: context, initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)), firstDate: DateTime(1950), lastDate: DateTime.now());
+                if (picked != null) setState(() => _dateOfBirth = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+              },
+            ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 16),
