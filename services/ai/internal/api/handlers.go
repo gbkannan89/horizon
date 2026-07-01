@@ -38,6 +38,7 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	// AI core
 	mux.HandleFunc("GET /api/v1/ai/health", h.GetHealth)
 	mux.HandleFunc("POST /api/v1/ai/chat", h.PostChat)
+	mux.HandleFunc("POST /api/v1/ai/chat/stream", h.PostChatStream)
 	mux.HandleFunc("POST /api/v1/ai/explain", h.PostExplain)
 	mux.HandleFunc("POST /api/v1/ai/summarize", h.PostSummarize)
 	mux.HandleFunc("GET /api/v1/ai/prompts", h.GetPrompts)
@@ -303,4 +304,72 @@ func (h *Handlers) buildTestInputs(userID string) ctxpkg.Inputs {
 		HasSims: true, SimCount: 1, EventCount: 15,
 		NotifUnread: 3, InsightTotal: 8,
 	}
+}
+
+// PostChatStream handles streaming chat via SSE.
+func (h *Handlers) PostChatStream(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SessionID string                 `json:"session_id"`
+		Message   string                 `json:"message"`
+		Context   map[string]interface{} `json:"context,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_PAYLOAD", "invalid chat request"); return
+	}
+	if req.Message == "" { writeError(w, http.StatusBadRequest, "MISSING_MESSAGE", "message is required"); return }
+	if req.SessionID == "" { req.SessionID = "session-" + time.Now().Format("20060102-150405") }
+
+	// First get the full response via regular chat
+	userID := getDefaultUserID(r)
+	conv := h.sessions.GetOrCreate(req.SessionID, userID)
+	if req.Context != nil { conv.Context = req.Context }
+	h.sessions.AddMessage(req.SessionID, session.Message{Role: "user", Content: req.Message, Timestamp: time.Now().UTC().Format(time.RFC3339)})
+	ai := h.registry.Active()
+	chatReq := provider.ChatRequest{SessionID: req.SessionID, Message: req.Message, Context: conv.Context}
+	for _, m := range h.sessions.GetHistory(req.SessionID) {
+		chatReq.History = append(chatReq.History, provider.ChatMessage{Role: m.Role, Content: m.Content})
+	}
+
+	resp, err := ai.Chat(r.Context(), chatReq)
+	if err != nil {
+		h.sessions.AddMessage(req.SessionID, session.Message{Role: "assistant", Content: "[Provider unavailable]", Timestamp: time.Now().UTC().Format(time.RFC3339)})
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		fmt.Fprintf(w, "data: {\"token\":\"I'm sorry, the AI provider is currently unavailable.\"}\n\n")
+		fmt.Fprintf(w, "data: [DONE]\n\n")
+		w.(http.Flusher).Flush()
+		return
+	}
+
+	h.sessions.AddMessage(req.SessionID, session.Message{Role: "assistant", Content: resp.Reply, Timestamp: time.Now().UTC().Format(time.RFC3339), Confidence: resp.Confidence})
+
+	// Stream the response as SSE tokens
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	words := splitWords(resp.Reply)
+	for _, word := range words {
+		jsonData, _ := json.Marshal(map[string]string{"token": word})
+		fmt.Fprintf(w, "data: %s\n\n", jsonData)
+		w.(http.Flusher).Flush()
+		time.Sleep(30 * time.Millisecond)
+	}
+	fmt.Fprintf(w, "data: [DONE]\n\n")
+	w.(http.Flusher).Flush()
+}
+
+func splitWords(s string) []string {
+	var words []string
+	var current []rune
+	for _, r := range s {
+		current = append(current, r)
+		if r == ' ' || r == '\n' {
+			words = append(words, string(current))
+			current = nil
+		}
+	}
+	if len(current) > 0 { words = append(words, string(current)) }
+	return words
 }
