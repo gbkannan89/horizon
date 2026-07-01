@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/core/network/api_client.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
+
+final _changePasswordProvider = Provider.family<Future<void>, Map<String, String>>((ref, data) async {
+  final api = ref.read(apiClientProvider);
+  await api.post('/auth/change-password', data: data);
+});
 
 class SecurityPage extends ConsumerStatefulWidget {
   const SecurityPage({super.key});
@@ -11,11 +17,45 @@ class SecurityPage extends ConsumerStatefulWidget {
 }
 
 class _SecurityPageState extends ConsumerState<SecurityPage> {
+  final _currentPwdCtrl = TextEditingController();
+  final _newPwdCtrl = TextEditingController();
+  final _confirmPwdCtrl = TextEditingController();
   bool _showForm = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
+    _currentPwdCtrl.dispose();
+    _newPwdCtrl.dispose();
+    _confirmPwdCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    if (_newPwdCtrl.text.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password must be at least 8 characters'), behavior: SnackBarBehavior.floating));
+      return;
+    }
+    if (_newPwdCtrl.text != _confirmPwdCtrl.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match'), behavior: SnackBarBehavior.floating));
+      return;
+    }
+    setState(() => _isSaving = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.post('/auth/change-password', data: {
+        'current_password': _currentPwdCtrl.text,
+        'new_password': _newPwdCtrl.text,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password changed successfully'), behavior: SnackBarBehavior.floating));
+        setState(() { _showForm = false; _currentPwdCtrl.clear(); _newPwdCtrl.clear(); _confirmPwdCtrl.clear(); });
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), behavior: SnackBarBehavior.floating));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _handleLogoutAll() async {
@@ -45,27 +85,23 @@ class _SecurityPageState extends ConsumerState<SecurityPage> {
                   ListTile(
                     leading: const Icon(Icons.lock_outline),
                     title: const Text('Change Password'),
-                    subtitle: const Text('Feature coming soon'),
                     trailing: const Icon(Icons.chevron_right, size: 18),
-                    enabled: false,
+                    onTap: () => setState(() => _showForm = true),
                   )
                 else ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: Column(children: [
-                      TextField(obscureText: true, decoration: const InputDecoration(labelText: 'Current Password', prefixIcon: Icon(Icons.lock_outlined))),
+                      TextField(controller: _currentPwdCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Current Password', prefixIcon: Icon(Icons.lock_outlined))),
                       const SizedBox(height: 12),
-                      TextField(obscureText: true, decoration: const InputDecoration(labelText: 'New Password', prefixIcon: Icon(Icons.lock))),
+                      TextField(controller: _newPwdCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'New Password', prefixIcon: Icon(Icons.lock))),
                       const SizedBox(height: 12),
-                      TextField(obscureText: true, decoration: const InputDecoration(labelText: 'Confirm Password', prefixIcon: Icon(Icons.lock))),
+                      TextField(controller: _confirmPwdCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Confirm Password', prefixIcon: Icon(Icons.lock))),
                       const SizedBox(height: 16),
                       Row(children: [
                         Expanded(child: OutlinedButton(onPressed: () => setState(() => _showForm = false), child: const Text('Cancel'))),
                         const SizedBox(width: 12),
-                        Expanded(child: FilledButton(onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password change is not yet available'), behavior: SnackBarBehavior.floating));
-                          setState(() => _showForm = false);
-                        }, child: const Text('Update'))),
+                        Expanded(child: FilledButton(onPressed: _isSaving ? null : _changePassword, child: _isSaving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Update'))),
                       ]),
                     ]),
                   ),

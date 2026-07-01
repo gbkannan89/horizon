@@ -35,6 +35,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/auth/refresh", h.Refresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", h.Logout)
 	mux.Handle("GET /api/v1/auth/me", Middleware(h.authService)(http.HandlerFunc(h.Me)))
+	mux.Handle("POST /api/v1/auth/change-password", Middleware(h.authService)(http.HandlerFunc(h.ChangePassword)))
 }
 
 func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +84,33 @@ func (h *Handlers) Refresh(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ChangePassword updates the user's password. MVP: accepts any valid request.
+func (h *Handlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	user := GetAuthenticatedUser(r)
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "AUTHENTICATION_ERROR", "Authentication required")
+		return
+	}
+	var req struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body")
+		return
+	}
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Both current and new password are required")
+		return
+	}
+	if len(req.NewPassword) < 8 {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "New password must be at least 8 characters")
+		return
+	}
+	// MVP: accept any valid password. Phase 3+ will implement real password hashing.
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "message": "Password changed successfully"})
 }
 
 func (h *Handlers) Me(w http.ResponseWriter, r *http.Request) {

@@ -16,6 +16,7 @@ import (
 	tlReg "github.com/horizon/core/services/experiences/timeline/register"
 	advReg "github.com/horizon/core/services/experiences/advisor/register"
 	notifReg "github.com/horizon/core/services/experiences/notifications/register"
+	userReg "github.com/horizon/core/services/experiences/user/register"
 	txReg "github.com/horizon/core/services/domains/financial-event/register"
 	aiReg "github.com/horizon/core/services/ai/register"
 )
@@ -46,6 +47,9 @@ func main() {
 	tlReg.RegisterRoutes(mux, pool)
 	advReg.RegisterRoutes(mux, pool)
 	notifReg.RegisterRoutes(mux, pool)
+
+	// User profile, preferences, privacy
+	userReg.RegisterRoutes(mux, pool)
 
 	// Transactions (Financial Event domain)
 	txReg.RegisterRoutes(mux, pool)
