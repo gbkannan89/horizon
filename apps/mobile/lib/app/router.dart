@@ -25,6 +25,7 @@ import 'package:horizon_mobile/features/settings/pages/privacy_page.dart';
 import 'package:horizon_mobile/features/settings/pages/security_page.dart';
 import 'package:horizon_mobile/features/settings/pages/about_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
+import 'package:horizon_mobile/features/insights/pages/insight_detail_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
 import 'package:horizon_mobile/features/transactions/pages/transactions_page.dart';
@@ -80,7 +81,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ]),
       GoRoute(path: '/transactions/add', builder: (_, __) => const TransactionFormPage()),
       GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
-      GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
+      GoRoute(path: '/insights', builder: (_, __) => const InsightsPage(), routes: [
+        GoRoute(path: ':id', builder: (_, state) => InsightDetailPage(insightId: state.pathParameters['id'] ?? '')),
+      ]),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
       GoRoute(path: '/settings/profile', builder: (_, __) => const ProfilePage()),
       GoRoute(path: '/settings/profile/edit', builder: (_, __) => const EditProfilePage()),
