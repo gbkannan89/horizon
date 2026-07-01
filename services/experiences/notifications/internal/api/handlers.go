@@ -37,6 +37,8 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/notifications/{id}/read", h.MarkRead)
 	mux.HandleFunc("POST /api/v1/notifications/{id}/archive", h.Archive)
 	mux.HandleFunc("POST /api/v1/notifications/{id}/snooze", h.Snooze)
+	mux.HandleFunc("POST /api/v1/notifications/register-token", h.RegisterToken)
+	mux.HandleFunc("DELETE /api/v1/notifications/{id}", h.Delete)
 }
 
 func getDefaultUserID(r *http.Request) string {
@@ -172,4 +174,23 @@ func (h *Handlers) Snooze(w http.ResponseWriter, r *http.Request) {
 	}
 	h.stateRepo.Snooze(id, req.Until)
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": engine.StateSnoozed, "until": req.Until})
+}
+
+func (h *Handlers) RegisterToken(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token    string `json:"token"`
+		Platform string `json:"platform"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body"); return
+	}
+	log.Printf("push token registered: platform=%s token=%s", req.Platform, req.Token)
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{"registered": true}})
+}
+
+func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "notification ID required"); return }
+	h.stateRepo.SetState(id, "deleted")
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": "deleted"})
 }
