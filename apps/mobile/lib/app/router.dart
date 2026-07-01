@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/features/auth/pages/splash_page.dart';
@@ -42,6 +43,19 @@ import 'package:horizon_mobile/features/transactions/pages/transaction_detail_pa
 import 'package:horizon_mobile/features/transactions/pages/transaction_form_page.dart';
 import 'package:horizon_mobile/features/search/pages/search_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
+
+Page<void> _slideTransition(Widget child) {
+  return CustomTransitionPage<void>(
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0);
+      const end = Offset.zero;
+      const curve = Curves.easeInOutCubic;
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      return SlideTransition(position: animation.drive(tween), child: child);
+    },
+  );
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -96,20 +110,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: ':id', builder: (_, state) => TransactionDetailPage(transactionId: state.pathParameters['id'] ?? '')),
       ]),
       GoRoute(path: '/transactions/add', builder: (_, __) => const TransactionFormPage()),
-      GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
+      GoRoute(path: '/search', pageBuilder: (_, __) => _slideTransition(const SearchPage())),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage(), routes: [
-        GoRoute(path: ':id', builder: (_, state) => InsightDetailPage(insightId: state.pathParameters['id'] ?? '')),
+        GoRoute(path: ':id', pageBuilder: (_, state) => _slideTransition(InsightDetailPage(insightId: state.pathParameters['id'] ?? ''))),
       ]),
-      GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
-      GoRoute(path: '/settings/profile', builder: (_, __) => const ProfilePage()),
-      GoRoute(path: '/settings/profile/edit', builder: (_, __) => const EditProfilePage()),
-      GoRoute(path: '/settings/preferences', builder: (_, __) => const PreferencesPage()),
-      GoRoute(path: '/settings/privacy', builder: (_, __) => const PrivacyPage()),
-      GoRoute(path: '/settings/security', builder: (_, __) => const SecurityPage()),
-      GoRoute(path: '/settings/about', builder: (_, __) => const AboutPage()),
-      GoRoute(path: '/settings/ai', builder: (_, __) => const AiSettingsPage()),
-      GoRoute(path: '/settings/data', builder: (_, __) => const DataManagementPage()),
-      GoRoute(path: '/settings/notifications', builder: (_, __) => const NotificationPreferencesPage()),
+      GoRoute(path: '/settings', pageBuilder: (_, __) => _slideTransition(const SettingsPage())),
+      GoRoute(path: '/settings/profile', pageBuilder: (_, __) => _slideTransition(const ProfilePage())),
+      GoRoute(path: '/settings/profile/edit', pageBuilder: (_, __) => _slideTransition(const EditProfilePage())),
+      GoRoute(path: '/settings/preferences', pageBuilder: (_, __) => _slideTransition(const PreferencesPage())),
+      GoRoute(path: '/settings/privacy', pageBuilder: (_, __) => _slideTransition(const PrivacyPage())),
+      GoRoute(path: '/settings/security', pageBuilder: (_, __) => _slideTransition(const SecurityPage())),
+      GoRoute(path: '/settings/about', pageBuilder: (_, __) => _slideTransition(const AboutPage())),
+      GoRoute(path: '/settings/ai', pageBuilder: (_, __) => _slideTransition(const AiSettingsPage())),
+      GoRoute(path: '/settings/data', pageBuilder: (_, __) => _slideTransition(const DataManagementPage())),
+      GoRoute(path: '/settings/notifications', pageBuilder: (_, __) => _slideTransition(const NotificationPreferencesPage())),
     ],
   );
 });
