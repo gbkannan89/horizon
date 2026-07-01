@@ -13,6 +13,11 @@ import 'package:horizon_mobile/features/goals/pages/goals_page.dart';
 import 'package:horizon_mobile/features/portfolio/pages/portfolio_page.dart';
 import 'package:horizon_mobile/features/planning/pages/planning_page.dart';
 import 'package:horizon_mobile/features/planning/pages/projection_page.dart';
+import 'package:horizon_mobile/features/planning/pages/budget_page.dart';
+import 'package:horizon_mobile/features/planning/pages/retirement_page.dart';
+import 'package:horizon_mobile/features/planning/pages/emergency_fund_page.dart';
+import 'package:horizon_mobile/features/planning/pages/debt_payoff_page.dart';
+import 'package:horizon_mobile/features/planning/pages/investment_page.dart';
 import 'package:horizon_mobile/features/accounts/pages/accounts_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_detail_page.dart';
@@ -78,6 +83,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/planning', builder: (_, __) => const PlanningPage(), routes: [
         GoRoute(path: 'projections', builder: (_, __) => const ProjectionPage()),
+        GoRoute(path: 'budget', builder: (_, __) => const BudgetPage()),
+        GoRoute(path: 'retirement', builder: (_, __) => const RetirementPage()),
+        GoRoute(path: 'emergency-fund', builder: (_, __) => const EmergencyFundPage()),
+        GoRoute(path: 'debt-payoff', builder: (_, __) => const DebtPayoffPage()),
+        GoRoute(path: 'investment', builder: (_, __) => const InvestmentPage()),
       ]),
       GoRoute(path: '/accounts', builder: (_, __) => const AccountsPage(), routes: [
         GoRoute(path: ':id', builder: (_, state) => AccountDetailPage(accountId: state.pathParameters['id'] ?? '')),

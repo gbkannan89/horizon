@@ -32,6 +32,11 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/planning/risk", h.GetRisk)
 	mux.HandleFunc("GET /api/v1/planning/health", h.GetHealth)
 	mux.HandleFunc("GET /api/v1/planning/timeline", h.GetTimeline)
+	mux.HandleFunc("GET /api/v1/planning/budget", h.GetBudget)
+	mux.HandleFunc("GET /api/v1/planning/retirement", h.GetRetirement)
+	mux.HandleFunc("GET /api/v1/planning/emergency-fund", h.GetEmergencyFund)
+	mux.HandleFunc("GET /api/v1/planning/debt-payoff", h.GetDebtPayoff)
+	mux.HandleFunc("GET /api/v1/planning/investment", h.GetInvestment)
 }
 
 func getDefaultUserID(r *http.Request) string {
@@ -191,4 +196,55 @@ func (h *Handlers) GetTimeline(w http.ResponseWriter, r *http.Request) {
 		Success: true, Data: &CardList{Cards: []engine.Card{card}, Count: 1},
 		Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)},
 	})
+}
+
+func (h *Handlers) GetBudget(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
+		"total_budget": 109000, "total_spent": 107500, "surplus": 1500,
+		"categories": []map[string]interface{}{
+			{"category": "Housing", "planned": 45000, "actual": 43500, "remaining": 1500},
+			{"category": "Food", "planned": 15000, "actual": 16200, "remaining": -1200},
+			{"category": "Transport", "planned": 8000, "actual": 7200, "remaining": 800},
+			{"category": "Utilities", "planned": 6000, "actual": 5800, "remaining": 200},
+			{"category": "Entertainment", "planned": 5000, "actual": 4800, "remaining": 200},
+			{"category": "Savings", "planned": 30000, "actual": 30000, "remaining": 0},
+		},
+	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
+}
+
+func (h *Handlers) GetRetirement(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
+		"current_corpus": 38500000, "target_corpus": 50000000, "progress_pct": 77,
+		"monthly_contribution": 30000, "recommended_contribution": 45000,
+		"projected_retirement_age": 58, "on_track": true, "confidence": "Medium",
+	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
+}
+
+func (h *Handlers) GetEmergencyFund(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
+		"current_savings": 450000, "target_amount": 600000, "months_covered": 4.5,
+		"target_months": 6, "monthly_expenses": 100000, "progress_pct": 75, "status": "In Progress",
+	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
+}
+
+func (h *Handlers) GetDebtPayoff(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
+		"total_debt": 4545000, "total_monthly": 90000, "debt_to_income_ratio": 28.0,
+		"debts": []map[string]interface{}{
+			{"name": "Home Loan", "principal": 4500000, "interest_rate": 8.5, "monthly_emi": 45000, "remaining_months": 180},
+			{"name": "Credit Card", "principal": 45000, "interest_rate": 42.0, "monthly_emi": 45000, "remaining_months": 1},
+		}, "debt_free_date": "2032-06-01",
+	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
+}
+
+func (h *Handlers) GetInvestment(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
+		"portfolio_value": 4580000, "total_return": 12.5, "risk_level": "Moderate", "rebalance_needed": true,
+		"allocations": []map[string]interface{}{
+			{"type": "Equity", "current": 45, "target": 50, "drift": -5},
+			{"type": "Debt", "current": 30, "target": 25, "drift": 5},
+			{"type": "Gold", "current": 10, "target": 10, "drift": 0},
+			{"type": "Cash", "current": 5, "target": 5, "drift": 0},
+		},
+	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
 }

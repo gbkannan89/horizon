@@ -33,13 +33,13 @@ class PlanningPage extends ConsumerWidget {
             _section(theme, 'Projections', Icons.query_stats, Colors.cyan, 'View your financial projections', () => context.push('/planning/projections')),
             _section(theme, 'Scenarios', Icons.compare_arrows, Colors.indigo, 'Create and compare scenarios', () => context.push('/planning/scenarios')),
             const SizedBox(height: AppSpacing.md),
-            SharedSectionHeader(title: 'Coming Soon'),
+            SharedSectionHeader(title: 'Planning Tools'),
             const SizedBox(height: AppSpacing.sm),
-            _comingSoon(theme, 'Budget Planning', Icons.account_balance_wallet, 'Set and track budgets'),
-            _comingSoon(theme, 'Retirement Planning', Icons.beach_access, 'Plan for retirement'),
-            _comingSoon(theme, 'Emergency Fund', Icons.shield_outlined, 'Build your safety net'),
-            _comingSoon(theme, 'Debt Payoff', Icons.credit_score, 'Create a debt payoff strategy'),
-            _comingSoon(theme, 'Investment Planning', Icons.trending_up, 'Optimize your investments'),
+            _section(theme, 'Budget Planning', Icons.account_balance_wallet, Colors.green, 'Set and track budgets', () => context.push('/planning/budget')),
+            _section(theme, 'Retirement Planning', Icons.beach_access, Colors.blue, 'Plan for retirement', () => context.push('/planning/retirement')),
+            _section(theme, 'Emergency Fund', Icons.shield_outlined, Colors.orange, 'Build your safety net', () => context.push('/planning/emergency-fund')),
+            _section(theme, 'Debt Payoff', Icons.credit_score, Colors.red, 'Create a debt payoff strategy', () => context.push('/planning/debt-payoff')),
+            _section(theme, 'Investment Planning', Icons.trending_up, Colors.purple, 'Optimize your investments', () => context.push('/planning/investment')),
           ],
         ),
       ),
@@ -72,28 +72,4 @@ class PlanningPage extends ConsumerWidget {
     );
   }
 
-  Widget _comingSoon(ThemeData t, String title, IconData icon, String subtitle) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Opacity(
-        opacity: 0.5,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(children: [
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(color: t.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(AppRadius.md)),
-              child: Icon(icon, color: t.colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: t.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-              Text(subtitle, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)),
-            ])),
-            Chip(label: Text('Soon', style: t.textTheme.labelSmall), visualDensity: VisualDensity.compact),
-          ]),
-        ),
-      ),
-    );
-  }
 }
