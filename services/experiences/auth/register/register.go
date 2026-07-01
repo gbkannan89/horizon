@@ -47,7 +47,10 @@ func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Email and password are required")
 		return
 	}
-	userID := "user-" + req.Email
+	userID := req.Email
+	if req.Email == "demo@horizon.app" {
+		userID = "a1b2c3d4-0000-4000-8000-000000000001"
+	}
 	roles := []string{"member"}
 	accessToken, refreshToken, err := h.authService.GenerateTokenPair(userID, req.Email, roles)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/horizon/core/services/domains/financial-event/internal/application/dto/query"
 	"github.com/horizon/core/services/domains/financial-event/internal/domain"
 	"github.com/horizon/core/services/domains/financial-event/internal/infrastructure/persistence"
+	"github.com/horizon/core/services/internal/auth"
 )
 
 type transactionsHandler struct {
@@ -191,12 +192,7 @@ func (h *transactionsHandler) archiveEvent(w http.ResponseWriter, r *http.Reques
 }
 
 func getUserID(r *http.Request) string {
-	u := r.URL.Query().Get("user_id")
-	if u != "" { return u }
-	if a := r.Header.Get("Authorization"); strings.HasPrefix(a, "Bearer ") {
-		if uid := strings.TrimPrefix(a, "Bearer "); uid != "" { return uid }
-	}
-	return "default"
+	return auth.UserIDFromRequest(r)
 }
 
 func queryLimit(r *http.Request, def int) int {

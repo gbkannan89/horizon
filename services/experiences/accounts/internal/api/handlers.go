@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/horizon/core/services/internal/auth"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/horizon/core/services/experiences/accounts/internal/aggregator"
@@ -36,13 +37,7 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 }
 
 func getDefaultUserID(r *http.Request) string {
-	u := r.URL.Query().Get("user_id")
-	if u != "" { return u }
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		if uid := strings.TrimPrefix(auth, "Bearer "); uid != "" { return uid }
-	}
-	return "default"
+	return auth.UserIDFromRequest(r)
 }
 
 func parseFilters(r *http.Request) *engine.FilterOpts {

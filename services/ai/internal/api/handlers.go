@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+
+	"github.com/horizon/core/services/internal/auth"
 	"time"
 
 	"github.com/horizon/core/services/ai/internal/config"
@@ -68,13 +69,7 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 }
 
 func getDefaultUserID(r *http.Request) string {
-	u := r.URL.Query().Get("user_id")
-	if u != "" { return u }
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		if uid := strings.TrimPrefix(auth, "Bearer "); uid != "" { return uid }
-	}
-	return "default"
+	return auth.UserIDFromRequest(r)
 }
 
 // AI core endpoints

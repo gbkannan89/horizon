@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/horizon/core/services/experiences/dashboard/internal/aggregator"
 	"github.com/horizon/core/services/experiences/dashboard/internal/engine"
+	"github.com/horizon/core/services/internal/auth"
 )
 
 type Handlers struct {
@@ -32,14 +32,7 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 
 // getDefaultUserID extracts from Authorization or query param.
 func getDefaultUserID(r *http.Request) string {
-	u := r.URL.Query().Get("user_id")
-	if u != "" { return u }
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		userID := strings.TrimPrefix(auth, "Bearer ")
-		if userID != "" { return userID }
-	}
-	return "default"
+	return auth.UserIDFromRequest(r)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
