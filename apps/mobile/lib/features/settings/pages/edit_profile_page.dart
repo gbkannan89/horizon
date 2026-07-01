@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../repository/settings_repository.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -67,7 +68,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Edit Profile')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const SharedLoadingView(message: 'Loading profile...'),
       );
     }
 
