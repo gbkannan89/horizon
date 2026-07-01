@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'environments/environment.dart';
 
 export 'environments/environment.dart';
@@ -21,8 +23,18 @@ class AppConfig {
     required this.enableOfflineCache,
   });
 
+  /// Returns the correct loopback address for the current platform.
+  /// Android emulator requires 10.0.2.2 to reach the host machine.
+  /// iOS simulator and web use localhost.
+  static String _host() {
+    try {
+      if (Platform.isAndroid) return '10.0.2.2';
+    } catch (_) {}
+    return 'localhost';
+  }
+
   static AppConfig _instance = AppConfig._(
-    apiBaseUrl: 'http://localhost:8081/api/v1',
+    apiBaseUrl: 'http://${_host()}:8081/api/v1',
     connectTimeout: 15000,
     receiveTimeout: 30000,
     useHttps: false,

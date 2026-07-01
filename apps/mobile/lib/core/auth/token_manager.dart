@@ -14,6 +14,7 @@ class TokenManager {
   TokenManager({required this.storage});
 
   String? get accessToken => _accessToken;
+  String? get refreshToken => _refreshToken;
 
   Future<void> init() async {
     _accessToken = await storage.read('access_token');
@@ -25,16 +26,6 @@ class TokenManager {
     _refreshToken = refreshToken;
     await storage.write('access_token', accessToken);
     if (refreshToken != null) await storage.write('refresh_token', refreshToken);
-  }
-
-  Future<bool> refreshToken() async {
-    if (_refreshToken == null) return false;
-    try {
-      // TODO: Call refresh endpoint via ApiClient when available
-      return false;
-    } catch (_) {
-      return false;
-    }
   }
 
   Future<void> clear() async {

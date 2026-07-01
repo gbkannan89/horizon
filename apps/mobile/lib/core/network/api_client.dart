@@ -28,7 +28,7 @@ class ApiClient {
       _AuthInterceptor(tokenManager),
       _CorrelationInterceptor(),
       _LogInterceptor(config.enableLogging),
-      _RetryInterceptor(tokenManager, connectivityMonitor),
+      _RetryInterceptor(dio, tokenManager, connectivityMonitor),
     ]);
   }
 
@@ -99,33 +99,55 @@ class _LogInterceptor extends Interceptor {
 }
 
 class _RetryInterceptor extends Interceptor {
+  final Dio dio;
   final TokenManager tokenManager;
   final ConnectivityMonitor connectivityMonitor;
-  _RetryInterceptor(this.tokenManager, this.connectivityMonitor);
+  int _retryCount = 0;
+  static const _maxRetries = 1;
+
+  _RetryInterceptor(this.dio, this.tokenManager, this.connectivityMonitor);
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      final refreshed = await tokenManager.refreshToken();
-      if (refreshed) {
-        final retryResponse = await _retry(err.requestOptions);
-        handler.resolve(retryResponse);
+    if (err.response?.statusCode == 401 && _retryCount < _maxRetries) {
+      _retryCount++;
+      final refreshTokenValue = tokenManager.refreshToken;
+      if (refreshTokenValue == null) {
+        await tokenManager.clear();
+        handler.next(err);
         return;
       }
+
+      try {
+        final refreshDio = Dio(BaseOptions(baseUrl: dio.options.baseUrl));
+        final response = await refreshDio.post(
+          '/auth/refresh',
+          data: {'refresh_token': refreshTokenValue},
+          options: Options(
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          ),
+        );
+
+        if (response.statusCode == 200) {
+          final data = response.data as Map<String, dynamic>;
+          await tokenManager.setTokens(
+            accessToken: data['access_token'] as String,
+            refreshToken: data['refresh_token'] as String?,
+          );
+
+          final opts = err.requestOptions;
+          opts.headers['Authorization'] = 'Bearer ${tokenManager.accessToken}';
+          final retryResponse = await dio.fetch(opts);
+          _retryCount = 0;
+          handler.resolve(retryResponse);
+          return;
+        }
+      } catch (_) {
+        // Refresh failed — network or server error
+      }
+
+      await tokenManager.clear();
     }
     handler.next(err);
-  }
-
-  Future<Response> _retry(RequestOptions requestOptions) async {
-    final dio = Dio();
-    return dio.request(
-      requestOptions.path,
-      options: Options(method: requestOptions.method, headers: {
-        ...requestOptions.headers,
-        'Authorization': 'Bearer ${tokenManager.accessToken}',
-      }),
-      data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-    );
   }
 }

@@ -129,7 +129,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                           ],
                         ),
                         TextButton(
-                          onPressed: () => ref.read(authFormStateProvider.notifier).setStep(AuthFormStep.forgotPassword),
+                          onPressed: () => context.push('/forgot-password'),
                           child: const Text('Forgot password?'),
                         ),
                       ],

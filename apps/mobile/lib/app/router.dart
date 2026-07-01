@@ -27,6 +27,9 @@ import 'package:horizon_mobile/features/settings/pages/about_page.dart';
 import 'package:horizon_mobile/features/insights/pages/insights_page.dart';
 import 'package:horizon_mobile/features/notifications/pages/notifications_page.dart';
 import 'package:horizon_mobile/features/advisor/pages/advisor_page.dart';
+import 'package:horizon_mobile/features/transactions/pages/transactions_page.dart';
+import 'package:horizon_mobile/features/transactions/pages/transaction_detail_page.dart';
+import 'package:horizon_mobile/features/transactions/pages/transaction_form_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -71,6 +74,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/accounts', builder: (_, __) => const AccountsPage(), routes: [
         GoRoute(path: ':id', builder: (_, state) => AccountDetailPage(accountId: state.pathParameters['id'] ?? '')),
       ]),
+      GoRoute(path: '/transactions', builder: (_, __) => const TransactionsPage(), routes: [
+        GoRoute(path: ':id', builder: (_, state) => TransactionDetailPage(transactionId: state.pathParameters['id'] ?? '')),
+      ]),
+      GoRoute(path: '/transactions/add', builder: (_, __) => const TransactionFormPage()),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
       GoRoute(path: '/settings/profile', builder: (_, __) => const ProfilePage()),
@@ -91,6 +98,7 @@ class _MorePage extends ConsumerWidget {
     body: ListView(
       children: [
         ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
+        ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Transactions'), onTap: () => context.push('/transactions')),
         ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
         ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
         ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:horizon_mobile/shared/providers/app_state.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
+import 'package:horizon_mobile/features/settings/repository/settings_repository.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -60,11 +61,23 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       builder: (_) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(title: const Text('Light'), leading: const Icon(Icons.light_mode), onTap: () { Navigator.pop(context); ref.read(themeModeProvider.notifier).state = ThemeMode.light; }),
-          ListTile(title: const Text('Dark'), leading: const Icon(Icons.dark_mode), onTap: () { Navigator.pop(context); ref.read(themeModeProvider.notifier).state = ThemeMode.dark; }),
-          ListTile(title: const Text('System'), leading: const Icon(Icons.settings_brightness), onTap: () { Navigator.pop(context); ref.read(themeModeProvider.notifier).state = ThemeMode.system; }),
+          ListTile(title: const Text('Light'), leading: const Icon(Icons.light_mode), onTap: () { Navigator.pop(context); _setTheme(ref, 'light'); }),
+          ListTile(title: const Text('Dark'), leading: const Icon(Icons.dark_mode), onTap: () { Navigator.pop(context); _setTheme(ref, 'dark'); }),
+          ListTile(title: const Text('System'), leading: const Icon(Icons.settings_brightness), onTap: () { Navigator.pop(context); _setTheme(ref, 'system'); }),
         ]),
       ),
     );
+  }
+
+  void _setTheme(WidgetRef ref, String theme) async {
+    if (theme == 'dark') ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+    else if (theme == 'light') ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+    else ref.read(themeModeProvider.notifier).state = ThemeMode.system;
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
+      final current = await repo.getPreferences();
+      current.theme = theme;
+      await repo.updatePreferences(prefs: current);
+    } catch (_) {}
   }
 }

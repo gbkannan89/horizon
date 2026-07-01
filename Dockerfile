@@ -7,7 +7,7 @@ COPY services/ ./services/
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
-RUN go build -o /horizon-api ./cmd/server
+RUN go clean -cache && go build -o /horizon-api ./cmd/server
 
 FROM alpine:3.19
 RUN apk --no-cache add ca-certificates tzdata

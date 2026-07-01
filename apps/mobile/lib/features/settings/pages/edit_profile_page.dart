@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../repository/settings_repository.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -12,22 +13,71 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  bool _isLoading = false;
+  bool _isSaving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
+      final profile = await repo.getProfile();
+      _nameCtrl.text = profile.name ?? '';
+      _phoneCtrl.text = profile.phone ?? '';
+    } catch (e) {
+      _error = e.toString();
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
 
   @override
   void dispose() { _nameCtrl.dispose(); _phoneCtrl.dispose(); super.dispose(); }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated'), behavior: SnackBarBehavior.floating));
-    context.pop();
+    setState(() { _isSaving = true; _error = null; });
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
+      await repo.updateProfile(data: {
+        'name': _nameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated'), behavior: SnackBarBehavior.floating));
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Edit Profile')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Profile'), actions: [
-        TextButton(onPressed: _save, child: const Text('Save')),
+        TextButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Save'),
+        ),
       ]),
       body: Form(
         key: _formKey,
@@ -53,6 +103,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               keyboardType: TextInputType.phone),
             const SizedBox(height: 16),
             TextFormField(decoration: const InputDecoration(labelText: 'Date of Birth', prefixIcon: Icon(Icons.calendar_today)), readOnly: true),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(12)),
+                  child: Row(children: [
+                    Icon(Icons.error_outline, size: 20, color: theme.colorScheme.error),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(_error!, style: TextStyle(color: theme.colorScheme.error, fontSize: 14))),
+                  ]),
+                ),
+              ),
           ],
         ),
       ),

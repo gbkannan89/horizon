@@ -15,6 +15,30 @@ class PreferencesPage extends ConsumerStatefulWidget {
 }
 
 class _PreferencesPageState extends ConsumerState<PreferencesPage> {
+  Future<void> _updatePrefs(UserPreferences prefs, {String? currency, String? language, bool? timelineCompact, bool? pushNotifications, bool? emailNotifications, bool? smsNotifications, bool? digestEnabled}) async {
+    final updated = UserPreferences(
+      baseCurrency: currency ?? prefs.baseCurrency,
+      language: language ?? prefs.language,
+      theme: prefs.theme,
+      emailNotifications: emailNotifications ?? prefs.emailNotifications,
+      pushNotifications: pushNotifications ?? prefs.pushNotifications,
+      smsNotifications: smsNotifications ?? prefs.smsNotifications,
+      digestEnabled: digestEnabled ?? prefs.digestEnabled,
+      digestFrequency: prefs.digestFrequency,
+      dashboardDefaultView: prefs.dashboardDefaultView,
+      timelineCompact: timelineCompact ?? prefs.timelineCompact,
+    );
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
+      await repo.updatePreferences(prefs: updated);
+      ref.invalidate(prefsProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e'), behavior: SnackBarBehavior.floating));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -31,13 +55,13 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
             _section(theme, 'Display', [
               ListTile(title: const Text('Currency'), subtitle: Text(prefs.baseCurrency), trailing: const Icon(Icons.chevron_right, size: 18)),
               ListTile(title: const Text('Language'), subtitle: Text(prefs.language.toUpperCase()), trailing: const Icon(Icons.chevron_right, size: 18)),
-              SwitchListTile(title: const Text('Compact Timeline'), value: prefs.timelineCompact, onChanged: (_) {}),
+              SwitchListTile(title: const Text('Compact Timeline'), value: prefs.timelineCompact, onChanged: (v) => _updatePrefs(prefs, timelineCompact: v)),
             ]),
             _section(theme, 'Notifications', [
-              SwitchListTile(title: const Text('Push Notifications'), value: prefs.pushNotifications, onChanged: (_) {}),
-              SwitchListTile(title: const Text('Email Notifications'), value: prefs.emailNotifications, onChanged: (_) {}),
-              SwitchListTile(title: const Text('SMS Notifications'), value: prefs.smsNotifications, onChanged: (_) {}),
-              SwitchListTile(title: const Text('Weekly Digest'), value: prefs.digestEnabled, onChanged: (_) {}),
+              SwitchListTile(title: const Text('Push Notifications'), value: prefs.pushNotifications, onChanged: (v) => _updatePrefs(prefs, pushNotifications: v)),
+              SwitchListTile(title: const Text('Email Notifications'), value: prefs.emailNotifications, onChanged: (v) => _updatePrefs(prefs, emailNotifications: v)),
+              SwitchListTile(title: const Text('SMS Notifications'), value: prefs.smsNotifications, onChanged: (v) => _updatePrefs(prefs, smsNotifications: v)),
+              SwitchListTile(title: const Text('Weekly Digest'), value: prefs.digestEnabled, onChanged: (v) => _updatePrefs(prefs, digestEnabled: v)),
             ]),
           ],
         ),

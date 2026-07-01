@@ -11,7 +11,7 @@ class Environment {
 
   static const development = Environment._(
     name: 'development',
-    apiBaseUrl: 'http://localhost:8081/api/v1',
+    apiBaseUrl: 'http://10.0.2.2:8081/api/v1',
     enableLogging: true,
   );
 
