@@ -17,6 +17,7 @@ import (
 	advReg "github.com/horizon/core/services/experiences/advisor/register"
 	notifReg "github.com/horizon/core/services/experiences/notifications/register"
 	userReg "github.com/horizon/core/services/experiences/user/register"
+	dataReg "github.com/horizon/core/services/experiences/data/register"
 	txReg "github.com/horizon/core/services/domains/financial-event/register"
 	aiReg "github.com/horizon/core/services/ai/register"
 )
@@ -50,6 +51,9 @@ func main() {
 
 	// User profile, preferences, privacy
 	userReg.RegisterRoutes(mux, pool)
+
+	// Data management (export, import, backup, restore)
+	dataReg.RegisterRoutes(mux, pool)
 
 	// Transactions (Financial Event domain)
 	txReg.RegisterRoutes(mux, pool)
