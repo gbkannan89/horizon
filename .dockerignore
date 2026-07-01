@@ -1,0 +1,12 @@
+.git
+.gitignore
+*.md
+apps/
+docs/
+scripts/
+tests/
+tools/
+.DS_Store
+*.exe
+*.test
+.gitkeep

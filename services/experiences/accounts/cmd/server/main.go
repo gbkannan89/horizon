@@ -5,18 +5,39 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	pkghttp "github.com/horizon/core/packages/http"
 	"github.com/horizon/core/services/experiences/accounts/internal/aggregator"
 	"github.com/horizon/core/services/experiences/accounts/internal/api"
 	"github.com/horizon/core/services/experiences/accounts/internal/config"
 	"github.com/horizon/core/services/experiences/accounts/internal/engine"
 	"github.com/horizon/core/services/experiences/accounts/internal/infrastructure/cache"
+	"github.com/horizon/core/services/experiences/accounts/internal/infrastructure/persistence"
 )
 
 func main() {
 	cfg := config.Load()
+
+	pool, err := connectDB(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer pool.Close()
+
 	c := cache.NewInMemory(5 * time.Minute)
-	providers := defaultProviders()
+	pgProvider := persistence.NewAccountsPGProvider(pool)
+
+	providers := aggregator.DataProviders{
+		Accounts:   pgProvider,
+		Trans:      pgProvider,
+		Projection: pgProvider,
+		Risk:       pgProvider,
+		Health:     pgProvider,
+		Recs:       pgProvider,
+		Optimize:   pgProvider,
+		Simulation: pgProvider,
+		Events:     pgProvider,
+	}
 	agg := aggregator.New(providers, c)
 	composer := engine.NewComposer()
 	acctEngine := engine.NewEngine()
@@ -24,50 +45,25 @@ func main() {
 	router := api.NewRouter(handlers)
 	srv := pkghttp.New(cfg.Addr(), router)
 
-	log.Printf("Starting Accounts Experience on %s", cfg.Addr())
+	log.Printf("Starting Accounts Experience on %s (database: connected)", cfg.Addr())
 	if err := srv.Start(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
 
-func defaultProviders() aggregator.DataProviders {
-	return aggregator.DataProviders{
-		Accounts:   &noopAcctProvider{},
-		Trans:      &noopTransProvider{},
-		Projection: &noopProjProvider{},
-		Risk:       &noopRiskProvider{},
-		Health:     &noopHealthProvider{},
-		Recs:       &noopRecProvider{},
-		Optimize:   &noopOptProvider{},
-		Simulation: &noopSimProvider{},
-		Events:     &noopEventProvider{},
+func connectDB(databaseURL string) (*pgxpool.Pool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		return nil, err
 	}
+
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
+
+	return pool, nil
 }
-
-type noopAcctProvider struct{}
-func (n *noopAcctProvider) GetAccounts(ctx context.Context, userID string) ([]engine.AccountInput, error) { return nil, nil }
-func (n *noopAcctProvider) GetAccountByID(ctx context.Context, userID, accountID string) (*engine.AccountInput, error) { return nil, nil }
-
-type noopTransProvider struct{}
-func (n *noopTransProvider) GetTransactions(ctx context.Context, accountID string, limit int) ([]engine.TransInput, error) { return nil, nil }
-
-type noopProjProvider struct{}
-func (n *noopProjProvider) GetCashFlowProjection(ctx context.Context, userID string) (int64, int64, int64, error) { return 0, 0, 0, nil }
-
-type noopRiskProvider struct{}
-func (n *noopRiskProvider) GetRiskScore(ctx context.Context, userID string) (int, string, error) { return 25, "Low", nil }
-
-type noopHealthProvider struct{}
-func (n *noopHealthProvider) GetHealthScore(ctx context.Context, userID string) (int, string, error) { return 75, "Good", nil }
-
-type noopRecProvider struct{}
-func (n *noopRecProvider) HasRecommendations(ctx context.Context, userID string) (bool, int, error) { return false, 0, nil }
-
-type noopOptProvider struct{}
-func (n *noopOptProvider) HasOptimizations(ctx context.Context, userID string) (bool, int, error) { return false, 0, nil }
-
-type noopSimProvider struct{}
-func (n *noopSimProvider) HasSimulations(ctx context.Context, userID string) (bool, int, error) { return false, 0, nil }
-
-type noopEventProvider struct{}
-func (n *noopEventProvider) GetEventCount(ctx context.Context, userID string) (int, error) { return 0, nil }

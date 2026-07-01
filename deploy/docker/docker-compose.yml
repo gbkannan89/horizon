@@ -76,7 +76,8 @@ services:
       - "4317:4317"
       - "4318:4318"
     volumes:
-      - ./config/development/otel-collector.yml:/etc/otelcol-contrib/config.yaml
+      - ./config/development:/etc/otelcol-contrib/config
+    command: "--config=/etc/otelcol-contrib/config/otel-collector.yml"
     depends_on:
       - tempo
       - loki
@@ -105,8 +106,24 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./config/development/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/development:/etc/prometheus/config
       - prometheus-data:/prometheus
+    command: "--config.file=/etc/prometheus/config/prometheus.yml"
+    logging: *default-logging
+
+  horizon-api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATABASE_URL: "postgres://horizon:horizon@postgres:5432/horizon?sslmode=disable"
+      APP_ENV: "development"
+    depends_on:
+      postgres:
+        condition: service_healthy
     logging: *default-logging
 
   grafana:
@@ -115,7 +132,9 @@ services:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./config/development/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./config/development:/etc/grafana/config
+    environment:
+      - GF_PROVISIONING_DATASOURCES_PATH=/etc/grafana/config
     depends_on:
       - prometheus
       - tempo
