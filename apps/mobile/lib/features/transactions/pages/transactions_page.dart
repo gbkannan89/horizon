@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../state/transaction_state.dart';
 import '../widgets/transaction_widgets.dart';
 import '../widgets/transaction_filters.dart';
@@ -65,21 +67,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: _searching
-            ? TextField(
+            ? SharedSearchBar(
                 controller: _searchCtrl,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search transactions...',
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      setState(() { _searching = false; _searchCtrl.clear(); });
-                      ref.read(transactionListProvider.notifier).refresh();
-                    },
-                  ),
-                ),
+                hintText: 'Search transactions...',
                 onChanged: _onSearchChanged,
+                onCancel: () {
+                  setState(() { _searching = false; _searchCtrl.clear(); });
+                  ref.read(transactionListProvider.notifier).refresh();
+                },
               )
             : const Text('Transactions'),
         actions: [
@@ -152,9 +147,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       child: ListView.builder(
         controller: _scrollCtrl,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-        itemCount: state.transactions.length,
+        itemCount: state.transactions.length + (state.summary != null ? 1 : 0),
         itemBuilder: (context, index) {
-          final tx = state.transactions[index];
+          if (state.summary != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TransactionSummaryCard(summary: state.summary!),
+            );
+          }
+          final txIdx = state.summary != null ? index - 1 : index;
+          final tx = state.transactions[txIdx];
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: TransactionCard(

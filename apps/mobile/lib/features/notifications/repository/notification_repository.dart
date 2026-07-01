@@ -44,6 +44,11 @@ class NotificationRepository {
     await apiClient.put('/notifications/preferences', data: prefs.toJson());
   }
 
+  Future<List<NotificationItem>> search(String query) async {
+    final r = await apiClient.get('/notifications/search', queryParameters: {'q': query});
+    return _parseList(r.data);
+  }
+
   List<NotificationItem> _parseList(dynamic json) {
     final map = json is Map<String, dynamic> ? json : <String, dynamic>{};
     final data = map['data'] as Map<String, dynamic>? ?? map;

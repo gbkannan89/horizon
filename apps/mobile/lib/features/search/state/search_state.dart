@@ -45,7 +45,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   SearchNotifier(this._repo) : super(const SearchState());
 
-  Future<void> search(String query) async {
+  Future<void> search(String query, {String? moduleFilter}) async {
     if (query.isEmpty) {
       state = state.copyWith(status: SearchStatus.idle, results: [], clearQuery: true);
       return;

@@ -63,4 +63,14 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     state = state.copyWith(notifications: state.notifications.where((n) => n.id != id).toList());
     if (state.notifications.isEmpty) state = state.copyWith(status: NotificationStatus.empty);
   }
+
+  Future<void> search(String query) async {
+    if (query.isEmpty) { await load(); return; }
+    state = state.copyWith(status: NotificationStatus.loading);
+    try {
+      final items = await _repo.search(query);
+      if (items.isEmpty) { state = state.copyWith(status: NotificationStatus.empty); return; }
+      state = state.copyWith(status: NotificationStatus.loaded, notifications: items);
+    } catch (e) { state = state.copyWith(status: NotificationStatus.error, error: e.toString()); }
+  }
 }

@@ -28,6 +28,11 @@ class SettingsPage extends ConsumerWidget {
             ListTile(leading: const Icon(Icons.lock_outline), title: const Text('Privacy'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/privacy')),
             ListTile(leading: const Icon(Icons.security), title: const Text('Security'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/security')),
           ]),
+          _section(theme, 'Integrations', [
+            ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('AI Settings'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/ai')),
+            ListTile(leading: const Icon(Icons.storage), title: const Text('Data Management'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/data')),
+            ListTile(leading: const Icon(Icons.notifications_outlined), title: const Text('Notification Preferences'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/notifications')),
+          ]),
           _section(theme, 'About', [
             ListTile(leading: const Icon(Icons.info_outline), title: const Text('About'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => context.push('/settings/about')),
             ListTile(

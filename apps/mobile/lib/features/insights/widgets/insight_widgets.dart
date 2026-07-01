@@ -51,18 +51,39 @@ class InsightCard extends StatelessWidget {
   }
 }
 
-class InsightTrendChart extends StatelessWidget {
+class InsightTrendChart extends StatefulWidget {
   final TrendData data;
   const InsightTrendChart({super.key, required this.data});
+  @override
+  State<InsightTrendChart> createState() => _InsightTrendChartState();
+}
+
+class _InsightTrendChartState extends State<InsightTrendChart> {
+  String _period = '1M';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final data = widget.data;
     if (data.values.isEmpty) {
       return const SizedBox(height: 200, child: Center(child: Text('No trend data available')));
     }
-    return SizedBox(
-      height: 200,
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: ['1M', '3M', '6M', '1Y'].map((p) => Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.xs),
+            child: ChoiceChip(
+              label: Text(p, style: theme.textTheme.labelSmall),
+              selected: _period == p,
+              onSelected: (_) => setState(() => _period = p),
+              visualDensity: VisualDensity.compact,
+            ),
+          )).toList(),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: 200,
       child: LineChart(
         LineChartData(
           gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 1, getDrawingHorizontalLine: (value) => FlLine(color: theme.colorScheme.outlineVariant, strokeWidth: 1)),
@@ -88,6 +109,8 @@ class InsightTrendChart extends StatelessWidget {
           )],
         ),
       ),
+      ),
+    ],
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:horizon_mobile/app/theme.dart';
@@ -11,15 +12,34 @@ class NotificationsPage extends ConsumerStatefulWidget {
 }
 
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+  bool _searching = false;
+
   @override
   void initState() { super.initState(); Future.microtask(() => ref.read(notificationProvider.notifier).load()); }
+
+  @override
+  void dispose() { _searchCtrl.dispose(); _debounce?.cancel(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(
+        title: _searching
+            ? SharedSearchBar(
+                controller: _searchCtrl,
+                hintText: 'Search notifications...',
+                onChanged: (v) { _debounce?.cancel(); _debounce = Timer(const Duration(milliseconds: 300), () => ref.read(notificationProvider.notifier).search(v.trim())); },
+                onCancel: () { setState(() { _searching = false; _searchCtrl.clear(); }); ref.read(notificationProvider.notifier).load(); },
+              )
+            : const Text('Notifications'),
+        actions: [
+          IconButton(icon: Icon(_searching ? Icons.search_off : Icons.search), onPressed: () => setState(() => _searching = !_searching)),
+        ],
+      ),
       body: _buildBody(theme, state),
     );
   }

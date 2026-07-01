@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/features/auth/providers/auth_form_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 
@@ -37,7 +38,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       appBar: AppBar(title: const Text('Reset Password')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: _sent ? _buildSuccess(theme) : _buildForm(theme, formState),
         ),
       ),
@@ -49,14 +50,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 80, height: 80,
-            decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(20)),
-            child: Icon(Icons.check_circle, size: 40, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(height: 24),
-          Text('Check your email', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+              child: Icon(Icons.check_circle, size: 40, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Check your email', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: AppSpacing.sm),
           Text('If an account exists with that email, we\'ve sent password reset instructions.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 32),
           FilledButton(
@@ -75,11 +76,11 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xl),
         Text('Enter your email', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text('We\'ll send you a link to reset your password', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xl),
         TextFormField(
           initialValue: formState.email,
           onChanged: (v) => ref.read(authFormStateProvider.notifier).setEmail(v),
@@ -93,7 +94,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         const SizedBox(height: 24),
         FilledButton(
           onPressed: formState.isLoading ? null : _handleSubmit,
-          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md))),
           child: formState.isLoading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Text('Send Reset Link', style: TextStyle(fontSize: 16)),

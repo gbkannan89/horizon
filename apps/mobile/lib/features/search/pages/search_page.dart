@@ -16,6 +16,7 @@ class SearchPage extends ConsumerStatefulWidget {
 class _SearchPageState extends ConsumerState<SearchPage> {
   final _searchCtrl = TextEditingController();
   Timer? _debounce;
+  String? _moduleFilter;
 
   @override
   void dispose() {
@@ -27,7 +28,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      ref.read(searchProvider.notifier).search(value.trim());
+      ref.read(searchProvider.notifier).search(value.trim(), moduleFilter: _moduleFilter);
     });
   }
 
@@ -38,24 +39,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
+        title: SharedSearchBar(
           controller: _searchCtrl,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: 'Search accounts, transactions, goals...',
-            border: InputBorder.none,
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: _searchCtrl.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      ref.read(searchProvider.notifier).clearSearch();
-                    },
-                  )
-                : null,
-          ),
+          hintText: 'Search accounts, transactions, goals...',
           onChanged: _onSearchChanged,
+          onCancel: () => ref.read(searchProvider.notifier).clearSearch(),
         ),
       ),
       body: _buildBody(context, theme, state),
@@ -120,51 +108,71 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     final grouped = <String, List<SearchResultItem>>{};
     for (final item in state.results) {
-      grouped.putIfAbsent(item.module, () => []).add(item);
+      if (_moduleFilter == null || item.module == _moduleFilter) {
+        grouped.putIfAbsent(item.module, () => []).add(item);
+      }
+    }
+
+    if (grouped.isEmpty) {
+      return SharedEmptyView(icon: Icons.filter_alt_off, title: 'No results for this filter', subtitle: 'Try a different module filter');
     }
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
-      children: grouped.entries.map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SharedSectionHeader(title: _moduleLabel(entry.key)),
-            const SizedBox(height: AppSpacing.sm),
-            ...entry.value.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: SharedCard(
-                onTap: () => context.push(item.route),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
+      children: [
+        // Module filter chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            SharedFilterChipWidget(label: 'All', selected: _moduleFilter == null, onTap: () => setState(() { _moduleFilter = null; _onSearchChanged(_searchCtrl.text); })),
+            SharedFilterChipWidget(label: 'Transactions', selected: _moduleFilter == 'transaction', onTap: () => setState(() { _moduleFilter = 'transaction'; _onSearchChanged(_searchCtrl.text); })),
+            SharedFilterChipWidget(label: 'Timeline', selected: _moduleFilter == 'timeline', onTap: () => setState(() { _moduleFilter = 'timeline'; _onSearchChanged(_searchCtrl.text); })),
+            SharedFilterChipWidget(label: 'Accounts', selected: _moduleFilter == 'account', onTap: () => setState(() { _moduleFilter = 'account'; _onSearchChanged(_searchCtrl.text); })),
+            SharedFilterChipWidget(label: 'Goals', selected: _moduleFilter == 'goal', onTap: () => setState(() { _moduleFilter = 'goal'; _onSearchChanged(_searchCtrl.text); })),
+          ]),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ...grouped.entries.map((entry) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SharedSectionHeader(title: _moduleLabel(entry.key)),
+              const SizedBox(height: AppSpacing.sm),
+              ...entry.value.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: SharedCard(
+                  onTap: () => context.push(item.route),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: item.color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Icon(item.icon, size: AppIconSize.md, color: item.color),
                       ),
-                      child: Icon(item.icon, size: AppIconSize.md, color: item.color),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          Text(item.subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ],
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text(item.subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
                       ),
-                    ),
-                    if (item.amount != null)
-                      Text(item.amount!, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                  ],
+                      if (item.amount != null)
+                        Text(item.amount!, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-              ),
-            )),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        );
-      }).toList(),
+              )),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          );
+        }),
+      ],
     );
   }
 

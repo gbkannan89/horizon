@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:horizon_mobile/app/theme.dart';
@@ -101,26 +102,9 @@ class ChatBubble extends StatelessWidget {
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(AppRadius.md).copyWith(bottomLeft: const Radius.circular(0)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _dot(theme),
-                const SizedBox(width: 4), _dot(theme),
-                const SizedBox(width: 4), _dot(theme),
-              ],
-            ),
+            child: const _AnimatedDots(),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _dot(ThemeData theme) {
-    return Container(
-      width: 8, height: 8,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.onSurfaceVariant,
-        shape: BoxShape.circle,
       ),
     );
   }
@@ -187,5 +171,59 @@ class ContextSummaryCard extends StatelessWidget {
     if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
     return v.toStringAsFixed(0);
+  }
+}
+
+class _AnimatedDots extends StatefulWidget {
+  const _AnimatedDots();
+  @override
+  State<_AnimatedDots> createState() => _AnimatedDotsState();
+}
+
+class _AnimatedDotsState extends State<_AnimatedDots> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _anim1;
+  late Animation<double> _anim2;
+  late Animation<double> _anim3;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _anim1 = Tween(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.3, curve: Curves.easeInOut)));
+    _anim2 = Tween(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.3, 0.6, curve: Curves.easeInOut)));
+    _anim3 = Tween(begin: 0.3, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.6, 0.9, curve: Curves.easeInOut)));
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dot(theme, _anim1.value),
+          const SizedBox(width: 4),
+          _dot(theme, _anim2.value),
+          const SizedBox(width: 4),
+          _dot(theme, _anim3.value),
+        ],
+      ),
+    );
+  }
+
+  Widget _dot(ThemeData theme, double opacity) {
+    return Container(
+      width: 8, height: 8,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: opacity),
+        shape: BoxShape.circle,
+      ),
+    );
   }
 }

@@ -16,6 +16,7 @@ class TransactionListState {
   final String? error;
   final TransactionFilter activeFilters;
   final String? searchQuery;
+  final TransactionSummary? summary;
 
   const TransactionListState({
     this.status = TransactionListStatus.initial,
@@ -25,6 +26,7 @@ class TransactionListState {
     this.error,
     this.activeFilters = const TransactionFilter(),
     this.searchQuery,
+    this.summary,
   });
 
   TransactionListState copyWith({
@@ -35,6 +37,7 @@ class TransactionListState {
     String? error,
     TransactionFilter? activeFilters,
     String? searchQuery,
+    TransactionSummary? summary,
     bool clearSearchQuery = false,
   }) => TransactionListState(
     status: status ?? this.status,
@@ -44,6 +47,7 @@ class TransactionListState {
     error: error ?? this.error,
     activeFilters: activeFilters ?? this.activeFilters,
     searchQuery: clearSearchQuery ? null : searchQuery ?? this.searchQuery,
+    summary: summary ?? this.summary,
   );
 }
 
@@ -55,10 +59,12 @@ class TransactionListNotifier extends StateNotifier<TransactionListState> {
   Future<void> load({String? userId}) async {
     state = state.copyWith(status: TransactionListStatus.loading);
     try {
-      final resp = await _repo.getTransactions(
-        userId: userId,
-        filters: state.activeFilters.hasActiveFilters ? state.activeFilters : null,
-      );
+      final results = await Future.wait([
+        _repo.getTransactions(userId: userId, filters: state.activeFilters.hasActiveFilters ? state.activeFilters : null),
+        _repo.getSummary(userId: userId),
+      ]);
+      final resp = results[0] as TransactionListResponse;
+      final summaryResp = results[1] as TransactionSummaryResponse;
       final data = resp.data;
       if (data == null || data.transactions.isEmpty) {
         state = state.copyWith(
@@ -66,6 +72,7 @@ class TransactionListNotifier extends StateNotifier<TransactionListState> {
           transactions: [],
           cursor: null,
           hasMore: false,
+          summary: summaryResp.data,
         );
       } else {
         state = state.copyWith(
@@ -73,6 +80,7 @@ class TransactionListNotifier extends StateNotifier<TransactionListState> {
           transactions: data.transactions,
           cursor: data.cursor,
           hasMore: data.hasMore,
+          summary: summaryResp.data,
         );
       }
     } catch (e) {
@@ -140,16 +148,22 @@ class TransactionListNotifier extends StateNotifier<TransactionListState> {
   Future<void> applyFilters({String? userId, required TransactionFilter filters}) async {
     state = state.copyWith(activeFilters: filters, status: TransactionListStatus.loading, cursor: null);
     try {
-      final resp = await _repo.getTransactions(userId: userId, filters: filters.hasActiveFilters ? filters : null);
+      final results = await Future.wait([
+        _repo.getTransactions(userId: userId, filters: filters.hasActiveFilters ? filters : null),
+        _repo.getSummary(userId: userId),
+      ]);
+      final resp = results[0] as TransactionListResponse;
+      final summaryResp = results[1] as TransactionSummaryResponse;
       final data = resp.data;
       if (data == null || data.transactions.isEmpty) {
-        state = state.copyWith(status: TransactionListStatus.empty, transactions: []);
+        state = state.copyWith(status: TransactionListStatus.empty, transactions: [], summary: summaryResp.data);
       } else {
         state = state.copyWith(
           status: TransactionListStatus.loaded,
           transactions: data.transactions,
           cursor: data.cursor,
           hasMore: data.hasMore,
+          summary: summaryResp.data,
         );
       }
     } catch (e) {

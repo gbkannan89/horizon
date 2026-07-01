@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/features/auth/providers/auth_form_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
@@ -58,29 +59,28 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
           opacity: _fadeIn,
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo + Title
                     Center(
                       child: Container(
                         width: 80, height: 80,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                         child: Icon(Icons.trending_up, size: 40, color: theme.colorScheme.primary),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.lg),
                     Text('Welcome back', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     Text('Sign in to your financial command center', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: AppSpacing.xl),
 
                     // Email
                     TextFormField(
@@ -140,11 +140,11 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.errorContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                           child: Row(
                             children: [
                               Icon(Icons.error_outline, size: 20, color: theme.colorScheme.error),
@@ -158,7 +158,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                     // Login Button
                     FilledButton(
                       onPressed: formState.isLoading ? null : _handleLogin,
-                      style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md))),
                       child: formState.isLoading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Text('Sign In', style: TextStyle(fontSize: 16)),

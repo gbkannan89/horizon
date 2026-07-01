@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
+import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 
@@ -43,15 +45,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
               width: 96, height: 96,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
-              child: Icon(Icons.trending_up, size: 48, color: theme.colorScheme.primary),
+              child: Icon(Icons.trending_up, size: AppIconSize.xl, color: theme.colorScheme.primary),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
             Text('Horizon', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text('Goal-Centric Financial OS', style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 48),
+            const SizedBox(height: AppSpacing.xxl),
             const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
           ],
         ),

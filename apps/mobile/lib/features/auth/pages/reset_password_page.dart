@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/features/auth/providers/auth_form_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 
@@ -38,7 +39,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       appBar: AppBar(title: const Text('Set New Password')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: _success ? _buildSuccess(theme) : _buildForm(theme, formState),
         ),
       ),
@@ -50,12 +51,12 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 80, height: 80,
-            decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(20)),
-            child: Icon(Icons.check_circle, size: 40, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(height: 24),
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+              child: Icon(Icons.check_circle, size: 40, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: AppSpacing.lg),
           Text('Password reset successful', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Your password has been updated. You can now sign in with your new password.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
@@ -70,11 +71,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xl),
         Text('Choose a new password', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text('Must be at least 8 characters', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 32),
+        const SizedBox(height: AppSpacing.xl),
         TextFormField(
           onChanged: (v) => ref.read(authFormStateProvider.notifier).setPassword(v),
           obscureText: formState.obscurePassword,
@@ -101,7 +102,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         const SizedBox(height: 24),
         FilledButton(
           onPressed: formState.isLoading ? null : _handleSubmit,
-          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md))),
           child: formState.isLoading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Text('Reset Password', style: TextStyle(fontSize: 16)),
