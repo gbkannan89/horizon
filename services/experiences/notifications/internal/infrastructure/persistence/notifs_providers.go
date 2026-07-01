@@ -61,7 +61,7 @@ func (p *NotifsPGProvider) GetCashFlowSurplus(ctx context.Context, userID string
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 	return income - expenses, nil
 }
 
@@ -72,17 +72,17 @@ func (p *NotifsPGProvider) GetNetWorthChange(ctx context.Context, userID string)
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 	return income - expenses, nil
 }
 
 // GoalProvider
 
 func (p *NotifsPGProvider) GetGoalProgress(ctx context.Context, userID string) (onTrack, total, atRisk int, err error) {
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
 	if total == 0 { return 0, 0, 0, nil }
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Active'`, userID).Scan(&onTrack)
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'AtRisk'`, userID).Scan(&atRisk)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Active'`, userID).Scan(&onTrack)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'AtRisk'`, userID).Scan(&atRisk)
 	return onTrack, total, atRisk, nil
 }
 
@@ -108,7 +108,7 @@ func (p *NotifsPGProvider) HasOptimizations(ctx context.Context, userID string) 
 
 func (p *NotifsPGProvider) GetAchievementCount(ctx context.Context, userID string) (int, error) {
 	var count int
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Completed'`, userID).Scan(&count)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Completed'`, userID).Scan(&count)
 	return count, nil
 }
 

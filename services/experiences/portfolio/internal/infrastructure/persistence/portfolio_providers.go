@@ -28,7 +28,7 @@ func (p *PortfolioPGProvider) GetPortfolioSummary(ctx context.Context, userID st
 		FROM portfolios pf
 		JOIN portfolio_members pm ON pf.portfolio_id = pm.portfolio_id
 		JOIN assets a ON pm.entity_id = a.asset_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value, &totalReturn)
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value, &totalReturn)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("get portfolio summary: %w", err)
 	}
@@ -49,7 +49,7 @@ func (p *PortfolioPGProvider) GetAllocations(ctx context.Context, userID string)
 		FROM portfolios pf
 		JOIN portfolio_members pm ON pf.portfolio_id = pm.portfolio_id
 		JOIN assets a ON pm.entity_id = a.asset_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'
 		GROUP BY a.classification
 		ORDER BY total_value DESC`, userID)
 	if err != nil {
@@ -95,7 +95,7 @@ func (p *PortfolioPGProvider) GetPerformance(ctx context.Context, userID string)
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
 		FROM financial_events
-		WHERE user_id = $1 AND effective_date >= $2 AND state = 'POSTED'`,
+		WHERE user_id::text = $1 AND effective_date >= $2 AND state = 'POSTED'`,
 		userID, startOfMonth).Scan(&income, &expenses)
 
 	periodReturn = float64(income - expenses)
@@ -173,7 +173,7 @@ func (p *PortfolioPGProvider) GetEventCount(ctx context.Context, userID string) 
 	var count int
 	err := p.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM financial_events
-		WHERE user_id = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
+		WHERE user_id::text = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count events: %w", err)
 	}

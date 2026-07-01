@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:horizon_mobile/core/network/api_client.dart';
 import 'package:horizon_mobile/core/auth/token_manager.dart';
@@ -66,8 +67,19 @@ class AuthRepository {
   }
 
   String _extractError(dynamic error) {
-    if (error is Map && error['error'] is Map) {
-      return (error['error'] as Map)['message'] as String? ?? 'An error occurred';
+    if (error is DioException) {
+      try {
+        final data = error.response?.data;
+        if (data is Map && data['error'] is Map) {
+          return (data['error'] as Map)['message'] as String? ?? 'An error occurred';
+        }
+      } catch (_) {}
+      if (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.receiveTimeout) {
+        return 'Connection timed out. Check that the backend is running.';
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return 'Cannot connect to backend. Is the server running on port 8081?';
+      }
     }
     return 'Connection error. Please try again.';
   }

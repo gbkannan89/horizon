@@ -86,7 +86,7 @@ func (p *AccountsPGProvider) GetAccounts(ctx context.Context, userID string) ([]
 			COALESCE(i.name, '') as institution_name
 		FROM accounts a
 		LEFT JOIN institutions i ON a.institution_id = i.institution_id
-		WHERE a.owner_id = $1 AND a.status NOT IN ('Closed', 'Archived')
+		WHERE a.owner_id::text = $1 AND a.status NOT IN ('Closed', 'Archived')
 		ORDER BY a.account_name`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list accounts: %w", err)
@@ -189,13 +189,13 @@ func (p *AccountsPGProvider) GetCashFlowProjection(ctx context.Context, userID s
 	// Income this month
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(amount), 0) FROM financial_events
-		WHERE user_id = $1 AND amount > 0 AND state = 'POSTED' AND effective_date >= $2`,
+		WHERE user_id::text = $1 AND amount > 0 AND state = 'POSTED' AND effective_date >= $2`,
 		userID, startOfMonth).Scan(&inflow)
 
 	// Expenses this month
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(ABS(amount)), 0) FROM financial_events
-		WHERE user_id = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2`,
+		WHERE user_id::text = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2`,
 		userID, startOfMonth).Scan(&outflow)
 
 	// Projected: extrapolate from last full month
@@ -204,11 +204,11 @@ func (p *AccountsPGProvider) GetCashFlowProjection(ctx context.Context, userID s
 	prevEnd := startOfMonth.AddDate(0, 0, -1)
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(amount), 0) FROM financial_events
-		WHERE user_id = $1 AND amount > 0 AND state = 'POSTED' AND effective_date BETWEEN $2 AND $3`,
+		WHERE user_id::text = $1 AND amount > 0 AND state = 'POSTED' AND effective_date BETWEEN $2 AND $3`,
 		userID, prevStart, prevEnd).Scan(&prevInflow)
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(ABS(amount)), 0) FROM financial_events
-		WHERE user_id = $1 AND amount < 0 AND state = 'POSTED' AND effective_date BETWEEN $2 AND $3`,
+		WHERE user_id::text = $1 AND amount < 0 AND state = 'POSTED' AND effective_date BETWEEN $2 AND $3`,
 		userID, prevStart, prevEnd).Scan(&prevOutflow)
 
 	projected = prevInflow - prevOutflow
@@ -279,7 +279,7 @@ func (p *AccountsPGProvider) HasSimulations(ctx context.Context, userID string) 
 func (p *AccountsPGProvider) GetEventCount(ctx context.Context, userID string) (int, error) {
 	var count int
 	err := p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM financial_events WHERE user_id = $1 AND effective_date >= NOW() - INTERVAL '30 days'`,
+		`SELECT COUNT(*) FROM financial_events WHERE user_id::text = $1 AND effective_date >= NOW() - INTERVAL '30 days'`,
 		userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count events: %w", err)

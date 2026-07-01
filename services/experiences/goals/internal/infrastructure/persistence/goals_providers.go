@@ -111,7 +111,7 @@ func (p *GoalsPGProvider) GetGoals(ctx context.Context, userID string) ([]engine
 	rows, err := p.pool.Query(ctx,
 		`SELECT goal_id, user_id, name, importance, type, COALESCE(subtype, ''), success_criteria,
 			target_date, priority, contribution_schedule, status, notes, tags, created_at, updated_at
-		FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')
+		FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')
 		ORDER BY priority, name`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list goals: %w", err)

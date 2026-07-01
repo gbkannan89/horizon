@@ -37,7 +37,7 @@ func (p *DashboardPGProvider) GetCashBalance(ctx context.Context, userID string)
 	var balance int64
 	err := p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(amount), 0) FROM financial_events
-		WHERE user_id = $1 AND state = 'POSTED' AND event_type IN ('Salary', 'Income', 'Credit')
+		WHERE user_id::text = $1 AND state = 'POSTED' AND event_type IN ('Salary', 'Income', 'Credit')
 		AND effective_date >= DATE_TRUNC('month', CURRENT_DATE)`, userID).Scan(&balance)
 	if err != nil {
 		return 0, fmt.Errorf("get cash balance: %w", err)
@@ -48,7 +48,7 @@ func (p *DashboardPGProvider) GetCashBalance(ctx context.Context, userID string)
 func (p *DashboardPGProvider) HasAccounts(ctx context.Context, userID string) (bool, error) {
 	var count int
 	err := p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM accounts WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&count)
+		`SELECT COUNT(*) FROM accounts WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("has accounts: %w", err)
 	}
@@ -61,7 +61,7 @@ func (p *DashboardPGProvider) GetTotalAssets(ctx context.Context, userID string)
 	var total int64
 	err := p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(COALESCE(quantity, 1) * unit_price), 0) FROM assets
-		WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&total)
+		WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&total)
 	if err != nil {
 		return 0, fmt.Errorf("get total assets: %w", err)
 	}
@@ -74,7 +74,7 @@ func (p *DashboardPGProvider) GetTotalLiabilities(ctx context.Context, userID st
 	var total int64
 	err := p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities
-		WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&total)
+		WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&total)
 	if err != nil {
 		return 0, fmt.Errorf("get total liabilities: %w", err)
 	}
@@ -86,7 +86,7 @@ func (p *DashboardPGProvider) GetTotalLiabilities(ctx context.Context, userID st
 func (p *DashboardPGProvider) GetGoalCounts(ctx context.Context, userID string) (onTrack, atRisk, total int, hasGoals bool, err error) {
 	var goalCount int
 	err = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1`, userID).Scan(&goalCount)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1`, userID).Scan(&goalCount)
 	if err != nil {
 		return 0, 0, 0, false, fmt.Errorf("get goal counts: %w", err)
 	}
@@ -96,14 +96,14 @@ func (p *DashboardPGProvider) GetGoalCounts(ctx context.Context, userID string) 
 
 	var activeCount int
 	err = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Active'`, userID).Scan(&activeCount)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Active'`, userID).Scan(&activeCount)
 	if err != nil {
 		return 0, 0, 0, true, fmt.Errorf("get active goals: %w", err)
 	}
 
 	var atRiskCount int
 	err = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'AtRisk'`, userID).Scan(&atRiskCount)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'AtRisk'`, userID).Scan(&atRiskCount)
 	if err != nil {
 		return 0, 0, 0, true, fmt.Errorf("get at-risk goals: %w", err)
 	}
@@ -119,7 +119,7 @@ func (p *DashboardPGProvider) GetRecentCount(ctx context.Context, userID string)
 	var count int
 	err := p.pool.QueryRow(ctx,
 		`SELECT COUNT(*) FROM financial_events
-		WHERE user_id = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
+		WHERE user_id::text = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
 	if err != nil {
 		return 0, false, fmt.Errorf("get recent events: %w", err)
 	}
@@ -135,7 +135,7 @@ func (p *DashboardPGProvider) GetPortfolioValue(ctx context.Context, userID stri
 		FROM portfolio_members pm
 		JOIN portfolios pf ON pm.portfolio_id = pf.portfolio_id
 		JOIN assets a ON pm.entity_id = a.asset_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value)
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value)
 	if err != nil {
 		return 0, fmt.Errorf("get portfolio value: %w", err)
 	}
@@ -151,7 +151,7 @@ func (p *DashboardPGProvider) GetHealthScore(ctx context.Context, userID string)
 		`SELECT overall_score, score_grade FROM health_scores
 		WHERE score_id = (SELECT MAX(score_id) FROM health_scores WHERE score_id LIKE $1 || '%')
 		ORDER BY created_at DESC LIMIT 1`,
-		userID[:8], // prefix match on score_id
+		safePrefix(userID, 8), // prefix match on score_id
 	).Scan(&score, &grade)
 	if err != nil {
 		// Return default values if no health score exists
@@ -195,7 +195,7 @@ func (p *DashboardPGProvider) GetMonthlyIncomeExpenses(ctx context.Context, user
 	var inc, exp int64
 	incErr := p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(amount), 0) FROM financial_events
-		WHERE user_id = $1 AND state = 'POSTED' AND amount > 0
+		WHERE user_id::text = $1 AND state = 'POSTED' AND amount > 0
 		AND effective_date >= $2`, userID, startOfMonth).Scan(&inc)
 	if incErr != nil {
 		return 0, 0, fmt.Errorf("get monthly income: %w", incErr)
@@ -203,7 +203,7 @@ func (p *DashboardPGProvider) GetMonthlyIncomeExpenses(ctx context.Context, user
 
 	expErr := p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(ABS(amount)), 0) FROM financial_events
-		WHERE user_id = $1 AND state = 'POSTED' AND amount < 0
+		WHERE user_id::text = $1 AND state = 'POSTED' AND amount < 0
 		AND effective_date >= $2`, userID, startOfMonth).Scan(&exp)
 	if expErr != nil {
 		return 0, 0, fmt.Errorf("get monthly expenses: %w", expErr)
@@ -222,4 +222,9 @@ func (p *DashboardPGProvider) HasSimulations(ctx context.Context, userID string)
 		return false, fmt.Errorf("get simulations: %w", err)
 	}
 	return count > 0, nil
+}
+
+func safePrefix(s string, n int) string {
+	if len(s) <= n { return s }
+	return s[:n]
 }

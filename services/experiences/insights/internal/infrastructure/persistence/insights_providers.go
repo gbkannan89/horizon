@@ -72,7 +72,7 @@ func (p *InsightsPGProvider) GetSavingsRate(ctx context.Context, userID string) 
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
 	if income <= 0 {
 		return 0, "stable", nil
@@ -88,7 +88,7 @@ func (p *InsightsPGProvider) GetSavingsRate(ctx context.Context, userID string) 
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2 AND effective_date < $3`,
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2 AND effective_date < $3`,
 		userID, prevStart, som).Scan(&prevIncome, &prevExpenses)
 
 	trend := "stable"
@@ -107,11 +107,11 @@ func (p *InsightsPGProvider) GetSavingsRate(ctx context.Context, userID string) 
 func (p *InsightsPGProvider) GetNetWorthChange(ctx context.Context, userID string) (int64, int64, error) {
 	var netWorth int64
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&netWorth)
+		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&netWorth)
 
 	var liabilities int64
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&liabilities)
+		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&liabilities)
 	netWorth -= liabilities
 
 	// Net worth change: income - expenses from current month
@@ -121,7 +121,7 @@ func (p *InsightsPGProvider) GetNetWorthChange(ctx context.Context, userID strin
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
 	change := income - expenses
 	return change, netWorth, nil
@@ -135,7 +135,7 @@ func (p *InsightsPGProvider) GetCashFlowSurplus(ctx context.Context, userID stri
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
 	return income - expenses, nil
 }
@@ -145,14 +145,14 @@ func (p *InsightsPGProvider) GetCashFlowSurplus(ctx context.Context, userID stri
 func (p *InsightsPGProvider) GetGoalProgress(ctx context.Context, userID string) (int, int, float64, error) {
 	var total int
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
 	if total == 0 {
 		return 0, 0, 0, nil
 	}
 
 	var onTrack int
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Active'`, userID).Scan(&onTrack)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Active'`, userID).Scan(&onTrack)
 
 	avgPct := float64(0)
 	if total > 0 {
@@ -178,7 +178,7 @@ func (p *InsightsPGProvider) GetPortfolioReturn(ctx context.Context, userID stri
 		FROM assets a
 		JOIN portfolio_members pm ON a.asset_id = pm.entity_id
 		JOIN portfolios pf ON pm.portfolio_id = pf.portfolio_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset'`, userID).Scan(&value, &costBasis)
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset'`, userID).Scan(&value, &costBasis)
 
 	if costBasis > 0 {
 		return value, (float64(value) - costBasis) / costBasis * 100, nil
@@ -225,7 +225,7 @@ func (p *InsightsPGProvider) GetAchievementCount(ctx context.Context, userID str
 	// Achievements are derived — count goals with Completed status as proxy
 	var count int
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Completed'`, userID).Scan(&count)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Completed'`, userID).Scan(&count)
 	if count == 0 {
 		// Also count milestones reached from simulations/projections
 		count = 0
@@ -242,10 +242,10 @@ func (p *InsightsPGProvider) GetSpendingAnomaly(ctx context.Context, userID stri
 	var currentExp, prevExp float64
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(ABS(amount)), 0) FROM financial_events
-		WHERE user_id = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&currentExp)
+		WHERE user_id::text = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&currentExp)
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(ABS(amount)), 0) FROM financial_events
-		WHERE user_id = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2 AND effective_date < $3`,
+		WHERE user_id::text = $1 AND amount < 0 AND state = 'POSTED' AND effective_date >= $2 AND effective_date < $3`,
 		userID, prevStart, som).Scan(&prevExp)
 
 	if prevExp > 0 && currentExp > prevExp*1.3 {
@@ -259,7 +259,7 @@ func (p *InsightsPGProvider) GetSpendingAnomaly(ctx context.Context, userID stri
 func (p *InsightsPGProvider) GetAccountCount(ctx context.Context, userID string) (int, error) {
 	var count int
 	err := p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM accounts WHERE owner_id = $1 AND status NOT IN ('Closed', 'Archived')`, userID).Scan(&count)
+		`SELECT COUNT(*) FROM accounts WHERE owner_id::text = $1 AND status NOT IN ('Closed', 'Archived')`, userID).Scan(&count)
 	if err != nil {
 		return 0, nil
 	}

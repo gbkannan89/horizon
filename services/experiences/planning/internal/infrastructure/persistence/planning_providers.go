@@ -22,13 +22,13 @@ func NewPlanningPGProvider(pool *pgxpool.Pool) *PlanningPGProvider {
 
 func (p *PlanningPGProvider) GetGoalSummary(ctx context.Context, userID string) (onTrack, total int, fundingGap int64, err error) {
 	err = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
 	if err != nil || total == 0 {
 		return 0, 0, 0, nil
 	}
 
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Active'`, userID).Scan(&onTrack)
+		`SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Active'`, userID).Scan(&onTrack)
 
 	var gap int64
 	_ = p.pool.QueryRow(ctx,
@@ -38,7 +38,7 @@ func (p *PlanningPGProvider) GetGoalSummary(ctx context.Context, userID string) 
 			SELECT goal_id, SUM(allocated_amount) as alloc FROM allocations
 			WHERE status IN ('Active','Approved') GROUP BY goal_id
 		) a ON g.goal_id = a.goal_id
-		WHERE g.user_id = $1 AND g.status NOT IN ('Archived')`, userID).Scan(&gap)
+		WHERE g.user_id::text = $1::text AND g.status NOT IN ('Archived')`, userID).Scan(&gap)
 	if gap < 0 {
 		gap = 0
 	}
@@ -52,7 +52,7 @@ func (p *PlanningPGProvider) GetCashBalance(ctx context.Context, userID string) 
 	var cash int64
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets
-		WHERE owner_id = $1 AND classification IN ('CashAndCashEquivalent', 'FixedDeposit') AND status = 'Active'`, userID).Scan(&cash)
+		WHERE owner_id::text = $1 AND classification IN ('CashAndCashEquivalent', 'FixedDeposit') AND status = 'Active'`, userID).Scan(&cash)
 
 	var income, expenses int64
 	now := p.now()
@@ -60,7 +60,7 @@ func (p *PlanningPGProvider) GetCashBalance(ctx context.Context, userID string) 
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
 	return cash, income, expenses, nil
 }
@@ -70,11 +70,11 @@ func (p *PlanningPGProvider) GetCashBalance(ctx context.Context, userID string) 
 func (p *PlanningPGProvider) GetPlanningProjection(ctx context.Context, userID string) (netWorth, income, expenses, portfolio int64, conf string, err error) {
 	// Net worth: assets - liabilities
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&netWorth)
+		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&netWorth)
 
 	var liabilities int64
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&liabilities)
+		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&liabilities)
 	netWorth -= liabilities
 
 	// Portfolio value
@@ -82,7 +82,7 @@ func (p *PlanningPGProvider) GetPlanningProjection(ctx context.Context, userID s
 		`SELECT COALESCE(SUM(a.unit_price * COALESCE(a.quantity, 1)), 0)
 		FROM portfolio_members pm JOIN assets a ON pm.entity_id = a.asset_id
 		JOIN portfolios pf ON pm.portfolio_id = pf.portfolio_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset'`, userID).Scan(&portfolio)
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset'`, userID).Scan(&portfolio)
 
 	// Monthly income/expenses
 	now := p.now()
@@ -90,7 +90,7 @@ func (p *PlanningPGProvider) GetPlanningProjection(ctx context.Context, userID s
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
 	conf = "Medium"
 	// Try to find confidence from projection
@@ -164,7 +164,7 @@ func (p *PlanningPGProvider) HasSimulations(ctx context.Context, userID string) 
 func (p *PlanningPGProvider) GetEventCount(ctx context.Context, userID string) (int, int, error) {
 	var evtCnt int
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM financial_events WHERE user_id = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&evtCnt)
+		`SELECT COUNT(*) FROM financial_events WHERE user_id::text = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&evtCnt)
 	return evtCnt, 0, nil
 }
 

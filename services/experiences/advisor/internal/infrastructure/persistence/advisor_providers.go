@@ -22,10 +22,10 @@ func NewAdvisorPGProvider(pool *pgxpool.Pool) *AdvisorPGProvider {
 func (p *AdvisorPGProvider) GetNetWorth(ctx context.Context, userID string) (int64, error) {
 	var assets int64
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&assets)
+		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&assets)
 	var liabilities int64
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&liabilities)
+		`SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&liabilities)
 	return assets - liabilities, nil
 }
 
@@ -33,7 +33,7 @@ func (p *AdvisorPGProvider) GetCashBalance(ctx context.Context, userID string) (
 	var cash int64
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets
-		WHERE owner_id = $1 AND classification IN ('CashAndCashEquivalent', 'FixedDeposit') AND status = 'Active'`, userID).Scan(&cash)
+		WHERE owner_id::text = $1 AND classification IN ('CashAndCashEquivalent', 'FixedDeposit') AND status = 'Active'`, userID).Scan(&cash)
 	return cash, nil
 }
 
@@ -44,7 +44,7 @@ func (p *AdvisorPGProvider) GetMonthlyFlow(ctx context.Context, userID string) (
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 	return income, expenses, nil
 }
 
@@ -52,19 +52,19 @@ func (p *AdvisorPGProvider) GetMonthlyFlow(ctx context.Context, userID string) (
 
 func (p *AdvisorPGProvider) GetGoalProgress(ctx context.Context, userID string) (int, int, int, int64, error) {
 	var total int
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')`, userID).Scan(&total)
 	if total == 0 {
 		return 0, 0, 0, 0, nil
 	}
 	var onTrack int
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'Active'`, userID).Scan(&onTrack)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'Active'`, userID).Scan(&onTrack)
 	var atRisk int
-	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id = $1 AND status = 'AtRisk'`, userID).Scan(&atRisk)
+	_ = p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM goals WHERE user_id::text = $1 AND status = 'AtRisk'`, userID).Scan(&atRisk)
 	var gap int64
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(SUM((success_criteria->>'target_value')::numeric - COALESCE(a.alloc, 0)), 0)
 		FROM goals g LEFT JOIN (SELECT goal_id, SUM(allocated_amount) as alloc FROM allocations WHERE status IN ('Active','Approved') GROUP BY goal_id) a ON g.goal_id = a.goal_id
-		WHERE g.user_id = $1 AND g.status NOT IN ('Archived')`, userID).Scan(&gap)
+		WHERE g.user_id::text = $1::text AND g.status NOT IN ('Archived')`, userID).Scan(&gap)
 	if gap < 0 { gap = 0 }
 	return onTrack, atRisk, total, gap, nil
 }
@@ -77,7 +77,7 @@ func (p *AdvisorPGProvider) GetAccountSummary(ctx context.Context, userID string
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COUNT(*), COALESCE(SUM(a.unit_price * COALESCE(a.quantity, 1)), 0)
 		FROM accounts ac LEFT JOIN assets a ON ac.account_id = a.account_id
-		WHERE ac.owner_id = $1 AND ac.status NOT IN ('Closed', 'Archived')`, userID).Scan(&count, &balance)
+		WHERE ac.owner_id::text = $1 AND ac.status NOT IN ('Closed', 'Archived')`, userID).Scan(&count, &balance)
 	return count, balance, nil
 }
 
@@ -90,7 +90,7 @@ func (p *AdvisorPGProvider) GetPortfolioSummary(ctx context.Context, userID stri
 		`SELECT COALESCE(SUM(a.unit_price * COALESCE(a.quantity, 1)), 0), COALESCE(SUM(a.cost_basis), 0)
 		FROM portfolios pf JOIN portfolio_members pm ON pf.portfolio_id = pm.portfolio_id
 		JOIN assets a ON pm.entity_id = a.asset_id
-		WHERE pf.owner_id = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value, &costBasis)
+		WHERE pf.owner_id::text = $1 AND pm.entity_type = 'Asset' AND pf.status = 'Active'`, userID).Scan(&value, &costBasis)
 	retPct := 0.0
 	if costBasis > 0 {
 		retPct = (float64(value) - costBasis) / costBasis * 100
@@ -138,8 +138,8 @@ func (p *AdvisorPGProvider) GetProjectionSummary(ctx context.Context, userID str
 	var nw int64
 	var assets int64
 	var liabilities int64
-	_ = p.pool.QueryRow(ctx, `SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&assets)
-	_ = p.pool.QueryRow(ctx, `SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id = $1 AND status = 'Active'`, userID).Scan(&liabilities)
+	_ = p.pool.QueryRow(ctx, `SELECT COALESCE(SUM(unit_price * COALESCE(quantity, 1)), 0) FROM assets WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&assets)
+	_ = p.pool.QueryRow(ctx, `SELECT COALESCE(SUM(original_principal), 0) FROM liabilities WHERE owner_id::text = $1 AND status = 'Active'`, userID).Scan(&liabilities)
 	nw = assets - liabilities
 
 	conf := "Medium"
@@ -180,7 +180,7 @@ func (p *AdvisorPGProvider) HasSimulations(ctx context.Context, userID string) (
 func (p *AdvisorPGProvider) GetEventCount(ctx context.Context, userID string) (int, error) {
 	var count int
 	_ = p.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM financial_events WHERE user_id = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
+		`SELECT COUNT(*) FROM financial_events WHERE user_id::text = $1 AND effective_date >= NOW() - INTERVAL '30 days'`, userID).Scan(&count)
 	return count, nil
 }
 

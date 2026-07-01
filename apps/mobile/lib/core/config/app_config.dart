@@ -22,7 +22,7 @@ class AppConfig {
   });
 
   static AppConfig _instance = AppConfig._(
-    apiBaseUrl: 'http://localhost:8080/api/v1',
+    apiBaseUrl: 'http://localhost:8081/api/v1',
     connectTimeout: 15000,
     receiveTimeout: 30000,
     useHttps: false,

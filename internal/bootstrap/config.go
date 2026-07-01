@@ -13,8 +13,8 @@ type Config struct {
 // LoadConfig reads configuration from environment variables.
 func LoadConfig() *Config {
 	return &Config{
-		Port:        env("PORT", "8080"),
-		DatabaseURL: env("DATABASE_URL", "postgres://horizon:horizon@localhost:5432/horizon?sslmode=disable"),
+		Port:        env("PORT", "8081"),
+		DatabaseURL: env("DATABASE_URL", "postgres://horizon:horizon@localhost:5433/horizon?sslmode=disable"),
 		AppEnv:      env("APP_ENV", "development"),
 		LogLevel:    env("LOG_LEVEL", "info"),
 	}

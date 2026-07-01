@@ -34,7 +34,7 @@ func (p *TimelinePGProvider) getFinancialEvents(ctx context.Context, userID stri
 	rows, err := p.pool.Query(ctx,
 		`SELECT event_id, event_type, amount, currency, description, source, destination,
 			effective_date, state, confidence
-		FROM financial_events WHERE user_id = $1 AND state = 'POSTED'
+		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED'
 		ORDER BY effective_date DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
 		return nil, nil
@@ -77,7 +77,7 @@ func severityForAmount(amt int64) engine.Severity {
 func (p *TimelinePGProvider) getGoalEvents(ctx context.Context, userID string, limit int) ([]engine.RawItem, error) {
 	rows, err := p.pool.Query(ctx,
 		`SELECT goal_id, name, status, created_at, updated_at
-		FROM goals WHERE user_id = $1 AND status NOT IN ('Archived')
+		FROM goals WHERE user_id::text = $1 AND status NOT IN ('Archived')
 		ORDER BY updated_at DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
 		return nil, nil
@@ -119,7 +119,7 @@ func (p *TimelinePGProvider) getGoalEvents(ctx context.Context, userID string, l
 func (p *TimelinePGProvider) getAccountEvents(ctx context.Context, userID string, limit int) ([]engine.RawItem, error) {
 	rows, err := p.pool.Query(ctx,
 		`SELECT account_id, account_name, account_type, status, created_at, updated_at
-		FROM accounts WHERE owner_id = $1 AND status NOT IN ('Draft')
+		FROM accounts WHERE owner_id::text = $1 AND status NOT IN ('Draft')
 		ORDER BY updated_at DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
 		return nil, nil
@@ -158,7 +158,7 @@ func (p *TimelinePGProvider) getAccountEvents(ctx context.Context, userID string
 func (p *TimelinePGProvider) getAssetEvents(ctx context.Context, userID string, limit int) ([]engine.RawItem, error) {
 	rows, err := p.pool.Query(ctx,
 		`SELECT asset_id, asset_name, classification, unit_price, created_at, updated_at
-		FROM assets WHERE owner_id = $1 AND status = 'Active'
+		FROM assets WHERE owner_id::text = $1 AND status = 'Active'
 		ORDER BY updated_at DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
 		return nil, nil
@@ -195,7 +195,7 @@ func (p *TimelinePGProvider) getAssetEvents(ctx context.Context, userID string, 
 func (p *TimelinePGProvider) getLiabilityEvents(ctx context.Context, userID string, limit int) ([]engine.RawItem, error) {
 	rows, err := p.pool.Query(ctx,
 		`SELECT liability_id, name, classification, original_principal, status, created_at
-		FROM liabilities WHERE owner_id = $1 AND status = 'Active'
+		FROM liabilities WHERE owner_id::text = $1 AND status = 'Active'
 		ORDER BY created_at DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
 		return nil, nil
@@ -232,7 +232,7 @@ func (p *TimelinePGProvider) getPortfolioEvents(ctx context.Context, userID stri
 		FROM portfolios p
 		LEFT JOIN portfolio_members pm ON p.portfolio_id = pm.portfolio_id
 		LEFT JOIN assets a ON pm.entity_id = a.asset_id
-		WHERE p.owner_id = $1 AND p.status NOT IN ('Archived')
+		WHERE p.owner_id::text = $1 AND p.status NOT IN ('Archived')
 		GROUP BY p.portfolio_id, p.name, p.status, p.created_at
 		ORDER BY p.created_at DESC LIMIT $2`, userID, getLimit(limit))
 	if err != nil {
