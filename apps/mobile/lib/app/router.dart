@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/features/auth/pages/splash_page.dart';
@@ -14,7 +13,9 @@ import 'package:horizon_mobile/features/goals/pages/goals_page.dart';
 import 'package:horizon_mobile/features/portfolio/pages/portfolio_page.dart';
 import 'package:horizon_mobile/features/planning/pages/planning_page.dart';
 import 'package:horizon_mobile/features/planning/pages/projection_page.dart';
-import 'package:horizon_mobile/features/planning/pages/budget_page.dart';
+import 'package:horizon_mobile/features/budget/pages/budget_list_page.dart';
+import 'package:horizon_mobile/features/budget/pages/budget_detail_page.dart';
+import 'package:horizon_mobile/features/budget/pages/budget_form_page.dart';
 import 'package:horizon_mobile/features/planning/pages/retirement_page.dart';
 import 'package:horizon_mobile/features/planning/pages/emergency_fund_page.dart';
 import 'package:horizon_mobile/features/planning/pages/debt_payoff_page.dart';
@@ -42,6 +43,14 @@ import 'package:horizon_mobile/features/transactions/pages/transactions_page.dar
 import 'package:horizon_mobile/features/transactions/pages/transaction_detail_page.dart';
 import 'package:horizon_mobile/features/transactions/pages/transaction_form_page.dart';
 import 'package:horizon_mobile/features/search/pages/search_page.dart';
+import 'package:horizon_mobile/features/recurring/pages/recurring_list_page.dart';
+import 'package:horizon_mobile/features/recurring/pages/recurring_detail_page.dart';
+import 'package:horizon_mobile/features/recurring/pages/recurring_form_page.dart';
+import 'package:horizon_mobile/features/household/pages/household_list_page.dart';
+import 'package:horizon_mobile/features/household/pages/household_detail_page.dart';
+import 'package:horizon_mobile/features/household/pages/household_create_page.dart';
+import 'package:horizon_mobile/features/household/pages/household_invite_page.dart';
+import 'package:horizon_mobile/features/household/pages/household_settings_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
 
 Page<void> _slideTransition(Widget child) {
@@ -97,7 +106,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/planning', builder: (_, __) => const PlanningPage(), routes: [
         GoRoute(path: 'projections', builder: (_, __) => const ProjectionPage()),
-        GoRoute(path: 'budget', builder: (_, __) => const BudgetPage()),
+        GoRoute(path: 'budget', builder: (_, __) => const BudgetListPage(), routes: [
+          GoRoute(path: 'add', builder: (_, __) => const BudgetFormPage()),
+          GoRoute(path: ':id', builder: (_, state) => BudgetDetailPage(budgetId: state.pathParameters['id'] ?? '')),
+        ]),
         GoRoute(path: 'retirement', builder: (_, __) => const RetirementPage()),
         GoRoute(path: 'emergency-fund', builder: (_, __) => const EmergencyFundPage()),
         GoRoute(path: 'debt-payoff', builder: (_, __) => const DebtPayoffPage()),
@@ -110,6 +122,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: ':id', builder: (_, state) => TransactionDetailPage(transactionId: state.pathParameters['id'] ?? '')),
       ]),
       GoRoute(path: '/transactions/add', builder: (_, __) => const TransactionFormPage()),
+      GoRoute(path: '/recurring', builder: (_, __) => const RecurringListPage(), routes: [
+        GoRoute(path: 'add', builder: (_, __) => const RecurringFormPage()),
+        GoRoute(path: ':id', builder: (_, state) => RecurringDetailPage(id: state.pathParameters['id'] ?? '')),
+      ]),
       GoRoute(path: '/search', pageBuilder: (_, __) => _slideTransition(const SearchPage())),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage(), routes: [
         GoRoute(path: ':id', pageBuilder: (_, state) => _slideTransition(InsightDetailPage(insightId: state.pathParameters['id'] ?? ''))),
@@ -124,6 +140,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/ai', pageBuilder: (_, __) => _slideTransition(const AiSettingsPage())),
       GoRoute(path: '/settings/data', pageBuilder: (_, __) => _slideTransition(const DataManagementPage())),
       GoRoute(path: '/settings/notifications', pageBuilder: (_, __) => _slideTransition(const NotificationPreferencesPage())),
+      GoRoute(path: '/households', builder: (_, __) => const HouseholdListPage(), routes: [
+        GoRoute(path: 'create', builder: (_, __) => const HouseholdCreatePage()),
+        GoRoute(path: ':id', builder: (_, state) => HouseholdDetailPage(householdId: state.pathParameters['id'] ?? ''), routes: [
+          GoRoute(path: 'settings', builder: (_, state) => HouseholdSettingsPage(householdId: state.pathParameters['id'] ?? '')),
+          GoRoute(path: 'invite', builder: (_, state) => HouseholdInvitePage(householdId: state.pathParameters['id'] ?? '')),
+        ]),
+      ]),
     ],
   );
 });
@@ -137,9 +160,11 @@ class _MorePage extends ConsumerWidget {
       children: [
         ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
         ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Transactions'), onTap: () => context.push('/transactions')),
+        ListTile(leading: const Icon(Icons.repeat), title: const Text('Recurring'), onTap: () => context.push('/recurring')),
         ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
         ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
         ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),
+        ListTile(leading: const Icon(Icons.home_work_outlined), title: const Text('Households'), onTap: () => context.push('/households')),
         ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('Settings'), onTap: () => context.push('/settings')),
         const Divider(),
         ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Sign Out', style: TextStyle(color: Colors.red)), onTap: () async {
