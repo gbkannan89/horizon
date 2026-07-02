@@ -11,4 +11,5 @@ use (
 	./services/engines/recurring
 	./services/engines/rules
 	./services/engines/smart-alert
+	./services/engines/scheduled-reports
 )

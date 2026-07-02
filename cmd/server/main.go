@@ -29,6 +29,7 @@ import (
 	recurringReg "github.com/horizon/core/services/domains/recurring/register"
 	autoCatReg "github.com/horizon/core/services/engines/auto-categorize/register"
 	smartAlertReg "github.com/horizon/core/services/engines/smart-alert/register"
+	schedReportsReg "github.com/horizon/core/services/engines/scheduled-reports/register"
 	rulesReg "github.com/horizon/core/services/domains/rules/register"
 	streamReg "github.com/horizon/core/services/infra/events/register"
 )
@@ -97,6 +98,9 @@ func main() {
 
 	// Smart alert engine
 	smartAlertReg.RegisterRoutes(mux, pool)
+
+	// Scheduled reports engine
+	schedReportsReg.RegisterRoutes(mux, pool)
 
 	// Account domain — household account listings
 	acctDomainReg.RegisterRoutes(mux, pool)
