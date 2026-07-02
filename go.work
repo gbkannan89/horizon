@@ -1,5 +1,12 @@
-go 1.24
+go 1.25.2
 
 use (
 	.
+	./services/domains/account
+	./services/domains/budget
+	./services/domains/household
+	./services/domains/recurring
+	./services/domains/rules
+	./services/engines/recurring
+	./services/engines/rules
 )
