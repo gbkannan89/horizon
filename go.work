@@ -10,4 +10,5 @@ use (
 	./services/engines/auto-categorize
 	./services/engines/recurring
 	./services/engines/rules
+	./services/engines/smart-alert
 )
