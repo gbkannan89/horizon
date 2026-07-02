@@ -142,7 +142,15 @@ class HouseholdDetailPage extends ConsumerWidget {
               return ListTile(
                 leading: CircleAvatar(child: Text(member.userId.substring(0, 1).toUpperCase())),
                 title: Text(member.userId),
-                subtitle: Text('Role: ${member.role} • Status: ${member.inviteStatus}'),
+                subtitle: Text('Status: ${member.inviteStatus}'),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _roleColor(member.role).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(member.role, style: TextStyle(fontSize: 12, color: _roleColor(member.role), fontWeight: FontWeight.w500)),
+                ),
               );
             },
           ),
@@ -278,6 +286,16 @@ class HouseholdDetailPage extends ConsumerWidget {
       case 'Completed': return Colors.blue;
       case 'Paused': return Colors.grey;
       case 'Archived': return Colors.grey;
+      default: return Colors.grey;
+    }
+  }
+
+  Color _roleColor(String role) {
+    switch (role) {
+      case 'Head': return Colors.purple;
+      case 'Admin': return Colors.blue;
+      case 'Member': return Colors.green;
+      case 'Viewer': return Colors.grey;
       default: return Colors.grey;
     }
   }

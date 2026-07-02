@@ -96,4 +96,11 @@ class HouseholdRepository {
       throw Exception(response.data['error']?['message'] ?? 'Failed to update member role');
     }
   }
+
+  Future<void> dissolveHousehold(String householdId) async {
+    final response = await _dio.post('/api/v1/households/$householdId/dissolve');
+    if (response.data['success'] != true) {
+      throw Exception(response.data['error']?['message'] ?? 'Failed to dissolve household');
+    }
+  }
 }
