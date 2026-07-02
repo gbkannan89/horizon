@@ -27,6 +27,7 @@ import (
 	budgetReg "github.com/horizon/core/services/domains/budget/register"
 	acctDomainReg "github.com/horizon/core/services/domains/account/register"
 	recurringReg "github.com/horizon/core/services/domains/recurring/register"
+	autoCatReg "github.com/horizon/core/services/engines/auto-categorize/register"
 	rulesReg "github.com/horizon/core/services/domains/rules/register"
 	streamReg "github.com/horizon/core/services/infra/events/register"
 )
@@ -89,6 +90,9 @@ func main() {
 
 	// Rules domain — automation rules
 	rulesReg.RegisterRoutes(mux, pool)
+
+	// Auto-categorize engine
+	autoCatReg.RegisterRoutes(mux, pool)
 
 	// Account domain — household account listings
 	acctDomainReg.RegisterRoutes(mux, pool)
