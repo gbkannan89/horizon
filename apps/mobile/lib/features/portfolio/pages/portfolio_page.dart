@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/pf_models.dart';
 import '../repository/pf_repository.dart';
 import '../widgets/pf_widgets.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
+import 'package:horizon_mobile/core/ui_kit/glass_card.dart';
 
 final pfStateProvider = StateNotifierProvider<PfStateNotifier, PfState>((ref) {
   return PfStateNotifier(ref.read(pfRepositoryProvider));
@@ -66,76 +69,113 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(pfStateProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portfolio')),
-      body: _buildBody(theme, state),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text('Portfolio', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(theme, state),
+      ),
     );
   }
 
   Widget _buildBody(ThemeData theme, PfState state) {
-    if (state.loading) return const SharedLoadingView();
+    if (state.loading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.teal500).animate().fade(),
+      );
+    }
     if (state.error != null) {
       return SharedErrorView(
-      message: state.error,
-      onRetry: () => ref.read(pfStateProvider.notifier).load(),
-    );
+        message: state.error,
+        onRetry: () => ref.read(pfStateProvider.notifier).load(),
+      );
     }
 
+    final children = <Widget>[
+      if (state.dash != null) PfSummaryCard(dash: state.dash!),
+      if (state.dash != null) ...state.dash!.cards.map((c) => Padding(padding: const EdgeInsets.only(top: AppSpacing.md), child: PortfolioCard(card: c))),
+      if (state.alloc != null) Padding(padding: const EdgeInsets.only(top: AppSpacing.md), child: AllocationCard(alloc: state.alloc!)),
+      if (state.perf != null) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Performance', icon: Icons.trending_up_rounded, color: AppColors.teal500, rows: [
+            MapEntry('Period Return', '${state.perf!.periodReturnPct.toStringAsFixed(1)}%'),
+            MapEntry('Benchmark', '${state.perf!.benchmarkReturn.toStringAsFixed(1)}%'),
+            MapEntry('Unrealized G/L', _fmt(state.perf!.unrealizedGL)),
+            MapEntry('Realized G/L', _fmt(state.perf!.realizedGL)),
+          ]),
+        ),
+      if (state.risk != null) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Risk Assessment', icon: Icons.shield_rounded, color: AppColors.amber500, rows: [
+            MapEntry('Score', '${state.risk!.riskScore} (${state.risk!.riskLevel})'),
+            MapEntry('VaR', '${state.risk!.var_.toStringAsFixed(1)}%'),
+            MapEntry('Sharpe Ratio', state.risk!.sharpeRatio.toStringAsFixed(2)),
+            MapEntry('Volatility', '${state.risk!.volatility.toStringAsFixed(1)}%'),
+            MapEntry('Max Drawdown', '${state.risk!.maxDrawdown.toStringAsFixed(1)}%'),
+          ]),
+        ),
+      if (state.proj != null) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Projection', icon: Icons.query_stats_rounded, color: Colors.cyan, rows: [
+            MapEntry('Projected Value', _fmt(state.proj!.projectedValue.toInt())),
+            MapEntry('Confidence', state.proj!.confidence),
+            MapEntry('Horizon', '${state.proj!.horizonYears} years'),
+            MapEntry('Annual Return', '${state.proj!.annualReturn.toStringAsFixed(1)}%'),
+          ]),
+        ),
+      if (state.recs != null && state.recs!.items.isNotEmpty) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Recommendations', icon: Icons.lightbulb_rounded, color: AppColors.amber500, rows: state.recs!.items.map((i) => MapEntry(i.title, i.value)).toList()),
+        ),
+      if (state.opts != null && state.opts!.items.isNotEmpty) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Optimizations', icon: Icons.auto_graph_rounded, color: Colors.purple, rows: state.opts!.items.map((i) => MapEntry(i.title, i.value)).toList()),
+        ),
+      if (state.sims != null && state.sims!.simulations.isNotEmpty) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Simulations', icon: Icons.science_rounded, color: Colors.deepOrange, rows: state.sims!.simulations.map((s) => MapEntry(s.scenario, s.outcome)).toList()),
+        ),
+      if (state.tl != null && state.tl!.items.isNotEmpty) 
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: PfSectionCard(title: 'Timeline', icon: Icons.history_rounded, color: Colors.brown, rows: state.tl!.items.map((i) => MapEntry(i.title, i.value)).toList()),
+        ),
+      const SizedBox(height: 100), // padding for floating navbar
+    ];
+
     return RefreshIndicator(
+      color: AppColors.teal500,
       onRefresh: () => ref.read(pfStateProvider.notifier).load(),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (state.dash != null) PfSummaryCard(dash: state.dash!),
-          const SizedBox(height: 16),
-          if (state.dash != null) ...state.dash!.cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PortfolioCard(card: c))),
-          if (state.alloc != null) ...[const SizedBox(height: 8), AllocationCard(alloc: state.alloc!)],
-          if (state.perf != null) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Performance', icon: Icons.trending_up, color: Colors.green, rows: [
-              MapEntry('Period Return', '${state.perf!.periodReturnPct.toStringAsFixed(1)}%'),
-              MapEntry('Benchmark', '${state.perf!.benchmarkReturn.toStringAsFixed(1)}%'),
-              MapEntry('Unrealized G/L', _fmt(state.perf!.unrealizedGL)),
-              MapEntry('Realized G/L', _fmt(state.perf!.realizedGL)),
-            ]),
-          ],
-          if (state.risk != null) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Risk Assessment', icon: Icons.shield, color: Colors.amber, rows: [
-              MapEntry('Score', '${state.risk!.riskScore} (${state.risk!.riskLevel})'),
-              MapEntry('VaR', '${state.risk!.var_.toStringAsFixed(1)}%'),
-              MapEntry('Sharpe Ratio', state.risk!.sharpeRatio.toStringAsFixed(2)),
-              MapEntry('Volatility', '${state.risk!.volatility.toStringAsFixed(1)}%'),
-              MapEntry('Max Drawdown', '${state.risk!.maxDrawdown.toStringAsFixed(1)}%'),
-            ]),
-          ],
-          if (state.proj != null) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Projection', icon: Icons.query_stats, color: Colors.cyan, rows: [
-              MapEntry('Projected Value', _fmt(state.proj!.projectedValue.toInt())),
-              MapEntry('Confidence', state.proj!.confidence),
-              MapEntry('Horizon', '${state.proj!.horizonYears} years'),
-              MapEntry('Annual Return', '${state.proj!.annualReturn.toStringAsFixed(1)}%'),
-            ]),
-          ],
-          if (state.recs != null && state.recs!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Recommendations', icon: Icons.lightbulb, color: Colors.amber, rows: state.recs!.items.map((i) => MapEntry(i.title, i.value)).toList()),
-          ],
-          if (state.opts != null && state.opts!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Optimizations', icon: Icons.auto_graph, color: Colors.purple, rows: state.opts!.items.map((i) => MapEntry(i.title, i.value)).toList()),
-          ],
-          if (state.sims != null && state.sims!.simulations.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Simulations', icon: Icons.science, color: Colors.deepOrange, rows: state.sims!.simulations.map((s) => MapEntry(s.scenario, s.outcome)).toList()),
-          ],
-          if (state.tl != null && state.tl!.items.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            PfSectionCard(title: 'Timeline', icon: Icons.history, color: Colors.brown, rows: state.tl!.items.map((i) => MapEntry(i.title, i.value)).toList()),
-          ],
-        ],
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        itemCount: children.length,
+        itemBuilder: (context, index) {
+          return children[index]
+            .animate()
+            .fade(duration: 400.ms)
+            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad);
+        },
       ),
     );
   }

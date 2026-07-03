@@ -9,7 +9,7 @@ class HouseholdRepository {
   HouseholdRepository(this._dio);
 
   Future<List<HouseholdView>> getHouseholds({int limit = 25, String? cursor}) async {
-    final response = await _dio.get('/api/v1/households', queryParameters: {
+    final response = await _dio.get('/households', queryParameters: {
       'limit': limit,
       if (cursor != null) 'cursor': cursor,
     });
@@ -22,7 +22,7 @@ class HouseholdRepository {
   }
 
   Future<HouseholdDetailView> getHouseholdDetail(String id) async {
-    final response = await _dio.get('/api/v1/households/$id');
+    final response = await _dio.get('/households/$id');
     if (response.data['success'] == true) {
       return HouseholdDetailView.fromJson(response.data['data']);
     }
@@ -30,7 +30,7 @@ class HouseholdRepository {
   }
 
   Future<HouseholdFinancialSummary> getHouseholdSummary(String id) async {
-    final response = await _dio.get('/api/v1/households/$id/summary');
+    final response = await _dio.get('/households/$id/summary');
     if (response.data['success'] == true) {
       return HouseholdFinancialSummary.fromJson(response.data['data']);
     }
@@ -38,7 +38,7 @@ class HouseholdRepository {
   }
 
   Future<void> createHousehold(String name, String type, String currency, String country) async {
-    final response = await _dio.post('/api/v1/households', data: {
+    final response = await _dio.post('/households', data: {
       'name': name,
       'household_type': type,
       'currency': currency,
@@ -51,21 +51,21 @@ class HouseholdRepository {
   }
 
   Future<List<GoalSummary>> getHouseholdGoals(String householdId) async {
-    final response = await _dio.get('/api/v1/households/$householdId/goals');
+    final response = await _dio.get('/households/$householdId/goals');
     final data = response.data;
     final goals = (data['goals'] as List?)?.map((e) => GoalSummary.fromJson(e)).toList() ?? [];
     return goals;
   }
 
   Future<List<BudgetModel>> getHouseholdBudgets(String householdId) async {
-    final response = await _dio.get('/api/v1/households/$householdId/budgets');
+    final response = await _dio.get('/households/$householdId/budgets');
     final data = response.data;
     final budgets = (data['data']['budgets'] as List?)?.map((e) => BudgetModel.fromJson(e)).toList() ?? [];
     return budgets;
   }
 
   Future<void> inviteMember(String householdId, String userId, String role) async {
-    final response = await _dio.post('/api/v1/households/$householdId/members', data: {
+    final response = await _dio.post('/households/$householdId/members', data: {
       'user_id': userId,
       'role': role,
     });
@@ -75,21 +75,21 @@ class HouseholdRepository {
   }
 
   Future<void> acceptInvite(String householdId, String userId) async {
-    final response = await _dio.post('/api/v1/households/$householdId/members/$userId/accept');
+    final response = await _dio.post('/households/$householdId/members/$userId/accept');
     if (response.data['success'] != true) {
       throw Exception(response.data['error']?['message'] ?? 'Failed to accept invite');
     }
   }
 
   Future<void> removeMember(String householdId, String userId) async {
-    final response = await _dio.delete('/api/v1/households/$householdId/members/$userId');
+    final response = await _dio.delete('/households/$householdId/members/$userId');
     if (response.data['success'] != true) {
       throw Exception(response.data['error']?['message'] ?? 'Failed to remove member');
     }
   }
 
   Future<void> updateMemberRole(String householdId, String userId, String role) async {
-    final response = await _dio.put('/api/v1/households/$householdId/members/$userId/role', data: {
+    final response = await _dio.put('/households/$householdId/members/$userId/role', data: {
       'role': role,
     });
     if (response.data['success'] != true) {
@@ -98,7 +98,7 @@ class HouseholdRepository {
   }
 
   Future<void> dissolveHousehold(String householdId) async {
-    final response = await _dio.post('/api/v1/households/$householdId/dissolve');
+    final response = await _dio.post('/households/$householdId/dissolve');
     if (response.data['success'] != true) {
       throw Exception(response.data['error']?['message'] ?? 'Failed to dissolve household');
     }

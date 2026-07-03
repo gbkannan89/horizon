@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:horizon_mobile/features/dashboard/models/dashboard_models.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
+import 'package:horizon_mobile/core/ui_kit/glass_card.dart';
+import 'package:horizon_mobile/core/ui_kit/animated_stat.dart';
 
 class HealthScoreCard extends StatelessWidget {
   final WidgetModel widget;
@@ -10,42 +13,44 @@ class HealthScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = score >= 60 ? AppColors.teal500 : (score >= 40 ? AppColors.amber500 : AppColors.red500);
     final theme = Theme.of(context);
-    final color = score >= 60 ? Colors.green : (score >= 40 ? Colors.orange : Colors.red);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.favorite, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text('Health Score', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('$score', style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold, color: color)),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text('/100', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+    
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.favorite, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text('Health Score', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AnimatedStatValue(
+                value: score.toDouble(),
+                format: '#',
+                style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold, color: color),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('/100', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(grade, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
-                ),
-              ],
-            ),
-          ],
-        ),
+                child: Text(grade, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -59,23 +64,23 @@ class NetWorthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Net Worth', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text(WidgetModel.formatMoney(netWorth), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('Total financial position', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ],
-        ),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.account_balance_wallet, color: AppColors.teal500, size: 20),
+            const SizedBox(width: 8),
+            Text('Net Worth', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          AnimatedStatValue(
+            value: netWorth.toDouble(),
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface),
+          ),
+          const SizedBox(height: 4),
+          Text('Total financial position', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
       ),
     );
   }
@@ -91,30 +96,30 @@ class CashFlowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final surplus = income - expenses;
-    final color = surplus >= 0 ? Colors.green : Colors.red;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.swap_horiz, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Cash Flow', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text(_flowLine('Income', income), style: theme.textTheme.bodyMedium),
-            Text(_flowLine('Expenses', expenses), style: theme.textTheme.bodyMedium),
-            const Divider(height: 16),
-            Row(
-              children: [
-                Text('Net: ', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                Text(WidgetModel.formatMoney(surplus), style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-              ],
-            ),
-          ],
-        ),
+    final color = surplus >= 0 ? AppColors.teal500 : AppColors.red500;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.swap_horiz, color: AppColors.amber500, size: 20),
+            const SizedBox(width: 8),
+            Text('Cash Flow', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Text(_flowLine('Income', income), style: theme.textTheme.bodyMedium),
+          Text(_flowLine('Expenses', expenses), style: theme.textTheme.bodyMedium),
+          const Divider(height: 16, color: AppColors.slate200),
+          Row(
+            children: [
+              Text('Net: ', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+              AnimatedStatValue(
+                value: surplus.toDouble(),
+                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -132,27 +137,29 @@ class GoalProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final pct = total > 0 ? onTrack / total : 0.0;
-    final color = pct >= 0.8 ? Colors.green : (pct >= 0.5 ? Colors.orange : Colors.red);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.flag, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text('Goal Progress', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text('$onTrack / $total on track', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: pct, backgroundColor: color.withValues(alpha: 0.1), color: color, minHeight: 8),
+    final color = pct >= 0.8 ? AppColors.teal500 : (pct >= 0.5 ? AppColors.amber500 : AppColors.red500);
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.flag_rounded, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text('Goal Progress', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Text('$onTrack / $total on track', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: LinearProgressIndicator(
+              value: pct, 
+              backgroundColor: color.withOpacity(0.15), 
+              color: color, 
+              minHeight: 6
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -166,23 +173,23 @@ class PortfolioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.pie_chart, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Portfolio', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text(WidgetModel.formatMoney(value), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('Total portfolio value', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ],
-        ),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.pie_chart_rounded, color: AppColors.teal500, size: 20),
+            const SizedBox(width: 8),
+            Text('Portfolio', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          AnimatedStatValue(
+            value: value.toDouble(),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text('Total portfolio value', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
       ),
     );
   }
@@ -197,32 +204,33 @@ class RiskScoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = score >= 80 ? Colors.red : (score >= 60 ? Colors.orange : Colors.green);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.shield, color: color, size: 20),
+    final color = score >= 80 ? AppColors.red500 : (score >= 60 ? AppColors.amber500 : AppColors.teal500);
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.shield_rounded, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text('Risk', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              AnimatedStatValue(
+                value: score.toDouble(),
+                format: '#',
+                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: color),
+              ),
               const SizedBox(width: 8),
-              Text('Risk', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Text('$score', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text(level, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          ],
-        ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.sm)),
+                child: Text(level, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -235,25 +243,22 @@ class RecommendationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.lightbulb, color: Colors.amber, size: 20),
-              const SizedBox(width: 8),
-              Text('Recommendation', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text(widget.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            if (widget.numericValue.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(widget.numericValue, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            ],
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.lightbulb_rounded, color: AppColors.amber500, size: 20),
+            const SizedBox(width: 8),
+            Text('Recommendation', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Text(widget.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          if (widget.numericValue.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(widget.numericValue, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -268,22 +273,22 @@ class AccountsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(Icons.account_balance, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Accounts', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text('$count accounts', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            Text(WidgetModel.formatMoney(balance), style: theme.textTheme.bodyMedium),
-          ],
-        ),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.account_balance_rounded, color: AppColors.teal500, size: 20),
+            const SizedBox(width: 8),
+            Text('Accounts', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          Text('$count accounts', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          AnimatedStatValue(
+            value: balance.toDouble(),
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }
@@ -298,21 +303,21 @@ class DebtSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (debt <= 0) return const SizedBox.shrink();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.credit_card, color: Colors.purple, size: 20),
-              const SizedBox(width: 8),
-              Text('Total Debt', style: theme.textTheme.titleSmall),
-            ]),
-            const SizedBox(height: 12),
-            Text(WidgetModel.formatMoney(debt), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.purple)),
-          ],
-        ),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.credit_card_rounded, color: AppColors.red500, size: 20),
+            const SizedBox(width: 8),
+            Text('Total Debt', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 12),
+          AnimatedStatValue(
+            value: debt.toDouble(),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.red500),
+          ),
+        ],
       ),
     );
   }
@@ -325,22 +330,20 @@ class MilestoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          const Icon(Icons.flag, color: Colors.green, size: 20),
-          const SizedBox(width: 12),
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-              if (widget.numericValue.isNotEmpty) Text(widget.numericValue, style: theme.textTheme.bodySmall),
-            ],
-          )),
-          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-        ]),
-      ),
+    return GlassCard(
+      child: Row(children: [
+        const Icon(Icons.emoji_events_rounded, color: AppColors.amber500, size: 20),
+        const SizedBox(width: 12),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            if (widget.numericValue.isNotEmpty) Text(widget.numericValue, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ],
+        )),
+        Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+      ]),
     );
   }
 }
+

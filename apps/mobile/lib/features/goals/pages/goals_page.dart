@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/goal_models.dart';
 import '../repository/goal_repository.dart';
 import '../widgets/goal_widgets.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
 
 final goalsListProvider = StateNotifierProvider<GoalsListNotifier, GoalsListState>((ref) {
   return GoalsListNotifier(ref.read(goalRepositoryProvider));
@@ -54,8 +56,10 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(goalsListProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: _searching
             ? TextField(
@@ -67,42 +71,65 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
                   }),
                 ),
               )
-            : const Text('Goals'),
+            : Text('Goals', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(icon: Icon(_searching ? Icons.search_off : Icons.search), onPressed: () => setState(() => _searching = !_searching)),
         ],
       ),
-      body: _buildBody(theme, state),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(theme, state),
+      ),
     );
   }
 
   Widget _buildBody(ThemeData theme, GoalsListState state) {
-    if (state.loading) return const SharedLoadingView();
+    if (state.loading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.teal500).animate().fade(),
+      );
+    }
     if (state.error != null) {
       return SharedErrorView(
-      message: state.error,
-      onRetry: () => ref.read(goalsListProvider.notifier).load(),
-    );
+        message: state.error,
+        onRetry: () => ref.read(goalsListProvider.notifier).load(),
+      );
     }
     if (state.goals.isEmpty) {
       return const SharedEmptyView(
-      icon: Icons.flag_outlined,
-      title: 'No goals yet',
-      subtitle: 'Create your first financial goal',
-    );
+        icon: Icons.flag_outlined,
+        title: 'No goals yet',
+        subtitle: 'Create your first financial goal',
+      );
     }
 
     final filtered = _searchCtrl.text.isEmpty ? state.goals : state.goals.where((g) =>
       g.name.toLowerCase().contains(_searchCtrl.text.toLowerCase())).toList();
 
     return RefreshIndicator(
+      color: AppColors.teal500,
       onRefresh: () => ref.read(goalsListProvider.notifier).load(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         itemCount: filtered.length,
         itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: GoalListCard(goal: filtered[i], onTap: () => context.push('/goals/${filtered[i].goalId}')),
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: GoalListCard(
+            goal: filtered[i], 
+            onTap: () => context.push('/goals/${filtered[i].goalId}')
+          ).animate()
+           .fade(duration: 400.ms, delay: (50 * i).ms)
+           .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad, delay: (50 * i).ms),
         ),
       ),
     );

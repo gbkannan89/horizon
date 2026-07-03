@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../models/acct_models.dart';
 import '../repository/acct_repository.dart';
 import '../widgets/acct_widgets.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
+import 'package:horizon_mobile/core/ui_kit/glass_card.dart';
 
 String _fmt(int v) { if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)}Cr'; if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L'; return '₹$v'; }
 
@@ -91,40 +94,64 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(acctStateProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts')),
-      body: _buildBody(theme, state),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text('Accounts', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(theme, state),
+      ),
     );
   }
 
   Widget _buildBody(ThemeData theme, AcctState state) {
-    if (state.loading) return const SharedLoadingView();
+    if (state.loading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.teal500).animate().fade(),
+      );
+    }
     if (state.error != null) {
       return SharedErrorView(
-      message: state.error,
-      onRetry: () => ref.read(acctStateProvider.notifier).load(householdId: state.householdId),
-    );
+        message: state.error,
+        onRetry: () => ref.read(acctStateProvider.notifier).load(householdId: state.householdId),
+      );
     }
 
     if (state.householdId != null) {
       final accts = state.householdAccounts;
       return RefreshIndicator(
+        color: AppColors.teal500,
         onRefresh: () => ref.read(acctStateProvider.notifier).load(householdId: state.householdId),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            Text('Household Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Household Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             if (accts.isEmpty)
               const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No household accounts'))),
             ...accts.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: GlassCard(
                 child: ListTile(
-                  leading: const Icon(Icons.account_balance),
-                  title: Text(a.accountName),
-                  subtitle: Text('${a.accountType} · ${a.currency}'),
-                  trailing: Text(a.status, style: TextStyle(color: a.status == 'Active' ? Colors.green : Colors.grey)),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.account_balance_rounded, color: AppColors.teal500),
+                  title: Text(a.accountName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text('${a.accountType} · ${a.currency}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  trailing: Text(a.status, style: TextStyle(color: a.status == 'Active' ? AppColors.teal500 : AppColors.slate500, fontWeight: FontWeight.bold)),
                   onTap: () => context.push('/accounts/${a.accountId}'),
                 ),
               ),
@@ -135,71 +162,94 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
     }
 
     final accts = state.filteredAccounts;
-    return RefreshIndicator(
-      onRefresh: () => ref.read(acctStateProvider.notifier).load(),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (state.balances != null) AcctBalanceCard(total: state.balances!.totalBalance, available: state.balances!.totalAvailable, spendable: state.balances!.totalSpendable),
-          if (state.dash != null) ...[
-            const SizedBox(height: 12),
-            ...state.dash!.cards.map((c) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AcctCardWidget(title: c.title, summary: c.summary, icon: _cardIcon(c.cardType), color: _cardColor(c.cardType)),
-            )),
-          ],
-          if (state.cashFlow != null) ...[
-            const SizedBox(height: 8),
-            Card(child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Cash Flow', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                _cfRow('Inflow', AcctFmt(state.cashFlow!.periodInflow), Colors.green, theme),
-                _cfRow('Outflow', AcctFmt(state.cashFlow!.periodOutflow), Colors.red, theme),
-                const Divider(height: 16),
-                _cfRow('Net', AcctFmt(state.cashFlow!.netFlow), state.cashFlow!.netFlow >= 0 ? Colors.green : Colors.red, theme),
-                _cfRow('Projected', AcctFmt(state.cashFlow!.projectedFlow), Colors.blue, theme),
-              ]),
-            )),
-          ],
-          if (state.health != null) ...[
-            const SizedBox(height: 8),
-            Card(child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Account Health', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Text('Healthy: ${state.health!.healthyPct.toStringAsFixed(0)}%', style: theme.textTheme.bodyMedium),
-                ...state.health!.accountsByHealth.entries.map((e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text('${e.key}: ${e.value}', style: theme.textTheme.bodySmall),
-                )),
-              ]),
-            )),
-          ],
-          if (accts.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            // Quick filter chips
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: [
-                _filterChip('All', '', state.filterType),
-                _filterChip('Savings', 'Savings', state.filterType),
-                _filterChip('Checking', 'Checking', state.filterType),
-                _filterChip('Credit', 'Credit', state.filterType),
-                _filterChip('Investment', 'Investment', state.filterType),
-              ]),
+    final children = <Widget>[
+      if (state.balances != null) AcctBalanceCard(total: state.balances!.totalBalance, available: state.balances!.totalAvailable, spendable: state.balances!.totalSpendable),
+      if (state.dash != null) ...[
+        const SizedBox(height: 12),
+        ...state.dash!.cards.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: AcctCardWidget(title: c.title, summary: c.summary, icon: _cardIcon(c.cardType), color: _cardColor(c.cardType)),
+        )),
+      ],
+      if (state.cashFlow != null) ...[
+        const SizedBox(height: 8),
+        GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
+            children: [
+              const Icon(Icons.swap_horiz_rounded, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text('Cash Flow', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _cfRow('Inflow', AcctFmt(state.cashFlow!.periodInflow), AppColors.teal500, theme),
+          _cfRow('Outflow', AcctFmt(state.cashFlow!.periodOutflow), AppColors.red500, theme),
+          const Divider(height: 24),
+          _cfRow('Net', AcctFmt(state.cashFlow!.netFlow), state.cashFlow!.netFlow >= 0 ? AppColors.teal500 : AppColors.red500, theme),
+          _cfRow('Projected', AcctFmt(state.cashFlow!.projectedFlow), Colors.blue, theme),
+        ])),
+      ],
+      if (state.health != null) ...[
+        const SizedBox(height: 8),
+        GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
+            children: [
+              const Icon(Icons.favorite_rounded, color: Colors.pink, size: 20),
+              const SizedBox(width: 8),
+              Text('Account Health', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Healthy: ${state.health!.healthyPct.toStringAsFixed(0)}%', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          ...state.health!.accountsByHealth.entries.map((e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(e.key, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(e.value.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              ]
             ),
-            const SizedBox(height: 8),
-            ...accts.map((a) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AcctCard(acct: a, onTap: () => context.push('/accounts/${a.accountId}')),
-            )),
-          ],
-        ],
+          )),
+        ])),
+      ],
+      if (accts.isNotEmpty) ...[
+        const SizedBox(height: 24),
+        Text('Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        // Quick filter chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _filterChip('All', '', state.filterType),
+            _filterChip('Savings', 'Savings', state.filterType),
+            _filterChip('Checking', 'Checking', state.filterType),
+            _filterChip('Credit', 'Credit', state.filterType),
+            _filterChip('Investment', 'Investment', state.filterType),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        ...accts.map((a) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: AcctCard(acct: a, onTap: () => context.push('/accounts/${a.accountId}')),
+        )),
+      ],
+      const SizedBox(height: 100), // padding for navbar
+    ];
+
+    return RefreshIndicator(
+      color: AppColors.teal500,
+      onRefresh: () => ref.read(acctStateProvider.notifier).load(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        itemCount: children.length,
+        itemBuilder: (context, index) {
+          return children[index]
+            .animate()
+            .fade(duration: 400.ms, delay: (30 * index).ms)
+            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad, delay: (30 * index).ms);
+        },
       ),
     );
   }
@@ -216,38 +266,38 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
   }
 
   Widget _cfRow(String label, String value, Color color, ThemeData t) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 2),
+    padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(label, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant)),
-      Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+      Text(label, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+      Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
     ]),
   );
 
   IconData _cardIcon(String type) {
     switch (type) {
-      case 'Overview': return Icons.dashboard;
-      case 'CashBalance': return Icons.account_balance_wallet;
-      case 'AccountHealth': return Icons.favorite;
-      case 'CashFlow': return Icons.swap_horiz;
-      case 'Risk': return Icons.shield;
-      case 'Projection': return Icons.trending_up;
-      case 'Recommendation': return Icons.lightbulb;
-      case 'Timeline': return Icons.history;
+      case 'Overview': return Icons.dashboard_rounded;
+      case 'CashBalance': return Icons.account_balance_wallet_rounded;
+      case 'AccountHealth': return Icons.favorite_rounded;
+      case 'CashFlow': return Icons.swap_horiz_rounded;
+      case 'Risk': return Icons.shield_rounded;
+      case 'Projection': return Icons.trending_up_rounded;
+      case 'Recommendation': return Icons.lightbulb_rounded;
+      case 'Timeline': return Icons.history_rounded;
       default: return Icons.circle;
     }
   }
 
   Color _cardColor(String type) {
     switch (type) {
-      case 'Overview': return Colors.teal;
-      case 'CashBalance': return Colors.green;
+      case 'Overview': return AppColors.teal500;
+      case 'CashBalance': return AppColors.teal500;
       case 'AccountHealth': return Colors.pink;
       case 'CashFlow': return Colors.blue;
-      case 'Risk': return Colors.amber;
+      case 'Risk': return AppColors.amber500;
       case 'Projection': return Colors.cyan;
-      case 'Recommendation': return Colors.amber;
+      case 'Recommendation': return AppColors.amber500;
       case 'Timeline': return Colors.brown;
-      default: return Colors.grey;
+      default: return AppColors.slate500;
     }
   }
 }

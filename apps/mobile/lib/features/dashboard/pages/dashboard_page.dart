@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../state/dashboard_state.dart';
 import '../widgets/dashboard_cards.dart';
 import '../models/dashboard_models.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
+import 'package:horizon_mobile/core/ui_kit/glass_card.dart';
+import 'package:horizon_mobile/core/ui_kit/animated_stat.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -22,11 +26,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(dashboardStateProvider);
     final theme = Theme.of(context);
-
-    // Use Future.microtask to navigate after build — not during build
-    // Navigation happens in async callbacks from card taps
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Colors.transparent, // Allow underlying app background
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,20 +38,36 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             Text(_subtitle(state), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () => context.push('/search')),
+          IconButton(icon: const Icon(Icons.search_rounded), onPressed: () => context.push('/search')),
           IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => context.push('/dashboard/notifications')),
-          IconButton(icon: const Icon(Icons.auto_awesome), onPressed: () => context.push('/advisor')),
+          IconButton(
+            icon: Icon(Icons.auto_awesome, color: AppColors.amber500), 
+            onPressed: () => context.push('/advisor')
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).shimmer(duration: 2000.ms, color: AppColors.amber400),
         ],
       ),
-      body: _buildBody(context, theme, state),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(context, theme, state),
+      ),
     );
   }
 
   String _subtitle(DashboardState s) {
     if (s.status == DashboardLoadStatus.loading) return 'Loading...';
     if (s.dashboard != null) return s.dashboard!.state.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(1)}').trim();
-    return 'Welcome';
+    return 'Welcome back';
   }
 
   Widget _buildBody(BuildContext context, ThemeData theme, DashboardState state) {
@@ -67,11 +86,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Widget _buildSkeleton(ThemeData theme) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: 6,
-      itemBuilder: (_, __) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Card(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary.withValues(alpha: 0.3))))),
+      itemBuilder: (_, i) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: GlassCard(
+          child: SizedBox(
+            height: 120, 
+            child: Center(
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal500.withOpacity(0.5))
+            )
+          )
+        ).animate().fade(duration: 500.ms, delay: (i * 100).ms),
       ),
     );
   }
@@ -83,15 +109,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off, size: 64, color: theme.colorScheme.error),
+            Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.red500),
             const SizedBox(height: 16),
-            Text('Something went wrong', style: theme.textTheme.titleLarge),
+            Text('Something went wrong', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(error ?? 'Could not load dashboard', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
             FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.teal500),
               onPressed: () => ref.read(dashboardStateProvider.notifier).refresh(),
-              icon: const Icon(Icons.refresh), label: const Text('Try Again'),
+              icon: const Icon(Icons.refresh_rounded), label: const Text('Try Again'),
             ),
           ],
         ),
@@ -104,9 +131,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off, size: 64, color: theme.colorScheme.onSurfaceVariant),
+          Icon(Icons.wifi_off_rounded, size: 64, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(height: 16),
-          Text('You\'re offline', style: theme.textTheme.titleLarge),
+          Text('You\'re offline', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Connect to the internet to see your dashboard', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ],
@@ -119,88 +146,100 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final summary = state.summary;
     if (dash == null) return _buildError(context, theme, 'No dashboard data');
 
+    final children = <Widget>[
+      // Critical Alert
+      if (dash.criticalAlert != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: GlassCard(
+            blur: 5,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.warning_amber_rounded, color: AppColors.red500),
+              title: Text(dash.criticalAlert!.title, style: TextStyle(color: AppColors.red500, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ),
+
+      // Welcome + Summary row
+      _buildWelcomeRow(context, theme, summary),
+      const SizedBox(height: AppSpacing.md),
+
+      // Tier 1 — Critical widgets
+      ...dash.tier1.where((w) => w.visible).map((w) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: _buildTier1Widget(context, theme, w, summary),
+      )),
+
+      // Tier 2 — Important widgets (2-column grid)
+      if (dash.tier2.where((w) => w.visible).isNotEmpty) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 12),
+          child: Text('Financial Overview', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        ),
+        _buildTier2Grid(context, theme, dash.tier2.where((w) => w.visible).toList(), summary),
+      ],
+
+      // Tier 3 — Contextual
+      if (dash.tier3.where((w) => w.visible).isNotEmpty) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 12),
+          child: Text('Activity', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        ),
+        ...dash.tier3.where((w) => w.visible).map((w) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: _buildTier3Widget(context, theme, w, summary),
+        )),
+      ],
+      
+      const SizedBox(height: 100), // Bottom padding for floating nav
+    ];
+
     return RefreshIndicator(
+      color: AppColors.teal500,
       onRefresh: () => ref.read(dashboardStateProvider.notifier).refresh(),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Critical Alert
-          if (dash.criticalAlert != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
-                color: theme.colorScheme.errorContainer,
-                child: ListTile(
-                  leading: Icon(Icons.warning_amber, color: theme.colorScheme.error),
-                  title: Text(dash.criticalAlert!.title, style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ),
-
-          // Welcome + Summary row
-          _buildWelcomeRow(context, theme, summary),
-
-          const SizedBox(height: 12),
-
-          // Tier 1 — Critical widgets
-          ...dash.tier1.where((w) => w.visible).map((w) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildTier1Widget(context, theme, w, summary),
-          )),
-
-          // Tier 2 — Important widgets (2-column grid)
-          if (dash.tier2.where((w) => w.visible).isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: Text('Financial Overview', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            ),
-            _buildTier2Grid(context, theme, dash.tier2.where((w) => w.visible).toList(), summary),
-          ],
-
-          // Tier 3 — Contextual
-          if (dash.tier3.where((w) => w.visible).isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: Text('Activity', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            ),
-            ...dash.tier3.where((w) => w.visible).map((w) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildTier3Widget(context, theme, w, summary),
-            )),
-          ],
-        ],
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        itemCount: children.length,
+        itemBuilder: (context, index) {
+          return children[index].animate().fade(duration: 400.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad);
+        },
       ),
     );
   }
 
   Widget _buildWelcomeRow(BuildContext context, ThemeData theme, SummaryData? summary) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(Icons.person, color: theme.colorScheme.primary),
+    return GlassCard(
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Financial Overview', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  if (summary != null)
-                    Text('Net Worth: ${WidgetModel.formatMoney(summary.netWorth)}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                ],
-              ),
+            child: const Icon(Icons.person_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Total Wealth', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant)),
+                if (summary != null)
+                  AnimatedStatValue(
+                    value: summary.netWorth.toDouble(),
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.open_in_new),
-              tooltip: 'View details',
-              onPressed: () {},
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.analytics_rounded, color: AppColors.teal500),
+            tooltip: 'View details',
+            onPressed: () {},
+          ),
+        ],
       ),
     );
   }
@@ -214,7 +253,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 'top_recommendation':
         return RecommendationCard(widget: w);
       default:
-        return Card(child: ListTile(title: Text(w.title), subtitle: Text(w.numericValue)));
+        return GlassCard(child: ListTile(title: Text(w.title), subtitle: Text(w.numericValue)));
     }
   }
 
@@ -231,47 +270,46 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 'debt_summary':
         return DebtSummaryCard(widget: w, debt: s?.totalDebt ?? 0);
       case 'upcoming_bills':
-        return Card(child: ListTile(leading: const Icon(Icons.receipt, color: Colors.amber), title: Text(w.title), subtitle: Text(w.numericValue)));
+        return GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.receipt_rounded, color: AppColors.amber500), SizedBox(height: 8), Text(w.title), Text(w.numericValue)]));
       default:
-        return Card(child: ListTile(title: Text(w.title), subtitle: Text(w.numericValue)));
+        return GlassCard(child: ListTile(title: Text(w.title), subtitle: Text(w.numericValue)));
     }
   }
 
   Widget _buildTier3Widget(BuildContext context, ThemeData theme, WidgetModel w, SummaryData? s) {
     switch (w.widgetType) {
       case 'recent_events':
-        return Card(child: ListTile(leading: Icon(Icons.history, color: theme.colorScheme.primary), title: Text(w.title), trailing: const Icon(Icons.chevron_right)));
+        return GlassCard(child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.history_rounded, color: AppColors.teal500), title: Text(w.title, style: TextStyle(fontWeight: FontWeight.w600)), trailing: const Icon(Icons.chevron_right_rounded)));
       case 'achievements':
-        return Card(child: ListTile(leading: const Icon(Icons.emoji_events, color: Colors.amber), title: Text(w.title)));
+        return GlassCard(child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.emoji_events_rounded, color: AppColors.amber500), title: Text(w.title, style: TextStyle(fontWeight: FontWeight.w600))));
       default:
-        return Card(child: ListTile(title: Text(w.title)));
+        return GlassCard(child: ListTile(title: Text(w.title)));
     }
   }
 
   Widget _buildTier2Grid(BuildContext context, ThemeData theme, List<WidgetModel> widgets, SummaryData? s) {
     final items = widgets.map((w) => _buildTier2Widget(context, theme, w, s)).toList();
-    // Alternate between full-width and half-width
+    
     return Column(
       children: items.asMap().entries.map((entry) {
-        // Make financial cards half-width in pairs
         if (entry.value is NetWorthCard || entry.value is RiskScoreCard || entry.value is PortfolioCard) {
           final idx = entry.key;
           if (idx % 2 == 0 && idx + 1 < items.length) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: Row(
                 children: [
                   Expanded(child: items[idx]),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(child: items[idx + 1]),
                 ],
               ),
             );
           }
-          if (idx % 2 == 0) return Padding(padding: const EdgeInsets.only(bottom: 12), child: items[idx]);
+          if (idx % 2 == 0) return Padding(padding: const EdgeInsets.only(bottom: AppSpacing.md), child: items[idx]);
           return const SizedBox.shrink();
         }
-        return Padding(padding: const EdgeInsets.only(bottom: 12), child: entry.value);
+        return Padding(padding: const EdgeInsets.only(bottom: AppSpacing.md), child: entry.value);
       }).toList(),
     );
   }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/timeline_models.dart';
 import '../widgets/timeline_widgets.dart';
 import '../repository/timeline_repository.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
 
 class TimelineDetailPage extends ConsumerStatefulWidget {
   final String timelineId;
@@ -40,34 +42,72 @@ class _TimelineDetailPageState extends ConsumerState<TimelineDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Details')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _item == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 64, color: theme.colorScheme.error),
-                      const SizedBox(height: 16),
-                      Text('Event not found', style: theme.textTheme.titleMedium),
-                    ],
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    TimelineDetailCard(item: _item!),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back to Timeline'),
-                    ),
-                  ],
-                ),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text('Event Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(theme),
+      ),
+    );
+  }
+
+  Widget _buildBody(ThemeData theme) {
+    if (_loading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.teal500).animate().fade(),
+      );
+    }
+    if (_item == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 64, color: AppColors.red500),
+            const SizedBox(height: 16),
+            Text('Event not found', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+    
+    final children = <Widget>[
+      TimelineDetailCard(item: _item!),
+      const SizedBox(height: 24),
+      OutlinedButton.icon(
+        onPressed: () => context.pop(),
+        icon: const Icon(Icons.arrow_back_rounded),
+        label: const Text('Back to Timeline'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        ),
+      ),
+      const SizedBox(height: 100),
+    ];
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      itemCount: children.length,
+      itemBuilder: (context, index) {
+        return children[index]
+          .animate()
+          .fade(duration: 400.ms, delay: (20 * index).ms)
+          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad, delay: (20 * index).ms);
+      },
     );
   }
 }

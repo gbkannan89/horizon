@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
-const _seedColor = Color(0xFF00897B);
+import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/design_tokens.dart';
 
 class AppSpacing {
   static const double xs = 4;
@@ -33,9 +33,16 @@ class AppIconSize {
 
 final lightTheme = ThemeData(
   useMaterial3: true,
-  colorSchemeSeed: _seedColor,
+  colorSchemeSeed: AppColors.teal500,
   brightness: Brightness.light,
-  appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+  scaffoldBackgroundColor: AppColors.lightBackground,
+  textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true, 
+    elevation: 0,
+    backgroundColor: AppColors.lightBackground,
+    foregroundColor: AppColors.lightTextPrimary,
+  ),
   cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
   inputDecorationTheme: InputDecorationTheme(
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -45,10 +52,20 @@ final lightTheme = ThemeData(
 
 final darkTheme = ThemeData(
   useMaterial3: true,
-  colorSchemeSeed: _seedColor,
+  colorSchemeSeed: AppColors.teal500,
   brightness: Brightness.dark,
-  appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-  cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
+  scaffoldBackgroundColor: AppColors.darkBackground,
+  textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true, 
+    elevation: 0,
+    backgroundColor: AppColors.darkBackground,
+    foregroundColor: AppColors.darkTextPrimary,
+  ),
+  cardTheme: CardThemeData(
+    clipBehavior: Clip.antiAlias,
+    color: AppColors.darkSurface,
+  ),
   inputDecorationTheme: InputDecorationTheme(
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     filled: true,

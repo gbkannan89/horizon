@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../state/timeline_state.dart';
 import '../widgets/timeline_widgets.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
 
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
@@ -40,6 +42,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => FilterSheet(
         current: ref.read(timelineStateProvider).activeFilters,
         onApply: (filters) => ref.read(timelineStateProvider.notifier).applyFilters(filters: filters),
@@ -51,18 +54,24 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(timelineStateProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: _searching
             ? TextField(
                 controller: _searchCtrl,
                 autofocus: true,
+                style: theme.textTheme.titleMedium,
                 decoration: InputDecoration(
                   hintText: 'Search timeline...',
+                  hintStyle: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   border: InputBorder.none,
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded),
                     onPressed: () {
                       setState(() { _searching = false; _searchCtrl.clear(); });
                       ref.read(timelineStateProvider.notifier).refresh();
@@ -73,16 +82,27 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                   if (q.isNotEmpty) ref.read(timelineStateProvider.notifier).search(query: q);
                 },
               )
-            : const Text('Timeline'),
+            : Text('Timeline', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: Icon(_searching ? Icons.search : Icons.search),
+            icon: Icon(_searching ? Icons.search_rounded : Icons.search_rounded),
             onPressed: () => setState(() => _searching = !_searching),
           ),
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: _showFilterSheet),
+          IconButton(icon: const Icon(Icons.filter_list_rounded), onPressed: _showFilterSheet),
         ],
       ),
-      body: _buildBody(context, theme, state),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [AppColors.darkBackground, AppColors.navy900]
+                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
+          ),
+        ),
+        child: _buildBody(context, theme, state),
+      ),
     );
   }
 
@@ -105,25 +125,27 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   }
 
   Widget _buildSkeleton() {
-    return const SharedSkeletonList(itemCount: 8, itemHeight: 72);
+    return const SharedSkeletonList(itemCount: 8, itemHeight: 88);
   }
 
   Widget _buildList(BuildContext context, ThemeData theme, TimelineState state) {
     if (state.items.isEmpty) return _buildEmpty(theme, state);
     return RefreshIndicator(
+      color: AppColors.teal500,
       onRefresh: () => ref.read(timelineStateProvider.notifier).refresh(),
       child: ListView.builder(
         controller: _scrollCtrl,
-        padding: const EdgeInsets.all(16),
-        itemCount: state.items.length,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        itemCount: state.items.length + 1, // +1 for navbar padding
         itemBuilder: (context, index) {
+          if (index == state.items.length) return const SizedBox(height: 100);
           final item = state.items[index];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: TimelineCard(
               item: item,
               onTap: () => context.push('/timeline/${item.timelineId}', extra: item),
-            ),
+            ).animate().fade(duration: 400.ms, delay: (20 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad, delay: (20 * index).ms),
           );
         },
       ),
@@ -135,14 +157,14 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       children: [
         _buildList(context, theme, state),
         if (state.status == TimelineStatus.loadingMore)
-          Positioned(bottom: 0, left: 0, right: 0, child: Center(child: Padding(padding: const EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary)))),
+          Positioned(bottom: 24, left: 0, right: 0, child: Center(child: Padding(padding: const EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal500)))),
       ],
     );
   }
 
   Widget _buildEmpty(ThemeData theme, TimelineState state) {
     return SharedEmptyView(
-      icon: Icons.history,
+      icon: Icons.history_rounded,
       title: state.activeFilters.q != null ? 'No results found' : 'No timeline events',
       subtitle: state.activeFilters.q != null ? 'Try a different search term' : 'Events will appear here as they happen',
     );

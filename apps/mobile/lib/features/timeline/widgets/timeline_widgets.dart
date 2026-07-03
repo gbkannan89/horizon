@@ -1,53 +1,55 @@
 import 'package:flutter/material.dart';
 import '../models/timeline_models.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
+import 'package:horizon_mobile/core/ui_kit/glass_card.dart';
 
 IconData categoryIcon(String category) {
   switch (category) {
-    case 'FinancialEvent': return Icons.currency_rupee;
-    case 'GoalEvent': return Icons.flag;
-    case 'AccountEvent': return Icons.account_balance;
-    case 'AssetEvent': return Icons.trending_up;
-    case 'LiabilityEvent': return Icons.credit_card;
-    case 'PortfolioEvent': return Icons.pie_chart;
-    case 'HealthEvent': return Icons.favorite;
-    case 'RiskEvent': return Icons.shield;
-    case 'RecommendationEvent': return Icons.lightbulb;
-    case 'SimulationEvent': return Icons.science;
-    case 'OptimizationEvent': return Icons.auto_graph;
-    case 'Achievement': return Icons.emoji_events;
-    case 'Milestone': return Icons.flag;
-    case 'UserEvent': return Icons.person;
+    case 'FinancialEvent': return Icons.currency_rupee_rounded;
+    case 'GoalEvent': return Icons.flag_rounded;
+    case 'AccountEvent': return Icons.account_balance_rounded;
+    case 'AssetEvent': return Icons.trending_up_rounded;
+    case 'LiabilityEvent': return Icons.credit_card_rounded;
+    case 'PortfolioEvent': return Icons.pie_chart_rounded;
+    case 'HealthEvent': return Icons.favorite_rounded;
+    case 'RiskEvent': return Icons.shield_rounded;
+    case 'RecommendationEvent': return Icons.lightbulb_rounded;
+    case 'SimulationEvent': return Icons.science_rounded;
+    case 'OptimizationEvent': return Icons.auto_graph_rounded;
+    case 'Achievement': return Icons.emoji_events_rounded;
+    case 'Milestone': return Icons.flag_rounded;
+    case 'UserEvent': return Icons.person_rounded;
     default: return Icons.circle;
   }
 }
 
 Color categoryColor(String category) {
   switch (category) {
-    case 'FinancialEvent': return Colors.green;
+    case 'FinancialEvent': return AppColors.teal500;
     case 'GoalEvent': return Colors.blue;
     case 'AccountEvent': return Colors.indigo;
-    case 'AssetEvent': return Colors.teal;
+    case 'AssetEvent': return AppColors.teal500;
     case 'LiabilityEvent': return Colors.purple;
     case 'PortfolioEvent': return Colors.blue;
     case 'HealthEvent': return Colors.pink;
-    case 'RiskEvent': return Colors.amber;
-    case 'RecommendationEvent': return Colors.amber;
+    case 'RiskEvent': return AppColors.amber500;
+    case 'RecommendationEvent': return AppColors.amber500;
     case 'SimulationEvent': return Colors.cyan;
     case 'OptimizationEvent': return Colors.cyan;
     case 'Achievement': return const Color(0xFFFFD700);
-    case 'Milestone': return Colors.green;
-    case 'UserEvent': return Colors.grey;
-    default: return Colors.grey;
+    case 'Milestone': return AppColors.teal500;
+    case 'UserEvent': return AppColors.slate500;
+    default: return AppColors.slate500;
   }
 }
 
 Color severityColor(String severity) {
   switch (severity) {
-    case 'critical': return Colors.red;
-    case 'warning': return Colors.orange;
-    case 'success': return Colors.green;
+    case 'critical': return AppColors.red500;
+    case 'warning': return AppColors.amber500;
+    case 'success': return AppColors.teal500;
     case 'milestone': return Colors.blue;
-    default: return Colors.grey;
+    default: return AppColors.slate500;
   }
 }
 
@@ -59,9 +61,9 @@ class SeverityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = severityColor(severity);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(severity[0].toUpperCase() + severity.substring(1), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.xs)),
+      child: Text(severity[0].toUpperCase() + severity.substring(1), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -75,9 +77,9 @@ class CategoryBadge extends StatelessWidget {
     final color = categoryColor(category);
     final label = category.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(1)}').trim();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.xs)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -93,54 +95,48 @@ class TimelineCard extends StatelessWidget {
     final theme = Theme.of(context);
     final color = categoryColor(item.category);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: Icon(categoryIcon(item.category), color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return GlassCard(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.md)),
+            child: Icon(categoryIcon(item.category), color: color, size: 24),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(child: Text(item.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                        const SizedBox(width: 8),
-                        Text(item.formattedDate, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                      ],
-                    ),
-                    if (item.summary.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(item.summary, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        CategoryBadge(category: item.category),
-                        const SizedBox(width: 6),
-                        SeverityBadge(severity: item.severity),
-                        if (item.amount != 0) ...[
-                          const Spacer(),
-                          Text(_formatAmount(item.amount), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: item.amount > 0 ? Colors.green : Colors.red)),
-                        ],
-                      ],
-                    ),
+                    Expanded(child: Text(item.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    Text(item.formattedDate, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
-              ),
-            ],
+                if (item.summary.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(item.summary, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    CategoryBadge(category: item.category),
+                    const SizedBox(width: 8),
+                    SeverityBadge(severity: item.severity),
+                    if (item.amount != 0) ...[
+                      const Spacer(),
+                      Text(_formatAmount(item.amount), style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: item.amount > 0 ? AppColors.teal500 : AppColors.red500)),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -160,64 +156,61 @@ class TimelineDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = categoryColor(item.category);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                child: Icon(categoryIcon(item.category), color: color, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text(item.eventType, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                ],
-              )),
-            ]),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              width: 56, height: 56,
+              decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.lg)),
+              child: Icon(categoryIcon(item.category), color: color, size: 28),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(item.eventType, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            )),
+          ]),
+          const SizedBox(height: 24),
+          if (item.description.isNotEmpty) ...[
+            Text('Description', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(item.description, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 16),
-            if (item.description.isNotEmpty) ...[
-              Text('Description', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(item.description, style: theme.textTheme.bodyMedium),
-              const SizedBox(height: 12),
-            ],
-            _detailRow(theme, 'Category', item.category),
-            _detailRow(theme, 'Severity', item.severity[0].toUpperCase() + item.severity.substring(1)),
-            _detailRow(theme, 'Event Type', item.eventType),
-            _detailRow(theme, 'Timestamp', item.timestamp),
-            if (item.relatedEntity != null) _detailRow(theme, 'Entity ID', item.relatedEntity!),
-            if (item.relatedGoal != null) _detailRow(theme, 'Related Goal', item.relatedGoal!),
-            if (item.relatedAccount != null) _detailRow(theme, 'Related Account', item.relatedAccount!),
-            if (item.relatedAsset != null) _detailRow(theme, 'Related Asset', item.relatedAsset!),
-            if (item.relatedAgg != null) _detailRow(theme, 'Related Aggregate', item.relatedAgg!),
-            if (item.amount != 0) _detailRow(theme, 'Amount', _formatAmount(item.amount)),
-            if (item.metadata != null && item.metadata!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Metadata', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              ...item.metadata!.entries.map((e) => _detailRow(theme, e.key, '${e.value}')),
-            ],
           ],
-        ),
+          _detailRow(theme, 'Category', item.category),
+          _detailRow(theme, 'Severity', item.severity[0].toUpperCase() + item.severity.substring(1)),
+          _detailRow(theme, 'Event Type', item.eventType),
+          _detailRow(theme, 'Timestamp', item.timestamp),
+          if (item.relatedEntity != null) _detailRow(theme, 'Entity ID', item.relatedEntity!),
+          if (item.relatedGoal != null) _detailRow(theme, 'Related Goal', item.relatedGoal!),
+          if (item.relatedAccount != null) _detailRow(theme, 'Related Account', item.relatedAccount!),
+          if (item.relatedAsset != null) _detailRow(theme, 'Related Asset', item.relatedAsset!),
+          if (item.relatedAgg != null) _detailRow(theme, 'Related Aggregate', item.relatedAgg!),
+          if (item.amount != 0) _detailRow(theme, 'Amount', _formatAmount(item.amount)),
+          if (item.metadata != null && item.metadata!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Metadata', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            ...item.metadata!.entries.map((e) => _detailRow(theme, e.key, '${e.value}')),
+          ],
+        ],
       ),
     );
   }
 
   Widget _detailRow(ThemeData theme, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+          SizedBox(width: 140, child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
         ],
       ),
     );

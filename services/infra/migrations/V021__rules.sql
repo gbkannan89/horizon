@@ -1,7 +1,7 @@
-CREATE TABLE rules (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    household_id UUID REFERENCES households(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS rules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL,
+    household_id TEXT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     category VARCHAR(50) NOT NULL,
@@ -13,6 +13,6 @@ CREATE TABLE rules (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_rules_user_id ON rules(user_id);
-CREATE INDEX idx_rules_household_id ON rules(household_id);
-CREATE INDEX idx_rules_category ON rules(category);
+CREATE INDEX IF NOT EXISTS idx_rules_user_id ON rules(user_id);
+CREATE INDEX IF NOT EXISTS idx_rules_household_id ON rules(household_id);
+CREATE INDEX IF NOT EXISTS idx_rules_category ON rules(category);
