@@ -23,5 +23,7 @@ use (
 	./services/engines/tax-planning
 	./services/engines/currency
 	./services/engines/documents
+	./services/engines/billpay
+	./services/engines/integrations
 	./packages/errors
 )

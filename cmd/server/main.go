@@ -34,6 +34,8 @@ import (
 	taxReg "github.com/horizon/core/services/engines/tax-planning/register"
 	currencyReg "github.com/horizon/core/services/engines/currency/register"
 	docReg "github.com/horizon/core/services/engines/documents/register"
+	billpayReg "github.com/horizon/core/services/engines/billpay/register"
+	integrationsReg "github.com/horizon/core/services/engines/integrations/register"
 	rulesReg "github.com/horizon/core/services/domains/rules/register"
 	streamReg "github.com/horizon/core/services/infra/events/register"
 )
@@ -115,6 +117,12 @@ func main() {
 
 	// Document management engine
 	docReg.RegisterRoutes(mux)
+
+	// Bill pay engine
+	billpayReg.RegisterRoutes(mux)
+
+	// External integrations engine
+	integrationsReg.RegisterRoutes(mux)
 
 	// Account domain — household account listings
 	acctDomainReg.RegisterRoutes(mux, pool)
