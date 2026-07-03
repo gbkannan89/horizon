@@ -49,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: const Color(0xFFF1F5F9),
       body: RefreshIndicator(
         onRefresh: provider.loadAllData,
-        color: const Color(0xFF1E3A8A),
+        color: const Color(0xFF0D9488),
         child: CustomScrollView(
           slivers: [
             // ── Hero gradient header ──────────────────────────────────────────
@@ -111,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F2057), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+          colors: [Color(0xFF042F2E), Color(0xFF0D9488), Color(0xFF14B8A6)],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(36)),
       ),
@@ -227,7 +227,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SizedBox(width: 10),
       _miniCard('Spent',   loaded ? '₹${_formatNum(p.totalSpent)}'    : '--', const Color(0xFFE88A1A), Icons.shopping_cart_outlined),
       const SizedBox(width: 10),
-      _miniCard('Left',    loaded ? '₹${_formatNum(p.totalLeft)}'     : '--', const Color(0xFF1E3A8A), Icons.savings_outlined),
+      _miniCard('Left',    loaded ? '₹${_formatNum(p.totalLeft)}'     : '--', const Color(0xFF0D9488), Icons.savings_outlined),
     ]);
   }
 
@@ -375,14 +375,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.06), blurRadius: 24, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.06), blurRadius: 24, offset: const Offset(0, 10))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFF3B82F6).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.insights_rounded, color: Color(0xFF3B82F6), size: 20),
+            decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.insights_rounded, color: Color(0xFF2DD4BF), size: 20),
           ),
           const SizedBox(width: 12),
           const Text('Financial Insights', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
@@ -877,7 +877,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(24),
-      boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 8))],
+      boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 8))],
     ),
     child: child,
   );

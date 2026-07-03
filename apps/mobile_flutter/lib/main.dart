@@ -64,7 +64,7 @@ class HorizonApp extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
           floatingLabelStyle: const TextStyle(
-            color: Color(0xFF1E3A8A),
+            color: Color(0xFF0D9488),
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -81,7 +81,7 @@ class HorizonApp extends StatelessWidget {
           // Focus state — strong navy blue border (2px)
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2.0),
+            borderSide: const BorderSide(color: Color(0xFF0D9488), width: 2.0),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -95,12 +95,12 @@ class HorizonApp extends StatelessWidget {
           // Tall comfortable tap target
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
 
-          prefixIconColor: Color(0xFF1E3A8A),
+          prefixIconColor: Color(0xFF0D9488),
           suffixIconColor: Color(0xFF64748B),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E3A8A),
+            backgroundColor: const Color(0xFF0D9488),
             foregroundColor: Colors.white,
             elevation: 0,
             minimumSize: const Size(double.infinity, 52),

@@ -101,7 +101,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createCollection(context),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: const Color(0xFF0D9488),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -136,11 +136,11 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? const Color(0xFF1E3A8A).withValues(alpha: 0.1) : const Color(0xFF94A3B8).withValues(alpha: 0.2),
+            color: isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : const Color(0xFF94A3B8).withValues(alpha: 0.2),
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
+              color: const Color(0xFF0D9488).withValues(alpha: 0.05),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -154,12 +154,12 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF1E3A8A).withValues(alpha: 0.1) : Colors.grey.shade100,
+                    color: isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.people_alt_outlined,
-                    color: isActive ? const Color(0xFF1E3A8A) : Colors.grey,
+                    color: isActive ? const Color(0xFF0D9488) : Colors.grey,
                     size: 22,
                   ),
                 ),
@@ -198,7 +198,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('₹${_fmt(totalCollected)}',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A))),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0D9488))),
                       Text('collected of ₹${_fmt(totalExpected)}',
                           style: const TextStyle(fontSize: 11, color: Colors.grey)),
                     ],
@@ -207,13 +207,13 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: pct >= 1.0 ? Colors.green.shade50 : const Color(0xFF1E3A8A).withValues(alpha: 0.05),
+                    color: pct >= 1.0 ? Colors.green.shade50 : const Color(0xFF0D9488).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text('${(pct * 100).toInt()}%',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w800,
-                          color: pct >= 1.0 ? Colors.green : const Color(0xFF1E3A8A))),
+                          color: pct >= 1.0 ? Colors.green : const Color(0xFF0D9488))),
                 ),
               ],
             ),
@@ -223,8 +223,8 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
               child: LinearPercentIndicator(
                 lineHeight: 8,
                 percent: pct,
-                progressColor: pct >= 1.0 ? const Color(0xFF059669) : const Color(0xFF1E3A8A),
-                backgroundColor: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                progressColor: pct >= 1.0 ? const Color(0xFF059669) : const Color(0xFF0D9488),
+                backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.08),
                 barRadius: const Radius.circular(6),
                 padding: EdgeInsets.zero,
               ),

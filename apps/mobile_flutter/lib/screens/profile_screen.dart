@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../utils/ui_utils.dart';
 import '../screens/login_screen.dart';
 import '../screens/insurance_hub_screen.dart';
+import '../screens/edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -195,10 +196,10 @@ class ProfileScreen extends StatelessWidget {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+                            color: isSelected ? const Color(0xFF0D9488) : Colors.white,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade200,
+                              color: isSelected ? const Color(0xFF0D9488) : Colors.grey.shade200,
                             ),
                           ),
                           child: Column(
@@ -230,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     prefixText: '₹ ',
-                    prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
+                    prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -256,10 +257,10 @@ class ProfileScreen extends StatelessWidget {
                           margin: EdgeInsets.only(right: f == 'monthly' ? 8 : 0),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+                            color: isSelected ? const Color(0xFF0D9488) : Colors.white,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade200,
+                              color: isSelected ? const Color(0xFF0D9488) : Colors.grey.shade200,
                             ),
                           ),
                           child: Center(
@@ -299,7 +300,7 @@ class ProfileScreen extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
+                      backgroundColor: const Color(0xFF0D9488),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
                     ),
@@ -389,7 +390,7 @@ class ProfileScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   prefixText: '₹ ',
-                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
+                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
                   filled: true, fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -403,7 +404,7 @@ class ProfileScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   prefixText: '₹ ',
-                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
+                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
                   filled: true, fillColor: Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -430,7 +431,7 @@ class ProfileScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
+                    backgroundColor: const Color(0xFF0D9488),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
@@ -448,7 +449,7 @@ class ProfileScreen extends StatelessWidget {
   // ─── Income type helpers ───────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
-      case 'salary':   return const Color(0xFF1E3A8A);
+      case 'salary':   return const Color(0xFF0D9488);
       case 'business': return const Color(0xFF7C3AED);
       case 'passive':  return const Color(0xFF059669);
       default:         return const Color(0xFF475569);
@@ -500,7 +501,7 @@ class ProfileScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF0F2057), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                  colors: [Color(0xFF042F2E), Color(0xFF0D9488), Color(0xFF14B8A6)],
                 ),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
               ),
@@ -514,7 +515,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: CircleAvatar(
                       radius: 46,
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: const Color(0xFF2DD4BF),
                       child: Text(userInitials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                     ),
                   ),
@@ -541,64 +542,35 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Personal Information Card ──────────────────────────────────────
+                  // ── Personal Information Navigation ────────────────────────────────
                   Container(
-                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                  const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 24),
-                  const Text('Full Name', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: TextEditingController(text: userName),
-                    decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('Email', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: TextEditingController(text: userEmail),
-                    decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('Phone', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: TextEditingController(text: ''),
-                    decoration: InputDecoration(
-                      filled: true, fillColor: Colors.grey.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.person_outline, color: Color(0xFF0D9488)),
                       ),
-                      child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      title: const Text('Personal Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      subtitle: const Text('Update your name, email, and phone', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+                      },
+                    ),
                     ),
                   ),
-                ],
-              ),
-            ),
             const SizedBox(height: 40),
 
             // ── MY INCOME SOURCES ────────────────────────────────────────────
@@ -609,9 +581,9 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton.icon(
                   onPressed: () => _showAddIncomeModal(context),
-                  icon: const Icon(Icons.add_rounded, color: Color(0xFF1E3A8A), size: 20),
+                  icon: const Icon(Icons.add_rounded, color: Color(0xFF0D9488), size: 20),
                   label: const Text('Add Source',
-                      style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -650,11 +622,11 @@ class ProfileScreen extends StatelessWidget {
                         Container(
                           width: 56, height: 56,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                            color: const Color(0xFF0D9488).withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.account_balance_wallet_outlined,
-                              color: Color(0xFF1E3A8A), size: 28),
+                              color: Color(0xFF0D9488), size: 28),
                         ),
                         const SizedBox(height: 16),
                         const Text('No income sources yet',
@@ -680,7 +652,7 @@ class ProfileScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                          colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -823,9 +795,9 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton.icon(
                   onPressed: () => _showAddMemberModal(context),
-                  icon: const Icon(Icons.add_rounded, color: Color(0xFF1E3A8A), size: 20),
+                  icon: const Icon(Icons.add_rounded, color: Color(0xFF0D9488), size: 20),
                   label: const Text('Add',
-                      style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -893,7 +865,7 @@ class ProfileScreen extends StatelessWidget {
                 icon: const Icon(Icons.shield_rounded),
                 label: const Text('Insurance Hub', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
+                  backgroundColor: const Color(0xFF0D9488),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),

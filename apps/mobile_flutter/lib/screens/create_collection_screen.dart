@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
 
 class CreateCollectionScreen extends StatefulWidget {
-  const CreateCollectionScreen({super.key});
+  final double? prefillAmount;
+  final String? prefillName;
+
+  const CreateCollectionScreen({super.key, this.prefillAmount, this.prefillName});
 
   @override
   State<CreateCollectionScreen> createState() => _CreateCollectionScreenState();
@@ -17,6 +20,17 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   bool _isSubmitting = false;
 
   List<_MemberEntry> _members = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefillName != null && widget.prefillAmount != null) {
+      _members.add(_MemberEntry(
+        nameCtrl: TextEditingController(text: widget.prefillName),
+        amountCtrl: TextEditingController(text: widget.prefillAmount!.toStringAsFixed(0)),
+      ));
+    }
+  }
 
   @override
   void dispose() {
@@ -163,16 +177,16 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withValues(alpha: 0.04),
+              color: const Color(0xFF0D9488).withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.1)),
+              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.group_add, color: const Color(0xFF1E3A8A), size: 20),
+                    Icon(Icons.group_add, color: const Color(0xFF0D9488), size: 20),
                     const SizedBox(width: 8),
                     const Text('Bulk Add Members',
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1E293B))),
@@ -208,7 +222,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                       onPressed: _addBulk,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        backgroundColor: const Color(0xFF1E3A8A),
+                        backgroundColor: const Color(0xFF0D9488),
                       ),
                       child: const Text('Add'),
                     ),
@@ -297,8 +311,8 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
             icon: const Icon(Icons.person_add_outlined, size: 18),
             label: const Text('Add Single Member'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF1E3A8A),
-              side: const BorderSide(color: Color(0xFF1E3A8A)),
+              foregroundColor: const Color(0xFF0D9488),
+              side: const BorderSide(color: Color(0xFF0D9488)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),

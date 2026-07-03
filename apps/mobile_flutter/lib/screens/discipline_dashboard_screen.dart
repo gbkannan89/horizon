@@ -133,7 +133,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFFF8FAFC),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF0D9488))),
       );
     }
 
@@ -257,7 +257,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
     return _buildGamifiedCard(
       title: 'Financial Guardrails',
       icon: Icons.shield_rounded,
-      gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+      gradient: const [Color(0xFF14B8A6), Color(0xFF60A5FA)],
       child: Column(
         children: [
           _buildGuardrailRow('Emergency Runway', '${g.emergencyFundRatio.toStringAsFixed(1)} months\nTarget: ₹${g.emergencyTargetAmount.toStringAsFixed(0)}', g.runwayStatus),
@@ -804,7 +804,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                     onSelected: (v) {
                       if (v) setState(() => lockDays = days);
                     },
-                    selectedColor: const Color(0xFF1E3A8A),
+                    selectedColor: const Color(0xFF0D9488),
                     labelStyle: TextStyle(color: sel ? Colors.white : Colors.grey.shade700, fontWeight: sel ? FontWeight.bold : FontWeight.normal),
                     backgroundColor: Colors.grey.shade100,
                     side: BorderSide.none,
@@ -870,7 +870,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
+                        backgroundColor: const Color(0xFF0D9488),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),

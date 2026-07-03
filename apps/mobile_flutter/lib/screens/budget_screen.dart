@@ -7,6 +7,10 @@ import '../providers/financial_provider.dart';
 import '../utils/ui_utils.dart';
 import '../main.dart';
 import 'statement_insights_screen.dart';
+import 'create_collection_screen.dart';
+import 'collections_list_screen.dart';
+import 'collection_detail_screen.dart';
+import 'sms_import_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -161,7 +165,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     autofocus: true,
                     decoration: InputDecoration(
                       prefixText: '₹ ',
-                      prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A), fontSize: 16),
+                      prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488), fontSize: 16),
                       hintText: '500',
                       filled: true,
                       fillColor: Colors.white,
@@ -171,7 +175,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFF0D9488), width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     ),
@@ -194,7 +198,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFF0D9488), width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     ),
@@ -222,10 +226,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: selected ? const Color(0xFF1E3A8A) : Colors.white,
+                            color: selected ? const Color(0xFF0D9488) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: selected ? const Color(0xFF1E3A8A) : Colors.grey.shade200,
+                              color: selected ? const Color(0xFF0D9488) : Colors.grey.shade200,
                               width: 1.5,
                             ),
                           ),
@@ -298,7 +302,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.autorenew_rounded, color: isRecurring ? const Color(0xFF1E3A8A) : Colors.grey, size: 20),
+                                Icon(Icons.autorenew_rounded, color: isRecurring ? const Color(0xFF0D9488) : Colors.grey, size: 20),
                                 const SizedBox(width: 10),
                                 Text('Make this a Recurring Bill', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRecurring ? const Color(0xFF1E293B) : Colors.grey.shade600)),
                               ],
@@ -306,7 +310,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             Switch(
                               value: isRecurring,
                               onChanged: (val) => setState(() => isRecurring = val),
-                              activeThumbColor: const Color(0xFF1E3A8A),
+                              activeThumbColor: const Color(0xFF0D9488),
                             ),
                           ],
                         ),
@@ -352,7 +356,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               Switch(
                                 value: isEmi,
                                 onChanged: (val) => setState(() => isEmi = val),
-                                activeThumbColor: const Color(0xFF1E3A8A),
+                                activeThumbColor: const Color(0xFF0D9488),
                               ),
                             ],
                           ),
@@ -420,7 +424,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
+                        backgroundColor: const Color(0xFF0D9488),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
@@ -489,7 +493,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     if (categories.isEmpty) return const SizedBox.shrink();
 
     final colors = [
-      const Color(0xFF3B82F6), const Color(0xFFF59E0B), const Color(0xFF10B981),
+      const Color(0xFF2DD4BF), const Color(0xFFF59E0B), const Color(0xFF10B981),
       const Color(0xFFEF4444), const Color(0xFF8B5CF6), const Color(0xFFEC4899),
       const Color(0xFF06B6D4), const Color(0xFFF97316),
     ];
@@ -497,7 +501,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return _budgetCard(
       title: 'Spending by Category',
       icon: Icons.pie_chart_rounded,
-      color: const Color(0xFF3B82F6),
+      color: const Color(0xFF2DD4BF),
       child: Column(children: [
         ...categories.take(6).toList().asMap().entries.map((entry) {
           final i = entry.key;
@@ -606,7 +610,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       width: 70,
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+        color: isSelected ? const Color(0xFF0D9488) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: isSelected ? null : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
@@ -770,7 +774,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: _showActualSpent ? const Color(0xFF1E3A8A) : Colors.grey.shade600,
+                            color: _showActualSpent ? const Color(0xFF0D9488) : Colors.grey.shade600,
                           ),
                         ),
                       ),
@@ -791,7 +795,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: !_showActualSpent ? const Color(0xFF1E3A8A) : Colors.grey.shade600,
+                            color: !_showActualSpent ? const Color(0xFF0D9488) : Colors.grey.shade600,
                           ),
                         ),
                       ),
@@ -973,45 +977,206 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final color = _getColorForBucket(bucket);
     final icon = _getIconData(exp['icon'] ?? '');
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(date, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                      child: Text(bucket, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-              ],
+    return GestureDetector(
+      onLongPress: () => _showExpenseActions(context, exp),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 20),
             ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(date, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                        child: Text(bucket, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExpenseActions(BuildContext context, dynamic exp) {
+    final name = exp['name'] ?? '';
+    final amount = (exp['amount'] ?? 0).toDouble();
+    final fp = Provider.of<FinancialProvider>(context, listen: false);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text('₹${amount.toStringAsFixed(0)} — $name',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 4),
+              Text('What would you like to do with this transaction?',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+              const SizedBox(height: 24),
+
+              // Create Collection
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.people_alt_outlined, color: Color(0xFF6B46C1)),
+                ),
+                title: const Text('Create Collection from this',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Make this a member in a new collection'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CreateCollectionScreen(prefillAmount: amount, prefillName: name),
+                    ),
+                  );
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.link, color: Color(0xFF0D9488)),
+                ),
+                title: const Text('Link to existing Collection',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Mark this as payment for a collection member'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _showCollectionPicker(context, exp);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
-          Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
-        ],
+        ),
+      ),
+    );
+  }
+
+  void _showCollectionPicker(BuildContext context, dynamic exp) {
+    final fp = Provider.of<FinancialProvider>(context, listen: false);
+    final active = fp.collections.where((c) => c['status'] == 'active').toList();
+
+    if (active.isEmpty) {
+      UiUtils.showSnack(context, 'No active collections. Create one first.', isError: true);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('Select Collection',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              const Text('Which collection does this payment belong to?',
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 16),
+              ...active.map((c) {
+                final label = c['label'] ?? '';
+                final collected = (c['total_collected'] ?? 0).toDouble();
+                final expected = (c['total_expected'] ?? 0).toDouble();
+                return ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.people_outline, color: Color(0xFF0D9488), size: 20),
+                  ),
+                  title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text('₹${collected.toStringAsFixed(0)} / ₹${expected.toStringAsFixed(0)} collected'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showMemberPicker(context, c, exp);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMemberPicker(BuildContext context, Map<String, dynamic> collection, dynamic exp) {
+    final amount = (exp['amount'] ?? 0).toDouble();
+    final expName = exp['name'] ?? '';
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CollectionDetailScreen(
+          collection: collection,
+          highlightAmount: amount,
+          highlightName: expName,
+        ),
       ),
     );
   }
@@ -1242,9 +1407,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)]),
+                    gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)]),
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -1328,10 +1493,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                                color: const Color(0xFF0D9488).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.analytics_outlined, color: Color(0xFF1E3A8A), size: 26),
+                              child: const Icon(Icons.analytics_outlined, color: Color(0xFF0D9488), size: 26),
                             ),
                             const SizedBox(width: 16),
                             const Expanded(
@@ -1342,6 +1507,56 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
                                   SizedBox(height: 4),
                                   Text('Detect recurring, patterns & subscriptions',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Import from SMS Card
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SmsImportScreen()),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0891B2).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.sms_outlined, color: Color(0xFF0891B2), size: 26),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Import from SMS',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                                  SizedBox(height: 4),
+                                  Text('Read bank SMS and auto-add transactions',
                                       style: TextStyle(fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
@@ -1367,8 +1582,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E3A8A),
-                        side: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                        foregroundColor: const Color(0xFF0D9488),
+                        side: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
@@ -1398,7 +1613,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     ),
     floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddExpenseModal(context),
-            backgroundColor: const Color(0xFF1E3A8A),
+            backgroundColor: const Color(0xFF0D9488),
             child: const Icon(Icons.add, color: Colors.white),
           ),
         );

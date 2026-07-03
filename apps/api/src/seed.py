@@ -46,6 +46,8 @@ def seed_data():
             cur.execute("DELETE FROM incomes WHERE user_id = %s", (user_id,))
             cur.execute("DELETE FROM health_scores WHERE household_id = (SELECT household_id FROM users WHERE id = %s)", (user_id,))
             cur.execute("DELETE FROM contributing_members WHERE household_id = (SELECT household_id FROM users WHERE id = %s)", (user_id,))
+            cur.execute("DELETE FROM collection_members WHERE collection_id IN (SELECT id FROM collections WHERE user_id = %s)", (user_id,))
+            cur.execute("DELETE FROM collections WHERE user_id = %s", (user_id,))
             cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
             cur.execute("DELETE FROM households WHERE id NOT IN (SELECT household_id FROM users WHERE household_id IS NOT NULL)")
 
@@ -408,6 +410,104 @@ def seed_data():
                     """,
                     (user_id, cat, severity, title, msg, action_label, action_link, nudge_date)
                 )
+
+            # ── COLLECTIONS ─────────────────────────────────────────────────────
+            logger.info("Seeding collections...")
+
+            collections_data = [
+                {
+                    "label": "Badminton Court - July 2026",
+                    "description": "Monthly badminton court subscription collection from friends",
+                    "members": [
+                        ("Rajesh", 5000.00),
+                        ("Priya", 2500.00),
+                        ("Arun", 5000.00),
+                        ("Ananya", 5000.00),
+                        ("Vikram", 2500.00),
+                        ("Sneha", 5000.00),
+                        ("Rahul", 5000.00),
+                        ("Divya", 5000.00),
+                        ("Karthik", 5000.00),
+                        ("Meera", 5000.00),
+                        ("Ajay", 5000.00),
+                        ("Neha", 5000.00),
+                        ("Rohit", 2500.00),
+                        ("Pooja", 5000.00),
+                    ],
+                },
+                {
+                    "label": "Office Birthday Pool - Q3 2026",
+                    "description": "Office team collection for birthday celebrations",
+                    "members": [
+                        ("Amit", 1000.00),
+                        ("Sara", 1000.00),
+                        ("Ravi", 1000.00),
+                        ("Leena", 1000.00),
+                        ("Gopal", 1000.00),
+                        ("Nisha", 1000.00),
+                    ],
+                },
+                {
+                    "label": "Weekend Getaway - Lonavala",
+                    "description": "Trip collection for 3-day weekend trip",
+                    "members": [
+                        ("Varun", 8000.00),
+                        ("Kavya", 8000.00),
+                        ("Manish", 8000.00),
+                        ("Anita", 4000.00),
+                        ("Deepak", 4000.00),
+                    ],
+                },
+            ]
+
+            # Track what we insert so we can create matching expense entries
+            collection_member_map = {}  # member_name -> (collection_label, amount)
+
+            for c in collections_data:
+                total_exp = sum(m[1] for m in c["members"])
+                cur.execute("""
+                    INSERT INTO collections (user_id, label, description, total_expected, total_collected, status)
+                    VALUES (%s, %s, %s, %s, 0, 'active')
+                    RETURNING id
+                """, (user_id, c["label"], c["description"], total_exp))
+                collection_id = cur.fetchone()[0]
+
+                for m_name, m_amount in c["members"]:
+                    # Mark some as already paid for realistic look
+                    is_paid = random.random() < 0.35  # 35% chance already paid
+                    paid_amt = m_amount if is_paid else 0.0
+                    paid_date = today - datetime.timedelta(days=random.randint(1, 5)) if is_paid else None
+                    m_status = "paid" if is_paid else "pending"
+
+                    cur.execute("""
+                        INSERT INTO collection_members (collection_id, name, expected_amount, paid_amount, paid_date, status)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (collection_id, m_name, m_amount, paid_amt, paid_date, m_status))
+                    member_id = cur.fetchone()[0]
+                    collection_member_map[m_name] = (c["label"], m_amount, member_id)
+
+                    # If paid, also add a matching expense entry (simulates a UPI / bank transfer received)
+                    if is_paid:
+                        expense_name = random.choice([
+                            f"UPI-{m_name.upper()}",
+                            f"Transfer from {m_name}",
+                            f"Payment from {m_name}",
+                            f"{m_name} - Badminton",
+                        ])
+                        cur.execute("""
+                            INSERT INTO expenses (user_id, name, amount, category, bucket, icon, date)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """, (user_id, expense_name, m_amount, "Transfer Received", "Wants", "payments", paid_date))
+
+            # Update collection totals
+            cur.execute("""
+                UPDATE collections SET
+                    total_collected = (SELECT COALESCE(SUM(paid_amount), 0) FROM collection_members WHERE collection_id = collections.id),
+                    total_expected = (SELECT COALESCE(SUM(expected_amount), 0) FROM collection_members WHERE collection_id = collections.id)
+            """)
+
+            logger.info(f"  Seeded {sum(len(c['members']) for c in collections_data)} collection members across {len(collections_data)} collections")
 
             db.commit()
             logger.info(f"Database seeded successfully!")

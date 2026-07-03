@@ -5,8 +5,15 @@ import '../providers/financial_provider.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final Map<String, dynamic> collection;
+  final double? highlightAmount;
+  final String? highlightName;
 
-  const CollectionDetailScreen({super.key, required this.collection});
+  const CollectionDetailScreen({
+    super.key,
+    required this.collection,
+    this.highlightAmount,
+    this.highlightName,
+  });
 
   @override
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
@@ -29,6 +36,29 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     final detail = await fp.getCollectionDetail(_collection['id']);
     if (detail != null && mounted) {
       setState(() => _collection = detail);
+    }
+  }
+
+  Future<void> _recordPaymentFromSuggestion(Map<String, dynamic> member) async {
+    final amount = widget.highlightAmount ?? (member['expected_amount'] ?? 0).toDouble();
+    try {
+      final fp = Provider.of<FinancialProvider>(context, listen: false);
+      await fp.recordPayment(member['id'], amount);
+      await _refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('₹${amount.toStringAsFixed(0)} linked to ${member['name']}'),
+            backgroundColor: const Color(0xFF059669),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -203,7 +233,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                  colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -268,6 +298,82 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Suggestion from transaction
+            if (widget.highlightAmount != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6B46C1).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF6B46C1).withValues(alpha: 0.15)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lightbulb_outline, color: Color(0xFF6B46C1), size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Link this transaction',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF6B46C1))),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '₹${widget.highlightAmount!.toStringAsFixed(0)} — ${widget.highlightName ?? ''}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('Which member does this payment belong to?',
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 12),
+                    ...members.where((m) => m['status'] != 'paid').take(3).map((m) {
+                      final diff = (widget.highlightAmount! - (m['expected_amount'] ?? 0).toDouble()).abs();
+                      final isMatch = diff < 1;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: OutlinedButton.icon(
+                          onPressed: () => _recordPaymentFromSuggestion(m),
+                          icon: Icon(
+                            isMatch ? Icons.recommend : Icons.person_outline,
+                            size: 16,
+                            color: isMatch ? const Color(0xFF0D9488) : null,
+                          ),
+                          label: Text(
+                            '${m['name']} — ₹${(m['expected_amount'] ?? 0).toDouble().toStringAsFixed(0)}'
+                            '${isMatch ? '  ✓ Best match' : ''}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isMatch ? const Color(0xFF0D9488) : null,
+                              fontWeight: isMatch ? FontWeight.w700 : null,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isMatch ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                            side: BorderSide(
+                              color: isMatch
+                                  ? const Color(0xFF0D9488)
+                                  : const Color(0xFFE2E8F0),
+                              width: isMatch ? 2 : 1,
+                            ),
+                            backgroundColor: isMatch
+                                ? const Color(0xFF0D9488).withValues(alpha: 0.05)
+                                : null,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      );
+                    }),
+                    if (members.where((m) => m['status'] != 'paid').length > 3)
+                      Text('+ ${members.where((m) => m['status'] != 'paid').length - 3} more pending members',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
 
             // Members
             Row(
@@ -412,10 +518,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                  color: const Color(0xFF0D9488).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.payments_outlined, color: Color(0xFF1E3A8A), size: 20),
+                child: const Icon(Icons.payments_outlined, color: Color(0xFF0D9488), size: 20),
               ),
             ),
         ],

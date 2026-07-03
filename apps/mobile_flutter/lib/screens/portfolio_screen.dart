@@ -14,7 +14,7 @@ class PortfolioScreen extends StatelessWidget {
       labelText: label,
       hintText: hint,
       prefixText: prefix,
-      prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E3A8A)),
+      prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
       labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
       filled: true,
       fillColor: Colors.white,
@@ -24,7 +24,7 @@ class PortfolioScreen extends StatelessWidget {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF0D9488), width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -373,7 +373,7 @@ class PortfolioScreen extends StatelessWidget {
                   if (ctx.mounted) _showSnack(ctx, 'Failed to add income: $e', isError: true);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
               child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Text('Add Income', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             )),
@@ -617,10 +617,10 @@ class PortfolioScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: provider.isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488)))
           : RefreshIndicator(
             onRefresh: provider.loadAllData,
-            color: const Color(0xFF1E3A8A),
+            color: const Color(0xFF0D9488),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -630,12 +630,12 @@ class PortfolioScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                      colors: [Color(0xFF0F172A), Color(0xFF0D9488)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3), blurRadius: 30, offset: const Offset(0, 15))],
+                    boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.3), blurRadius: 30, offset: const Offset(0, 15))],
                   ),
                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -699,12 +699,12 @@ class PortfolioScreen extends StatelessWidget {
                 )),
 
                 // Incomes
-                _buildSectionHeader('Income Sources', const [Color(0xFF1E3A8A), Color(0xFF3B82F6)], () => _showAddIncomeModal(context)),
+                _buildSectionHeader('Income Sources', const [Color(0xFF0D9488), Color(0xFF2DD4BF)], () => _showAddIncomeModal(context)),
                 if (provider.incomes.isEmpty)
                   UiUtils.buildEmptyState('No income sources', 'Tap Add to record your salary\nand other income.', Icons.trending_up_outlined, Colors.blue),
                 ...provider.incomes.map((i) => _buildListItem(
                   i.label, i.amount, '${i.frequency} income',
-                  const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                  const [Color(0xFF0D9488), Color(0xFF2DD4BF)],
                   Icons.trending_up_rounded,
                   () => UiUtils.showDeleteBottomSheet(context, i.label, () async { 
                     await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id);

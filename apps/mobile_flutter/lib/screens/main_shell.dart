@@ -55,7 +55,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+            color: const Color(0xFF0D9488).withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -85,7 +85,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF1E3A8A) : Colors.transparent,
+          color: selected ? const Color(0xFF0D9488) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(

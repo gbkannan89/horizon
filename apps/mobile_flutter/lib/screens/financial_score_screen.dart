@@ -43,7 +43,7 @@ class FinancialScoreScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: loading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488)))
         : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -56,10 +56,10 @@ class FinancialScoreScreen extends StatelessWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF0F2057), Color(0xFF1E3A8A)]
+                  colors: [Color(0xFF042F2E), Color(0xFF0D9488)]
                 ),
                 borderRadius: BorderRadius.circular(28),
-                boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
+                boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
               ),
               child: Column(
                 children: [
@@ -139,7 +139,7 @@ class FinancialScoreScreen extends StatelessWidget {
                               BarChartRodData(
                                 toY: val,
                                 width: 24,
-                                color: val == 0 ? Colors.grey.shade200 : const Color(0xFF3B82F6),
+                                color: val == 0 ? Colors.grey.shade200 : const Color(0xFF2DD4BF),
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                                 backDrawRodData: BackgroundBarChartRodData(
                                   show: true,
@@ -181,7 +181,7 @@ class FinancialScoreScreen extends StatelessWidget {
             _buildPillarCard(
               title: 'Emergency Fund (40 Points)',
               icon: Icons.health_and_safety_rounded,
-              color: const Color(0xFF3B82F6),
+              color: const Color(0xFF2DD4BF),
               description: 'Looks at liquid assets (Bank/FDs) vs 3 months of basic expenses.',
             ),
             const SizedBox(height: 40),

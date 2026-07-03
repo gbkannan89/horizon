@@ -37,7 +37,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+                gradient: const LinearGradient(colors: [Color(0xFF2DD4BF), Color(0xFF14B8A6)]),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -81,7 +81,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Add Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
+                  backgroundColor: const Color(0xFF0D9488),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -98,7 +98,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
     Color color;
     switch (ins['type']) {
       case 'health': icon = Icons.medical_services_rounded; color = const Color(0xFF10B981); break;
-      case 'term': icon = Icons.shield_rounded; color = const Color(0xFF3B82F6); break;
+      case 'term': icon = Icons.shield_rounded; color = const Color(0xFF2DD4BF); break;
       case 'vehicle': icon = Icons.directions_car_rounded; color = const Color(0xFFF59E0B); break;
       default: icon = Icons.description_rounded; color = const Color(0xFF6366F1);
     }
@@ -273,7 +273,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                           if (context.mounted) UiUtils.showSnack(context, 'Failed to add policy: $e', isError: true);
                         }
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text('Save Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   )

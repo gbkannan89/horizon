@@ -106,7 +106,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF0F2057), Color(0xFF1E3A8A), Color(0xFF2563EB)],
+            colors: [Color(0xFF042F2E), Color(0xFF0D9488), Color(0xFF14B8A6)],
           ),
         ),
         child: SafeArea(
@@ -271,13 +271,13 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                   onPressed: isLoading ? null : _handleSignup,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF1E3A8A),
+                                    foregroundColor: const Color(0xFF0D9488),
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
                                   child: isLoading
                                       ? const SizedBox(width: 22, height: 22,
-                                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF1E3A8A)))
+                                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0D9488)))
                                       : const Text('Create Account', style: TextStyle(
                                           fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                                 ),
@@ -420,7 +420,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
         ),
       ),
     );

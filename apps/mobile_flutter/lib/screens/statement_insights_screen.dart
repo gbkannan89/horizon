@@ -98,7 +98,7 @@ class _StatementInsightsScreenState extends State<StatementInsightsScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+          colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -250,7 +250,7 @@ class _StatementInsightsScreenState extends State<StatementInsightsScreen> {
                   icon: const Icon(Icons.check, size: 16),
                   label: const Text('Add as Bill'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
+                    backgroundColor: const Color(0xFF0D9488),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     textStyle: const TextStyle(fontSize: 13),

@@ -3,12 +3,14 @@ import logging
 import codecs
 import os
 import tempfile
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from pydantic import BaseModel
 from ..database import get_db
 from ..schemas import UserOut, UploadSummary, UploadAnalysisOut
 from ..services.analytics_engine import run_full_analysis
+from ..services.dedup import is_duplicate, batch_check_duplicates
 from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -204,22 +206,16 @@ def upload_statement(
         inserted = 0
         duplicates = 0
         with conn.cursor() as cur:
-            for txn in transactions:
+            unique_txns, dup_count, _ = batch_check_duplicates(current_user.id, transactions, conn)
+            duplicates = dup_count
+
+            for txn in unique_txns:
                 category, bucket, icon = categorize_transaction(txn["description"], txn["amount"])
                 cur.execute(
-                    "SELECT 1 FROM expenses WHERE user_id = %s AND name = %s AND amount = %s AND date = %s",
-                    (current_user.id, txn["description"], txn["amount"], txn["date"])
-                )
-                if cur.fetchone():
-                    duplicates += 1
-                    continue
-                cur.execute(
                     """INSERT INTO expenses (user_id, name, amount, category, bucket, icon, date)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)
-                       RETURNING id, user_id, name, amount, category, bucket, icon, date, created_at""",
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
                     (current_user.id, txn["description"], txn["amount"], category, bucket, icon, txn["date"])
                 )
-                cur.fetchone()
                 inserted += 1
             conn.commit()
 
@@ -243,3 +239,54 @@ def upload_statement(
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         file.file.close()
+
+
+class SmsTransactionIn(BaseModel):
+    name: str
+    amount: float
+    date: date
+
+
+class SmsImportIn(BaseModel):
+    transactions: List[SmsTransactionIn]
+
+
+@router.post("/sms-import", response_model=UploadSummary)
+def import_sms_transactions(
+    data: SmsImportIn,
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        unique_txns, dup_count, fuzzy_count = batch_check_duplicates(
+            current_user.id,
+            [{"description": t.name, "amount": t.amount, "date": t.date} for t in data.transactions],
+            conn
+        )
+
+        inserted = 0
+        with conn.cursor() as cur:
+            for txn in unique_txns:
+                category, bucket, icon = categorize_transaction(txn["description"], txn["amount"])
+                cur.execute(
+                    """INSERT INTO expenses (user_id, name, amount, category, bucket, icon, date)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                    (current_user.id, txn["description"], txn["amount"], category, bucket, icon, txn["date"])
+                )
+                inserted += 1
+            conn.commit()
+
+        if fuzzy_count > 0:
+            logger.info(f"SMS import: {fuzzy_count} fuzzy matches treated as duplicates for user {current_user.id}")
+
+        return UploadSummary(
+            inserted=inserted,
+            skipped=0,
+            duplicates=dup_count,
+            total_parsed=len(data.transactions)
+        )
+
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error importing SMS transactions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

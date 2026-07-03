@@ -377,10 +377,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: ElevatedButton(
                   onPressed: _goNext,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
+                    backgroundColor: const Color(0xFF2DD4BF),
                     foregroundColor: Colors.white,
                     elevation: 4,
-                    shadowColor: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                    shadowColor: const Color(0xFF2DD4BF).withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
