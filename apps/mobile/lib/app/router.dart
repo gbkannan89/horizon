@@ -51,6 +51,9 @@ import 'package:horizon_mobile/features/household/pages/household_detail_page.da
 import 'package:horizon_mobile/features/household/pages/household_create_page.dart';
 import 'package:horizon_mobile/features/household/pages/household_invite_page.dart';
 import 'package:horizon_mobile/features/household/pages/household_settings_page.dart';
+import 'package:horizon_mobile/features/automation/pages/automation_list_page.dart';
+import 'package:horizon_mobile/features/automation/pages/automation_detail_page.dart';
+import 'package:horizon_mobile/features/automation/pages/automation_form_page.dart';
 import 'package:horizon_mobile/app/shell.dart';
 
 Page<void> _slideTransition(Widget child) {
@@ -126,6 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(path: 'add', builder: (_, __) => const RecurringFormPage()),
         GoRoute(path: ':id', builder: (_, state) => RecurringDetailPage(id: state.pathParameters['id'] ?? '')),
       ]),
+      GoRoute(path: '/automation', builder: (_, __) => const AutomationListPage(), routes: [
+        GoRoute(path: 'add', builder: (_, __) => const AutomationFormPage()),
+        GoRoute(path: ':id', builder: (_, state) => AutomationDetailPage(ruleId: state.pathParameters['id'] ?? '')),
+      ]),
       GoRoute(path: '/search', pageBuilder: (_, __) => _slideTransition(const SearchPage())),
       GoRoute(path: '/insights', builder: (_, __) => const InsightsPage(), routes: [
         GoRoute(path: ':id', pageBuilder: (_, state) => _slideTransition(InsightDetailPage(insightId: state.pathParameters['id'] ?? ''))),
@@ -161,6 +168,7 @@ class _MorePage extends ConsumerWidget {
         ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
         ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Transactions'), onTap: () => context.push('/transactions')),
         ListTile(leading: const Icon(Icons.repeat), title: const Text('Recurring'), onTap: () => context.push('/recurring')),
+        ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Automation'), onTap: () => context.push('/automation')),
         ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
         ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
         ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),
