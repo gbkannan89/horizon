@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.routers import upload, health
+
+from app.routers import health, upload
 
 app = FastAPI(
     title="Horizon Import Service",

@@ -9,18 +9,19 @@ import (
 	"github.com/horizon/core/services/ai/internal/config"
 	ctxpkg "github.com/horizon/core/services/ai/internal/context"
 	"github.com/horizon/core/services/ai/internal/prompts"
-	"github.com/horizon/core/services/ai/internal/provider/ollama"
+	"github.com/horizon/core/services/ai/provider/ollama"
 	"github.com/horizon/core/services/ai/internal/registry"
 	"github.com/horizon/core/services/ai/internal/runtime"
 	"github.com/horizon/core/services/ai/internal/session"
+	"github.com/horizon/core/services/ai/provider"
 )
 
 // RegisterRoutes wires the AI service into the shared monolith mux.
 // The AI service is self-contained (no PostgreSQL dependency) — it uses
 // in-memory state and optional HTTP calls to an Ollama instance.
-func RegisterRoutes(mux *http.ServeMux) {
+func RegisterRoutes(mux *http.ServeMux) provider.AIProvider {
 	cfg := config.Load()
-	reg := registry.New()
+	reg := registry.New(cfg.CBThreshold, cfg.CBTimeout)
 
 	ollamaProvider := ollama.New(ollama.Config{
 		Endpoint: cfg.OllamaURL,
@@ -59,4 +60,7 @@ func RegisterRoutes(mux *http.ServeMux) {
 	handlers.Register(mux)
 
 	log.Printf("AI service registered (provider: %s, AI enabled: %v)", reg.ActiveName(), cfg.AIEnabled)
+	
+	p, _ := reg.Active()
+	return p
 }

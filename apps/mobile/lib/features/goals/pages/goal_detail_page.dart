@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../models/goal_models.dart';
 import '../repository/goal_repository.dart';
 import '../widgets/goal_widgets.dart';
@@ -74,14 +73,16 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
 
   Widget _buildBody(ThemeData theme, GoalDetailState state) {
     if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
+    if (state.error != null) {
+      return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load goal details'),
+        const SizedBox(height: 16), const Text('Could not load goal details'),
         const SizedBox(height: 16),
         FilledButton.icon(onPressed: () => ref.read(goalDetailProvider(widget.goalId).notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
       ]),
     );
+    }
     if (state.dashboard == null) return const Center(child: Text('No data'));
 
     return RefreshIndicator(
@@ -121,7 +122,7 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
             Text('Recommendations', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             ...state.recs!.recs.map((r) => Card(child: ListTile(
-              leading: Icon(Icons.lightbulb, color: Colors.amber),
+              leading: const Icon(Icons.lightbulb, color: Colors.amber),
               title: Text(r.title), subtitle: Text(r.summary),
               trailing: Text(r.impact, style: TextStyle(color: r.impact == 'High' ? Colors.green : Colors.orange, fontWeight: FontWeight.w600)),
             ))),
@@ -131,9 +132,9 @@ class _GoalDetailPageState extends ConsumerState<GoalDetailPage> {
             Text('Optimization', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             ...state.opts!.opts.map((o) => Card(child: ListTile(
-              leading: Icon(Icons.auto_graph, color: Colors.cyan),
+              leading: const Icon(Icons.auto_graph, color: Colors.cyan),
               title: Text(o.strategy), subtitle: Text(o.summary),
-              trailing: Text('${o.score.toStringAsFixed(1)}', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan)),
+              trailing: Text(o.score.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.cyan)),
             ))),
           ],
           if (state.timeline != null && state.timeline!.events.isNotEmpty) ...[

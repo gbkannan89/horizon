@@ -31,9 +31,16 @@ type ListByTypeQuery struct {
 	Limit    int    `json:"limit,omitempty"`
 }
 
+type ListByHouseholdQuery struct {
+	HouseholdID string `json:"household_id" validate:"required"`
+	Cursor      string `json:"cursor,omitempty"`
+	Limit       int    `json:"limit,omitempty"`
+}
+
 type GoalView struct {
 	GoalID      string  `json:"goal_id"`
 	UserID      string  `json:"user_id"`
+	HouseholdID string  `json:"household_id,omitempty"`
 	Name        string  `json:"name"`
 	Importance  string  `json:"importance"`
 	GoalType    string  `json:"goal_type"`

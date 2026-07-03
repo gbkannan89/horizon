@@ -50,4 +50,9 @@ class AcctRepository {
   Future<AcctListResponse> getRecommendations({String? userId}) async { return AcctListResponse(success: true); }
   Future<AcctListResponse> getProjections({String? userId}) async { return AcctListResponse(success: true); }
   Future<AcctListResponse> getTimeline({String? userId}) async { return AcctListResponse(success: true); }
+
+  Future<HouseholdAcctsResponse> getHouseholdAccounts({required String householdId}) async {
+    final r = await apiClient.get('/api/v1/households/$householdId/accounts');
+    return HouseholdAcctsResponse.fromJson(r.data as Map<String, dynamic>);
+  }
 }

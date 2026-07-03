@@ -34,7 +34,7 @@ Color categoryColor(String category) {
     case 'RecommendationEvent': return Colors.amber;
     case 'SimulationEvent': return Colors.cyan;
     case 'OptimizationEvent': return Colors.cyan;
-    case 'Achievement': return Color(0xFFFFD700);
+    case 'Achievement': return const Color(0xFFFFD700);
     case 'Milestone': return Colors.green;
     case 'UserEvent': return Colors.grey;
     default: return Colors.grey;

@@ -52,7 +52,7 @@ class GoalListCard extends StatelessWidget {
                 Text('Priority: ${goal.priority}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 const Spacer(),
                 if (goal.hasRecommendation)
-                  Icon(Icons.lightbulb, color: Colors.amber, size: 16),
+                  const Icon(Icons.lightbulb, color: Colors.amber, size: 16),
               ]),
               const SizedBox(height: 12),
               Row(
@@ -177,9 +177,9 @@ class GoalHeaderCard extends StatelessWidget {
             if (goal.fundingGap > 0) ...[
               const SizedBox(height: 8),
               Row(children: [
-                Icon(Icons.warning_amber, size: 14, color: Colors.orange),
+                const Icon(Icons.warning_amber, size: 14, color: Colors.orange),
                 const SizedBox(width: 4),
-                Text('Gap: ${_fmt(goal.fundingGap)}', style: TextStyle(color: Colors.orange, fontSize: 12)),
+                Text('Gap: ${_fmt(goal.fundingGap)}', style: const TextStyle(color: Colors.orange, fontSize: 12)),
               ]),
             ],
           ],

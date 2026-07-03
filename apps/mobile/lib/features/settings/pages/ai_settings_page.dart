@@ -23,14 +23,14 @@ class AiSettingsPage extends ConsumerWidget {
         data: (providers) => ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            SharedSectionHeader(title: 'AI Provider'),
+            const SharedSectionHeader(title: 'AI Provider'),
             ...providers.map((p) => Card(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: ListTile(
                 leading: Icon(p.isActive ? Icons.check_circle : Icons.radio_button_unchecked, color: p.isActive ? theme.colorScheme.primary : null),
                 title: Text(p.name),
                 subtitle: Text(p.capabilities.join(', ')),
-                trailing: p.isActive ? Chip(label: const Text('Active'), visualDensity: VisualDensity.compact) : null,
+                trailing: p.isActive ? const Chip(label: Text('Active'), visualDensity: VisualDensity.compact) : null,
                 onTap: p.isActive ? null : () async {
                   try {
                     await ref.read(advisorRepositoryProvider).switchProvider(p.name);

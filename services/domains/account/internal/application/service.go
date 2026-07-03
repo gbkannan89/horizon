@@ -86,13 +86,18 @@ func (s *AccountService) Archive(ctx context.Context, cmd command.ArchiveAccount
 }
 
 func toAccountView(a *domain.Account) *query.AccountView {
-	return &query.AccountView{
+	view := &query.AccountView{
 		AccountID: a.ID(), AccountName: a.AccountName(), AccountType: string(a.AccountType()),
 		Classification: string(a.Classification()), Currency: a.Currency(),
 		Status: string(a.Status()), OwnerID: a.OwnerID(),
+		Visibility: string(a.Visibility()),
 		Liquidity: string(a.LiquidityProfile()), Health: string(a.AccountHealth()),
 		CreatedAt: a.CreatedAt().Format(time.RFC3339),
 	}
+	if a.HouseholdID() != nil {
+		view.HouseholdID = *a.HouseholdID()
+	}
+	return view
 }
 
 func toPaginated(accts []*domain.Account, cursor string) *query.PaginatedResult {
@@ -115,5 +120,9 @@ func (s *AccountService) ListByType(ctx context.Context, q query.ListByTypeQuery
 }
 func (s *AccountService) ListByStatus(ctx context.Context, q query.ListByStatusQuery) (*query.PaginatedResult, error) {
 	accts, c, err := s.repo.ListByStatus(ctx, q.UserID, domain.AccountStatus(q.Status), q.Cursor, q.Limit)
+	if err != nil { return nil, err }; return toPaginated(accts, c), nil
+}
+func (s *AccountService) ListByHousehold(ctx context.Context, q query.ListByHouseholdQuery) (*query.PaginatedResult, error) {
+	accts, c, err := s.repo.ListByHousehold(ctx, q.HouseholdID, q.Cursor, q.Limit)
 	if err != nil { return nil, err }; return toPaginated(accts, c), nil
 }

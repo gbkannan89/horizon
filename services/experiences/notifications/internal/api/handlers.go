@@ -7,9 +7,9 @@ import (
 
 	"github.com/horizon/core/services/internal/auth"
 	"strconv"
-	"sync"
 	"time"
 
+	"github.com/horizon/core/packages/events"
 	"github.com/horizon/core/services/experiences/notifications/internal/aggregator"
 	"github.com/horizon/core/services/experiences/notifications/internal/engine"
 )
@@ -17,13 +17,13 @@ import (
 type Handlers struct {
 	aggregator *aggregator.Aggregator
 	composer   *engine.Composer
-	stateRepo  *engine.StateRepository
-	mu         sync.RWMutex
-	prefs      map[string][]engine.Preference
+	stateRepo  engine.StateRepository
+	prefRepo   engine.PreferenceRepository
+	pub        events.Publisher
 }
 
-func New(agg *aggregator.Aggregator, comp *engine.Composer, repo *engine.StateRepository) *Handlers {
-	return &Handlers{aggregator: agg, composer: comp, stateRepo: repo, prefs: make(map[string][]engine.Preference)}
+func New(agg *aggregator.Aggregator, comp *engine.Composer, stateRepo engine.StateRepository, prefRepo engine.PreferenceRepository, pub events.Publisher) *Handlers {
+	return &Handlers{aggregator: agg, composer: comp, stateRepo: stateRepo, prefRepo: prefRepo, pub: pub}
 }
 
 func (h *Handlers) Register(mux *http.ServeMux) {
@@ -68,11 +68,11 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	})
 }
 
-func (h *Handlers) loadPrefs(userID string) map[engine.Category]engine.Preference {
-	h.mu.RLock()
-	prefs, ok := h.prefs[userID]
-	h.mu.RUnlock()
-	if !ok { return map[engine.Category]engine.Preference{} }
+func (h *Handlers) loadPrefs(r *http.Request, userID string) map[engine.Category]engine.Preference {
+	prefs, err := h.prefRepo.GetPreferences(r.Context(), userID)
+	if err != nil || len(prefs) == 0 {
+		return map[engine.Category]engine.Preference{}
+	}
 	m := make(map[engine.Category]engine.Preference)
 	for _, p := range prefs { m[p.Category] = p }
 	return m
@@ -82,7 +82,7 @@ func (h *Handlers) GetNotifications(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
 	inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	center := h.composer.BuildCenter(*inputs, h.loadPrefs(userID), h.stateRepo, queryInt(r, "limit", 50), r.URL.Query().Get("cursor"))
+	center := h.composer.BuildCenter(r.Context(), *inputs, h.loadPrefs(r, userID), h.stateRepo, queryInt(r, "limit", 50), r.URL.Query().Get("cursor"))
 	writeJSON(w, http.StatusOK, CenterResponse{Success: true, Data: center, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -90,7 +90,7 @@ func (h *Handlers) GetUnread(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
 	inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	center := h.composer.BuildUnread(*inputs, h.loadPrefs(userID), h.stateRepo)
+	center := h.composer.BuildUnread(r.Context(), *inputs, h.loadPrefs(r, userID), h.stateRepo)
 	writeJSON(w, http.StatusOK, CenterResponse{Success: true, Data: center, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -98,16 +98,15 @@ func (h *Handlers) GetHistory(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
 	inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	center := h.composer.BuildHistory(*inputs, h.loadPrefs(userID), h.stateRepo, queryInt(r, "limit", 50), r.URL.Query().Get("cursor"))
+	center := h.composer.BuildHistory(r.Context(), *inputs, h.loadPrefs(r, userID), h.stateRepo, queryInt(r, "limit", 50), r.URL.Query().Get("cursor"))
 	writeJSON(w, http.StatusOK, CenterResponse{Success: true, Data: center, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
 func (h *Handlers) GetPreferences(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
-	h.mu.RLock()
-	prefs, ok := h.prefs[userID]
-	h.mu.RUnlock()
-	if !ok {
+	
+	prefs, err := h.prefRepo.GetPreferences(r.Context(), userID)
+	if err != nil || len(prefs) == 0 {
 		inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 		if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
 		prefs = inputs.Preferences
@@ -122,9 +121,10 @@ func (h *Handlers) UpdatePreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userID := getDefaultUserID(r)
-	h.mu.Lock()
-	h.prefs[userID] = req
-	h.mu.Unlock()
+	if err := h.prefRepo.SavePreferences(r.Context(), userID, req); err != nil {
+		writeError(w, http.StatusInternalServerError, "DB_ERROR", "failed to save preferences")
+		return
+	}
 	writeJSON(w, http.StatusOK, PrefListResponse{Success: true, Data: &PrefList{Preferences: req, Count: len(req)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -134,7 +134,7 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
 	inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	results := h.composer.Search(*inputs, h.loadPrefs(userID), h.stateRepo, q)
+	results := h.composer.Search(r.Context(), *inputs, h.loadPrefs(r, userID), h.stateRepo, q)
 	writeJSON(w, http.StatusOK, NotifListResponse{Success: true, Data: &NotifList{Notifications: results, Count: len(results)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -144,7 +144,7 @@ func (h *Handlers) GetByID(w http.ResponseWriter, r *http.Request) {
 	userID := getDefaultUserID(r)
 	inputs, err := h.aggregator.Aggregate(r.Context(), userID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	notif := h.composer.GetByID(*inputs, h.loadPrefs(userID), h.stateRepo, id)
+	notif := h.composer.GetByID(r.Context(), *inputs, h.loadPrefs(r, userID), h.stateRepo, id)
 	if notif == nil { writeError(w, http.StatusNotFound, "NOT_FOUND", "notification not found"); return }
 	writeJSON(w, http.StatusOK, NotifResponse{Success: true, Data: notif, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -152,14 +152,30 @@ func (h *Handlers) GetByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) MarkRead(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "notification ID required"); return }
-	h.stateRepo.SetState(id, engine.StateRead)
+	userID := getDefaultUserID(r)
+	h.stateRepo.SetState(r.Context(), userID, id, engine.StateRead)
+	
+	if h.pub != nil {
+		env := events.NewEnvelope("notification.state_changed", 1, []byte(`{"id":"`+id+`","state":"read"}`))
+		env.UserID = userID
+		_ = h.pub.Publish(r.Context(), env)
+	}
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": engine.StateRead})
 }
 
 func (h *Handlers) Archive(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "notification ID required"); return }
-	h.stateRepo.SetState(id, engine.StateArchived)
+	userID := getDefaultUserID(r)
+	h.stateRepo.SetState(r.Context(), userID, id, engine.StateArchived)
+	
+	if h.pub != nil {
+		env := events.NewEnvelope("notification.state_changed", 1, []byte(`{"id":"`+id+`","state":"archived"}`))
+		env.UserID = userID
+		_ = h.pub.Publish(r.Context(), env)
+	}
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": engine.StateArchived})
 }
 
@@ -172,7 +188,15 @@ func (h *Handlers) Snooze(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		req.Until = time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
 	}
-	h.stateRepo.Snooze(id, req.Until)
+	userID := getDefaultUserID(r)
+	h.stateRepo.Snooze(r.Context(), userID, id, req.Until)
+	
+	if h.pub != nil {
+		env := events.NewEnvelope("notification.state_changed", 1, []byte(`{"id":"`+id+`","state":"snoozed","until":"`+req.Until+`"}`))
+		env.UserID = userID
+		_ = h.pub.Publish(r.Context(), env)
+	}
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": engine.StateSnoozed, "until": req.Until})
 }
 
@@ -191,6 +215,14 @@ func (h *Handlers) RegisterToken(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "notification ID required"); return }
-	h.stateRepo.SetState(id, "deleted")
+	userID := getDefaultUserID(r)
+	h.stateRepo.SetState(r.Context(), userID, id, "deleted")
+	
+	if h.pub != nil {
+		env := events.NewEnvelope("notification.state_changed", 1, []byte(`{"id":"`+id+`","state":"deleted"}`))
+		env.UserID = userID
+		_ = h.pub.Publish(r.Context(), env)
+	}
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "notif_id": id, "state": "deleted"})
 }

@@ -96,7 +96,7 @@ class RiskResponse {
 
 class RiskData {
   final int riskScore; final String riskLevel; final double var_; final double sharpeRatio; final double volatility; final double maxDrawdown;
-  RiskData({required this.riskScore, required this.riskLevel, required double var_, required this.sharpeRatio, required this.volatility, required this.maxDrawdown}) : var_ = var_;
+  RiskData({required this.riskScore, required this.riskLevel, required this.var_, required this.sharpeRatio, required this.volatility, required this.maxDrawdown});
   factory RiskData.fromJson(Map<String, dynamic> json) => RiskData(
     riskScore: (json['risk_score'] as num?)?.toInt() ?? 0,
     riskLevel: json['risk_level'] as String? ?? '',

@@ -78,15 +78,19 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
 
   Widget _buildBody(ThemeData theme, GoalsListState state) {
     if (state.loading) return const SharedLoadingView();
-    if (state.error != null) return SharedErrorView(
+    if (state.error != null) {
+      return SharedErrorView(
       message: state.error,
       onRetry: () => ref.read(goalsListProvider.notifier).load(),
     );
-    if (state.goals.isEmpty) return SharedEmptyView(
+    }
+    if (state.goals.isEmpty) {
+      return const SharedEmptyView(
       icon: Icons.flag_outlined,
       title: 'No goals yet',
       subtitle: 'Create your first financial goal',
     );
+    }
 
     final filtered = _searchCtrl.text.isEmpty ? state.goals : state.goals.where((g) =>
       g.name.toLowerCase().contains(_searchCtrl.text.toLowerCase())).toList();

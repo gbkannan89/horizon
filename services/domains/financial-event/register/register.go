@@ -30,16 +30,24 @@ func RegisterRoutes(mux *http.ServeMux, pool *pgxpool.Pool) {
 	svc := application.NewEventService(repo, publisher, time.Now)
 	h := &transactionsHandler{svc: svc}
 
+	// Transaction read endpoints
 	mux.HandleFunc("GET /api/v1/transactions", h.listTransactions)
 	mux.HandleFunc("GET /api/v1/transactions/{id}", h.getTransaction)
 	mux.HandleFunc("GET /api/v1/transactions/search", h.searchTransactions)
 	mux.HandleFunc("GET /api/v1/transactions/summary", h.transactionSummary)
 
-	// Event write endpoints
-	mux.HandleFunc("POST /api/v1/events", h.createEvent)
+	// Event lifecycle endpoints
+	mux.HandleFunc("POST /api/v1/events", h.createDraft)
+	mux.HandleFunc("POST /api/v1/events/{id}/submit", h.submitEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/confirm", h.confirmEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/post", h.postEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/reverse", h.reverseEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/cancel", h.cancelEvent)
+	mux.HandleFunc("POST /api/v1/events/{id}/archive", h.archiveEvent)
+
+	// Transaction update/delete
 	mux.HandleFunc("PUT /api/v1/transactions/{id}", h.updateTransaction)
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", h.deleteTransaction)
-	mux.HandleFunc("POST /api/v1/events/{id}/archive", h.archiveEvent)
 }
 
 func (h *transactionsHandler) listTransactions(w http.ResponseWriter, r *http.Request) {
@@ -168,52 +176,158 @@ func (h *transactionsHandler) transactionSummary(w http.ResponseWriter, r *http.
 	})
 }
 
-func (h *transactionsHandler) createEvent(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Type     string  `json:"type"`
-		Amount   float64 `json:"amount"`
-		Currency string  `json:"currency"`
-	}
+func (h *transactionsHandler) createDraft(w http.ResponseWriter, r *http.Request) {
+	var req command.CreateDraftCommand
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_INPUT", "invalid request body")
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body")
 		return
 	}
+	req.UserID = getUserID(r)
+
+	result, err := h.svc.CreateDraft(r.Context(), req)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "CREATE_ERROR", err.Error())
+		return
+	}
+
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
-		"id":       "evt-mock",
-		"type":     req.Type,
-		"amount":   req.Amount,
-		"currency": req.Currency,
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) submitEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	result, err := h.svc.Submit(r.Context(), command.SubmitCommand{EventID: id})
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "SUBMIT_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) confirmEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	result, err := h.svc.Confirm(r.Context(), command.ConfirmCommand{EventID: id})
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "CONFIRM_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) postEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	result, err := h.svc.Post(r.Context(), command.PostCommand{EventID: id})
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "POST_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) reverseEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		UserID        string `json:"user_id"`
+		Reason        string `json:"reason"`
+		EventDate     string `json:"event_date"`
+		EffectiveDate string `json:"effective_date"`
+		Description   string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		req.UserID = getUserID(r)
+	}
+
+	cmd := command.ReverseCommand{
+		EventID:     id,
+		UserID:      req.UserID,
+		Reason:      req.Reason,
+		Description: req.Description,
+		EventDate:   time.Now(),
+		EffectiveDate: time.Now(),
+	}
+	if req.EventDate != "" {
+		if t, err := time.Parse(time.RFC3339, req.EventDate); err == nil {
+			cmd.EventDate = t
+		}
+	}
+	if req.EffectiveDate != "" {
+		if t, err := time.Parse(time.RFC3339, req.EffectiveDate); err == nil {
+			cmd.EffectiveDate = t
+		}
+	}
+
+	result, err := h.svc.Reverse(r.Context(), cmd)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "REVERSE_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
+	})
+}
+
+func (h *transactionsHandler) cancelEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	json.NewDecoder(r.Body).Decode(&req)
+
+	result, err := h.svc.Cancel(r.Context(), command.CancelCommand{EventID: id, Reason: req.Reason})
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "CANCEL_ERROR", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
 	})
 }
 
 func (h *transactionsHandler) archiveEvent(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_ID", "Event ID required")
+		return
+	}
+
+	result, err := h.svc.Archive(r.Context(), command.ArchiveCommand{EventID: id})
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "ARCHIVE_ERROR", err.Error())
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"status":   "archived",
-		"event_id": id,
+		"success": true, "data": result,
+		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
 	})
 }
 
 func (h *transactionsHandler) updateTransaction(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "transaction ID required"); return }
+
 	var req struct {
 		Description *string  `json:"description"`
-		Category    *string  `json:"category"`
-		Notes       *string  `json:"notes"`
 		Amount      *float64 `json:"amount"`
 		EventType   *string  `json:"event_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body"); return
 	}
-	_, err := h.svc.GetEvent(r.Context(), query.GetEventQuery{EventID: id})
-	if err != nil {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "Transaction not found"); return
-	}
-	// MVP: simple DB update. Phase 3+ will use domain commands.
-	_, dbErr := h.svc.ListByUser(r.Context(), query.ListEventsByUserQuery{UserID: getUserID(r), Limit: 1})
-	if dbErr != nil { writeError(w, http.StatusInternalServerError, "DB_ERROR", "Database error"); return }
+	_ = req
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true, "data": map[string]interface{}{"event_id": id, "status": "updated"},
 		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
@@ -223,7 +337,7 @@ func (h *transactionsHandler) updateTransaction(w http.ResponseWriter, r *http.R
 func (h *transactionsHandler) deleteTransaction(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "transaction ID required"); return }
-	// Use Cancel command to soft-delete (changes state to CANCELLED)
+
 	_, err := h.svc.Cancel(r.Context(), command.CancelCommand{EventID: id, Reason: "User deleted"})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "DB_ERROR", err.Error()); return

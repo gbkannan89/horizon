@@ -39,8 +39,9 @@ func main() {
 	}
 	agg := aggregator.New(providers, c)
 	composer := engine.NewComposer()
-	stateRepo := engine.NewStateRepo()
-	handlers := api.New(agg, composer, stateRepo)
+	stateRepo := persistence.NewPGStateRepository(pool)
+	prefRepo := persistence.NewPGPreferenceRepository(pool)
+	handlers := api.New(agg, composer, stateRepo, prefRepo, nil)
 	router := api.NewRouter(handlers)
 	srv := pkghttp.New(cfg.Addr(), router)
 

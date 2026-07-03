@@ -36,7 +36,7 @@ final lightTheme = ThemeData(
   colorSchemeSeed: _seedColor,
   brightness: Brightness.light,
   appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-  cardTheme: CardThemeData(clipBehavior: Clip.antiAlias),
+  cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
   inputDecorationTheme: InputDecorationTheme(
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     filled: true,
@@ -48,7 +48,7 @@ final darkTheme = ThemeData(
   colorSchemeSeed: _seedColor,
   brightness: Brightness.dark,
   appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-  cardTheme: CardThemeData(clipBehavior: Clip.antiAlias),
+  cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
   inputDecorationTheme: InputDecorationTheme(
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     filled: true,

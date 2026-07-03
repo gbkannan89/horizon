@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -92,12 +93,32 @@ func (p *PlanningPGProvider) GetPlanningProjection(ctx context.Context, userID s
 			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
 		FROM financial_events WHERE user_id::text = $1 AND state = 'POSTED' AND effective_date >= $2`, userID, som).Scan(&income, &expenses)
 
+	var recIncome, recExpenses int64
+	_ = p.pool.QueryRow(ctx,
+		`SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 0)
+		FROM recurring_transactions WHERE user_id::text = $1 AND status = 'active'`, userID).Scan(&recIncome, &recExpenses)
+
+	// Add recurring elements as monthly equivalents
+	income += recIncome
+	expenses += recExpenses
+
 	conf = "Medium"
 	// Try to find confidence from projection
 	_ = p.pool.QueryRow(ctx,
 		`SELECT COALESCE(output_data->>'confidence', 'Medium') FROM projection_outputs ORDER BY created_at DESC LIMIT 1`).Scan(&conf)
 
 	return
+}
+
+// RecurringProvider
+
+func (p *PlanningPGProvider) GetUpcomingCount(ctx context.Context, userID string) (int, error) {
+	var count int
+	_ = p.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM recurring_transactions WHERE user_id::text = $1 AND status = 'active' AND next_occurrence <= $2`,
+		userID, p.now().AddDate(0, 1, 0)).Scan(&count)
+	return count, nil
 }
 
 // RiskProvider
@@ -172,4 +193,33 @@ func (p *PlanningPGProvider) GetEventCount(ctx context.Context, userID string) (
 
 func (p *PlanningPGProvider) GetScenarios(ctx context.Context, userID string) ([]engine.Scenario, error) {
 	return nil, nil
+}
+
+// BudgetProvider
+
+func (p *PlanningPGProvider) GetBudgetSummary(ctx context.Context, userID string) (totalBudgeted, totalSpent, totalRemaining int64, categories []map[string]interface{}, err error) {
+	row := p.pool.QueryRow(ctx, `SELECT total_budgeted, total_spent, total_remaining, categories FROM budgets WHERE user_id::text = $1 ORDER BY created_at DESC LIMIT 1`, userID)
+	var catsJSON []byte
+	err = row.Scan(&totalBudgeted, &totalSpent, &totalRemaining, &catsJSON)
+	if err != nil {
+		return 0, 0, 0, nil, err
+	}
+	var parsedCats []struct{
+		Category        string `json:"category"`
+		BudgetedAmount  int64  `json:"budgeted_amount"`
+		SpentAmount     int64  `json:"spent_amount"`
+		RemainingAmount int64  `json:"remaining_amount"`
+	}
+	if len(catsJSON) > 0 {
+		json.Unmarshal(catsJSON, &parsedCats)
+	}
+	for _, pc := range parsedCats {
+		categories = append(categories, map[string]interface{}{
+			"category": pc.Category,
+			"planned": pc.BudgetedAmount,
+			"actual": pc.SpentAmount,
+			"remaining": pc.RemainingAmount,
+		})
+	}
+	return
 }

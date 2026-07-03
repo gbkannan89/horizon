@@ -15,12 +15,20 @@ type Status struct {
 	ollamaHealthy bool
 	ollamaChecked time.Time
 	checkInterval time.Duration
+	history       []HealthEvent
+}
+
+type HealthEvent struct {
+	Timestamp string `json:"timestamp"`
+	Provider  string `json:"provider"`
+	Status    string `json:"status"`
 }
 
 func NewStatus(cfg *config.Config) *Status {
 	return &Status{
 		provider:      cfg.Provider,
 		checkInterval: 30 * time.Second,
+		history:       make([]HealthEvent, 0),
 	}
 }
 
@@ -33,6 +41,25 @@ func (s *Status) SetProvider(name string) {
 func (s *Status) SetOllamaHealthy(healthy bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	
+	statusStr := "down"
+	if healthy {
+		statusStr = "up"
+	}
+
+	// Only record if state changed or if history is empty
+	if len(s.history) == 0 || s.ollamaHealthy != healthy {
+		s.history = append(s.history, HealthEvent{
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			Provider:  "ollama",
+			Status:    statusStr,
+		})
+		// Keep last 10 events
+		if len(s.history) > 10 {
+			s.history = s.history[1:]
+		}
+	}
+
 	s.ollamaHealthy = healthy
 	s.ollamaChecked = time.Now()
 }
@@ -45,14 +72,16 @@ func (s *Status) Get() StatusInfo {
 		OllamaHealthy:   s.ollamaHealthy,
 		OllamaChecked:   s.ollamaChecked.Format(time.RFC3339),
 		CheckInterval:   s.checkInterval.String(),
+		History:         s.history,
 	}
 }
 
 type StatusInfo struct {
-	Provider        string `json:"provider"`
-	OllamaHealthy   bool   `json:"ollama_healthy"`
-	OllamaChecked   string `json:"ollama_checked"`
-	CheckInterval   string `json:"check_interval"`
+	Provider        string        `json:"provider"`
+	OllamaHealthy   bool          `json:"ollama_healthy"`
+	OllamaChecked   string        `json:"ollama_checked"`
+	CheckInterval   string        `json:"check_interval"`
+	History         []HealthEvent `json:"history"`
 }
 
 // RuntimeConfig exposes the active runtime configuration.

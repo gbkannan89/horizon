@@ -71,7 +71,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       itemCount: 6,
       itemBuilder: (_, __) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: Card(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary.withOpacity(0.3))))),
+        child: Card(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary.withValues(alpha: 0.3))))),
       ),
     );
   }
@@ -231,7 +231,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 'debt_summary':
         return DebtSummaryCard(widget: w, debt: s?.totalDebt ?? 0);
       case 'upcoming_bills':
-        return Card(child: ListTile(leading: Icon(Icons.receipt, color: Colors.amber), title: Text(w.title), subtitle: Text(w.numericValue)));
+        return Card(child: ListTile(leading: const Icon(Icons.receipt, color: Colors.amber), title: Text(w.title), subtitle: Text(w.numericValue)));
       default:
         return Card(child: ListTile(title: Text(w.title), subtitle: Text(w.numericValue)));
     }
@@ -240,9 +240,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildTier3Widget(BuildContext context, ThemeData theme, WidgetModel w, SummaryData? s) {
     switch (w.widgetType) {
       case 'recent_events':
-        return Card(child: ListTile(leading: Icon(Icons.history, color: theme.colorScheme.primary), title: Text(w.title), trailing: Icon(Icons.chevron_right)));
+        return Card(child: ListTile(leading: Icon(Icons.history, color: theme.colorScheme.primary), title: Text(w.title), trailing: const Icon(Icons.chevron_right)));
       case 'achievements':
-        return Card(child: ListTile(leading: Icon(Icons.emoji_events, color: Colors.amber), title: Text(w.title)));
+        return Card(child: ListTile(leading: const Icon(Icons.emoji_events, color: Colors.amber), title: Text(w.title)));
       default:
         return Card(child: ListTile(title: Text(w.title)));
     }

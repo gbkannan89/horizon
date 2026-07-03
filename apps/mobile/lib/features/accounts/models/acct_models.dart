@@ -218,4 +218,46 @@ class AcctHealthData {
   );
 }
 
+class HouseholdAcctsResponse {
+  final bool success; final HouseholdAcctsData? data;
+  HouseholdAcctsResponse({required this.success, this.data});
+  factory HouseholdAcctsResponse.fromJson(Map<String, dynamic> json) => HouseholdAcctsResponse(
+    success: json['success'] as bool? ?? false,
+    data: json['data'] != null ? HouseholdAcctsData.fromJson(json['data'] as Map<String, dynamic>) : null,
+  );
+}
+
+class HouseholdAcctsData {
+  final List<HouseholdAccountView> accounts; final String? nextCursor; final bool hasMore;
+  HouseholdAcctsData({required this.accounts, this.nextCursor, required this.hasMore});
+  factory HouseholdAcctsData.fromJson(Map<String, dynamic> json) => HouseholdAcctsData(
+    accounts: (json['accounts'] as List?)?.map((e) => HouseholdAccountView.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+    nextCursor: json['next_cursor'] as String?, hasMore: json['has_more'] as bool? ?? false,
+  );
+}
+
+class HouseholdAccountView {
+  final String accountId; final String accountName; final String accountType;
+  final String classification; final String currency; final String status;
+  final String ownerId; final String visibility; final String liquidity;
+  final String health; final String createdAt;
+  HouseholdAccountView({required this.accountId, required this.accountName,
+    required this.accountType, required this.classification, required this.currency,
+    required this.status, required this.ownerId, required this.visibility,
+    required this.liquidity, required this.health, required this.createdAt});
+  factory HouseholdAccountView.fromJson(Map<String, dynamic> json) => HouseholdAccountView(
+    accountId: json['account_id'] as String? ?? '',
+    accountName: json['account_name'] as String? ?? '',
+    accountType: json['account_type'] as String? ?? '',
+    classification: json['classification'] as String? ?? '',
+    currency: json['currency'] as String? ?? '',
+    status: json['status'] as String? ?? '',
+    ownerId: json['owner_id'] as String? ?? '',
+    visibility: json['visibility'] as String? ?? '',
+    liquidity: json['liquidity_profile'] as String? ?? '',
+    health: json['account_health'] as String? ?? '',
+    createdAt: json['created_at'] as String? ?? '',
+  );
+}
+
 

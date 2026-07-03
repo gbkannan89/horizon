@@ -37,7 +37,7 @@ class HealthScoreCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(grade, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
@@ -149,7 +149,7 @@ class GoalProgressCard extends StatelessWidget {
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: pct, backgroundColor: color.withOpacity(0.1), color: color, minHeight: 8),
+              child: LinearProgressIndicator(value: pct, backgroundColor: color.withValues(alpha: 0.1), color: color, minHeight: 8),
             ),
           ],
         ),
@@ -216,7 +216,7 @@ class RiskScoreCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Text(level, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ],
@@ -242,7 +242,7 @@ class RecommendationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(Icons.lightbulb, color: Colors.amber, size: 20),
+              const Icon(Icons.lightbulb, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text('Recommendation', style: theme.textTheme.titleSmall),
             ]),
@@ -305,7 +305,7 @@ class DebtSummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(Icons.credit_card, color: Colors.purple, size: 20),
+              const Icon(Icons.credit_card, color: Colors.purple, size: 20),
               const SizedBox(width: 8),
               Text('Total Debt', style: theme.textTheme.titleSmall),
             ]),
@@ -329,7 +329,7 @@ class MilestoneCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(children: [
-          Icon(Icons.flag, color: Colors.green, size: 20),
+          const Icon(Icons.flag, color: Colors.green, size: 20),
           const SizedBox(width: 12),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

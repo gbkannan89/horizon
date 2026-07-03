@@ -66,29 +66,29 @@ func (h *Handlers) GetInsights(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
 	limit := queryInt(r, "limit", 20)
-	feed := h.composer.BuildFeed(*inputs, limit, r.URL.Query().Get("cursor"))
+	feed := h.composer.BuildFeed(r.Context(), *inputs, limit, r.URL.Query().Get("cursor"))
 	writeJSON(w, http.StatusOK, FeedResponse{Success: true, Data: feed, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
 func (h *Handlers) GetSummary(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	dash := h.composer.BuildDashboard(*inputs)
+	dash := h.composer.BuildDashboard(r.Context(), *inputs)
 	writeJSON(w, http.StatusOK, DashboardResponse{Success: true, Data: dash, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
 func (h *Handlers) GetOpportunities(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	all := h.composer.FilterByCategory(*inputs, engine.ICOpportunity)
+	all := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICOpportunity)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: all, Count: len(all)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
 func (h *Handlers) GetWarnings(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	all := h.composer.FilterByCategory(*inputs, engine.ICWarning)
-	all2 := h.composer.FilterByCategory(*inputs, engine.ICRisk)
+	all := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICWarning)
+	all2 := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICRisk)
 	all = append(all, all2...)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: all, Count: len(all)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -96,8 +96,8 @@ func (h *Handlers) GetWarnings(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) GetAchievements(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	all := h.composer.FilterByCategory(*inputs, engine.ICAchievement)
-	all2 := h.composer.FilterByCategory(*inputs, engine.ICMilestone)
+	all := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICAchievement)
+	all2 := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICMilestone)
 	all = append(all, all2...)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: all, Count: len(all)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -105,8 +105,8 @@ func (h *Handlers) GetAchievements(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) GetForecast(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	all := h.composer.FilterByCategory(*inputs, engine.ICForecast)
-	all2 := h.composer.FilterByCategory(*inputs, engine.ICCashFlow)
+	all := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICForecast)
+	all2 := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICCashFlow)
 	all = append(all, all2...)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: all, Count: len(all)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -114,9 +114,9 @@ func (h *Handlers) GetForecast(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) GetTrends(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	all := h.composer.FilterByCategory(*inputs, engine.ICSavings)
-	all2 := h.composer.FilterByCategory(*inputs, engine.ICNetWorth)
-	all3 := h.composer.FilterByCategory(*inputs, engine.ICPortfolio)
+	all := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICSavings)
+	all2 := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICNetWorth)
+	all3 := h.composer.FilterByCategory(r.Context(), *inputs, engine.ICPortfolio)
 	all = append(all, all2...)
 	all = append(all, all3...)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: all, Count: len(all)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
@@ -126,7 +126,7 @@ func (h *Handlers) GetTimeline(w http.ResponseWriter, r *http.Request) {
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
 	limit := queryInt(r, "limit", 10)
-	feed := h.composer.BuildFeed(*inputs, limit, "")
+	feed := h.composer.BuildFeed(r.Context(), *inputs, limit, "")
 	writeJSON(w, http.StatusOK, FeedResponse{Success: true, Data: feed, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -135,7 +135,7 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 	if q == "" { writeError(w, http.StatusBadRequest, "MISSING_QUERY", "search query 'q' is required"); return }
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	results := h.composer.Search(*inputs, q)
+	results := h.composer.Search(r.Context(), *inputs, q)
 	writeJSON(w, http.StatusOK, InsightListResponse{Success: true, Data: &InsightList{Insights: results, Count: len(results)}, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -144,7 +144,7 @@ func (h *Handlers) GetByID(w http.ResponseWriter, r *http.Request) {
 	if id == "" { writeError(w, http.StatusBadRequest, "MISSING_ID", "insight ID required"); return }
 	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r))
 	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
-	insight := h.composer.GetByID(*inputs, id)
+	insight := h.composer.GetByID(r.Context(), *inputs, id)
 	if insight == nil { writeError(w, http.StatusNotFound, "NOT_FOUND", "insight not found"); return }
 	writeJSON(w, http.StatusOK, InsightResponse{Success: true, Data: insight, Metadata: &Metadata{Timestamp: time.Now().UTC().Format(time.RFC3339)}})
 }

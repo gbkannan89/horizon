@@ -75,8 +75,9 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _setTheme(WidgetRef ref, String theme) async {
-    if (theme == 'dark') ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
-    else if (theme == 'light') ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+    if (theme == 'dark') {
+      ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+    } else if (theme == 'light') ref.read(themeModeProvider.notifier).state = ThemeMode.light;
     else ref.read(themeModeProvider.notifier).state = ThemeMode.system;
     try {
       final repo = ref.read(settingsRepositoryProvider);

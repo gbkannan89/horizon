@@ -7,10 +7,14 @@ import "context"
 type AIProvider interface {
 	// Chat handles a conversational interaction.
 	Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error)
+	// StreamChat handles a conversational interaction with a streaming response.
+	StreamChat(ctx context.Context, req ChatRequest) (<-chan string, error)
 	// Explain generates an explanation for a given prompt type with deterministic data.
 	Explain(ctx context.Context, req ExplainRequest) (*ExplainResponse, error)
 	// Summarize generates a summary of financial data.
 	Summarize(ctx context.Context, req SummarizeRequest) (*SummarizeResponse, error)
+	// GenerateInsights generates proactive insights from financial data.
+	GenerateInsights(ctx context.Context, req GenerateInsightsRequest) (*GenerateInsightsResponse, error)
 	// Health returns provider health status.
 	Health(ctx context.Context) (*HealthResponse, error)
 	// Capabilities returns the provider's capabilities.
@@ -60,6 +64,23 @@ type SummarizeResponse struct {
 	Provider   string `json:"provider"`
 }
 
+type GenerateInsightsRequest struct {
+	Data map[string]interface{} `json:"data"`
+}
+
+type GeneratedInsight struct {
+	Type        string `json:"type"`
+	Title       string `json:"title"`
+	Summary     string `json:"summary"`
+	Explanation string `json:"explanation"`
+	Confidence  string `json:"confidence"`
+}
+
+type GenerateInsightsResponse struct {
+	Insights []GeneratedInsight `json:"insights"`
+	Provider string             `json:"provider"`
+}
+
 type HealthResponse struct {
 	Status   string `json:"status"`
 	Provider string `json:"provider"`
@@ -72,6 +93,7 @@ type Capabilities struct {
 	Chat         bool     `json:"chat"`
 	Explanation  bool     `json:"explanation"`
 	Summarize    bool     `json:"summarize"`
+	Insights     bool     `json:"insights"`
 	Streaming    bool     `json:"streaming"`
 	ToolCalling  bool     `json:"tool_calling"`
 	Embeddings   bool     `json:"embeddings"`

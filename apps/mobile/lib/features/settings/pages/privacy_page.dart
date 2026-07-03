@@ -61,7 +61,7 @@ class PrivacyPage extends ConsumerWidget {
             const SizedBox(height: 16),
             OutlinedButton.icon(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data export coming soon'))), icon: const Icon(Icons.download), label: const Text('Export My Data')),
             const SizedBox(height: 8),
-            OutlinedButton.icon(onPressed: () => _deleteAccount(context, ref), icon: const Icon(Icons.delete_forever, color: Colors.red), label: Text('Delete Account', style: TextStyle(color: Colors.red))),
+            OutlinedButton.icon(onPressed: () => _deleteAccount(context, ref), icon: const Icon(Icons.delete_forever, color: Colors.red), label: const Text('Delete Account', style: TextStyle(color: Colors.red))),
           ],
         ),
       ),

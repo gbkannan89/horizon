@@ -33,9 +33,9 @@ class AboutPage extends StatelessWidget {
             ListTile(title: const Text('Open Source Licenses'), trailing: const Icon(Icons.chevron_right, size: 18), onTap: () => showLicensePage(context: context)),
           ])),
           const SizedBox(height: 16),
-          Card(child: Column(children: [
-            ListTile(title: const Text('API Version'), subtitle: const Text('v1'), trailing: const Icon(Icons.chevron_right, size: 18)),
-            ListTile(title: const Text('Build Number'), subtitle: const Text('1'), trailing: const Icon(Icons.chevron_right, size: 18)),
+          const Card(child: Column(children: [
+            ListTile(title: Text('API Version'), subtitle: Text('v1'), trailing: Icon(Icons.chevron_right, size: 18)),
+            ListTile(title: Text('Build Number'), subtitle: Text('1'), trailing: Icon(Icons.chevron_right, size: 18)),
           ])),
           const SizedBox(height: 24),
           Center(child: Text('© 2026 Horizon Financial Systems', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),

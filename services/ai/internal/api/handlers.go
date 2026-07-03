@@ -13,8 +13,8 @@ import (
 	"github.com/horizon/core/services/ai/internal/config"
 	ctxpkg "github.com/horizon/core/services/ai/internal/context"
 	"github.com/horizon/core/services/ai/internal/prompts"
-	"github.com/horizon/core/services/ai/internal/provider"
-	"github.com/horizon/core/services/ai/internal/provider/ollama"
+	"github.com/horizon/core/services/ai/provider"
+	"github.com/horizon/core/services/ai/provider/ollama"
 	"github.com/horizon/core/services/ai/internal/registry"
 	"github.com/horizon/core/services/ai/internal/runtime"
 	"github.com/horizon/core/services/ai/internal/session"
@@ -76,7 +76,7 @@ func getDefaultUserID(r *http.Request) string {
 // AI core endpoints
 
 func (h *Handlers) GetHealth(w http.ResponseWriter, r *http.Request) {
-	ai := h.registry.Active()
+	ai, _ := h.registry.Active()
 	resp, err := ai.Health(r.Context())
 	if err != nil {
 		writeError(w, http.StatusServiceUnavailable, "AI_UNAVAILABLE", err.Error())
@@ -106,14 +106,33 @@ func (h *Handlers) PostChat(w http.ResponseWriter, r *http.Request) {
 
 	h.sessions.AddMessage(req.SessionID, session.Message{Role: "user", Content: req.Message, Timestamp: time.Now().UTC().Format(time.RFC3339)})
 
-	ai := h.registry.Active()
 	chatReq := provider.ChatRequest{SessionID: req.SessionID, Message: req.Message, Context: conv.Context}
 	for _, m := range h.sessions.GetHistory(req.SessionID) {
 		chatReq.History = append(chatReq.History, provider.ChatMessage{Role: m.Role, Content: m.Content})
 	}
 
-	resp, err := ai.Chat(r.Context(), chatReq)
-	if err != nil {
+	var resp *provider.ChatResponse
+	var err error
+	var ai provider.AIProvider
+
+	for attempts := 0; attempts < 3; attempts++ {
+		ai, _ = h.registry.Active()
+		if ai == nil {
+			break
+		}
+		
+		providerName := ai.Capabilities().Provider
+		resp, err = ai.Chat(r.Context(), chatReq)
+		
+		if err != nil {
+			h.registry.RecordFailure(providerName)
+		} else {
+			h.registry.RecordSuccess(providerName)
+			break
+		}
+	}
+
+	if err != nil || ai == nil {
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"success": true, "data": map[string]string{
 				"reply": "[System] The AI provider is currently unavailable. Please try again later or contact support.",
@@ -149,9 +168,28 @@ func (h *Handlers) PostExplain(w http.ResponseWriter, r *http.Request) {
 	rendered := prompts.Render(tmpl, req.Data)
 	log.Printf("Rendered prompt [%s v%d]: %s", req.PromptType, req.Version, rendered)
 
-	ai := h.registry.Active()
-	resp, err := ai.Explain(r.Context(), provider.ExplainRequest{PromptType: req.PromptType, Data: req.Data, Version: req.Version})
-	if err != nil {
+	var resp *provider.ExplainResponse
+	var err error
+	var ai provider.AIProvider
+
+	for attempts := 0; attempts < 3; attempts++ {
+		ai, _ = h.registry.Active()
+		if ai == nil {
+			break
+		}
+		
+		providerName := ai.Capabilities().Provider
+		resp, err = ai.Explain(r.Context(), provider.ExplainRequest{PromptType: req.PromptType, Data: req.Data, Version: req.Version})
+		
+		if err != nil {
+			h.registry.RecordFailure(providerName)
+		} else {
+			h.registry.RecordSuccess(providerName)
+			break
+		}
+	}
+
+	if err != nil || ai == nil {
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"success": true, "data": map[string]string{
 				"explanation": "[Fallback] Explanation unavailable. The AI provider could not process this request.",
@@ -177,10 +215,30 @@ func (h *Handlers) PostSummarize(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Topic == "" { writeError(w, http.StatusBadRequest, "MISSING_TOPIC", "topic is required"); return }
 
-	ai := h.registry.Active()
-	resp, err := ai.Summarize(r.Context(), provider.SummarizeRequest{Topic: req.Topic, Data: req.Data})
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "AI_ERROR", err.Error()); return
+	var resp *provider.SummarizeResponse
+	var err error
+	var ai provider.AIProvider
+
+	for attempts := 0; attempts < 3; attempts++ {
+		ai, _ = h.registry.Active()
+		if ai == nil {
+			break
+		}
+		
+		providerName := ai.Capabilities().Provider
+		resp, err = ai.Summarize(r.Context(), provider.SummarizeRequest{Topic: req.Topic, Data: req.Data})
+		
+		if err != nil {
+			h.registry.RecordFailure(providerName)
+		} else {
+			h.registry.RecordSuccess(providerName)
+			break
+		}
+	}
+
+	if err != nil || ai == nil {
+		writeError(w, http.StatusInternalServerError, "AI_ERROR", "provider unavailable")
+		return
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": resp, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -205,7 +263,7 @@ func (h *Handlers) GetProviders(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) GetActiveProvider(w http.ResponseWriter, r *http.Request) {
 	name := h.registry.ActiveName()
-	ai := h.registry.Active()
+	ai, _ := h.registry.Active()
 	caps := ai.Capabilities()
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true, "data": map[string]interface{}{"name": name, "capabilities": caps},
@@ -214,7 +272,7 @@ func (h *Handlers) GetActiveProvider(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetCapabilities(w http.ResponseWriter, r *http.Request) {
-	ai := h.registry.Active()
+	ai, _ := h.registry.Active()
 	caps := ai.Capabilities()
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": caps, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
 }
@@ -286,6 +344,7 @@ func (h *Handlers) GetRuntimeStatus(w http.ResponseWriter, r *http.Request) {
 			"ai_enabled":      h.cfg.AIEnabled,
 			"last_checked":    st.OllamaChecked,
 			"check_interval":  st.CheckInterval,
+			"history":         st.History,
 		},
 		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
 	})
@@ -324,52 +383,66 @@ func (h *Handlers) PostChatStream(w http.ResponseWriter, r *http.Request) {
 	conv := h.sessions.GetOrCreate(req.SessionID, userID)
 	if req.Context != nil { conv.Context = req.Context }
 	h.sessions.AddMessage(req.SessionID, session.Message{Role: "user", Content: req.Message, Timestamp: time.Now().UTC().Format(time.RFC3339)})
-	ai := h.registry.Active()
+	
 	chatReq := provider.ChatRequest{SessionID: req.SessionID, Message: req.Message, Context: conv.Context}
 	for _, m := range h.sessions.GetHistory(req.SessionID) {
 		chatReq.History = append(chatReq.History, provider.ChatMessage{Role: m.Role, Content: m.Content})
 	}
+	
+	var stream <-chan string
+	var err error
+	var ai provider.AIProvider
 
-	resp, err := ai.Chat(r.Context(), chatReq)
-	if err != nil {
+	for attempts := 0; attempts < 3; attempts++ {
+		ai, _ = h.registry.Active()
+		if ai == nil {
+			break
+		}
+
+		providerName := ai.Capabilities().Provider
+		stream, err = ai.StreamChat(r.Context(), chatReq)
+		
+		if err != nil {
+			h.registry.RecordFailure(providerName)
+		} else {
+			h.registry.RecordSuccess(providerName)
+			break
+		}
+	}
+
+	if err != nil || ai == nil {
 		h.sessions.AddMessage(req.SessionID, session.Message{Role: "assistant", Content: "[Provider unavailable]", Timestamp: time.Now().UTC().Format(time.RFC3339)})
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
 		fmt.Fprintf(w, "data: {\"token\":\"I'm sorry, the AI provider is currently unavailable.\"}\n\n")
 		fmt.Fprintf(w, "data: [DONE]\n\n")
-		w.(http.Flusher).Flush()
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
 		return
 	}
 
-	h.sessions.AddMessage(req.SessionID, session.Message{Role: "assistant", Content: resp.Reply, Timestamp: time.Now().UTC().Format(time.RFC3339), Confidence: resp.Confidence})
-
-	// Stream the response as SSE tokens
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	words := splitWords(resp.Reply)
-	for _, word := range words {
-		jsonData, _ := json.Marshal(map[string]string{"token": word})
+	var fullReply string
+	for token := range stream {
+		fullReply += token
+		jsonData, _ := json.Marshal(map[string]string{"token": token})
 		fmt.Fprintf(w, "data: %s\n\n", jsonData)
-		w.(http.Flusher).Flush()
-		time.Sleep(30 * time.Millisecond)
-	}
-	fmt.Fprintf(w, "data: [DONE]\n\n")
-	w.(http.Flusher).Flush()
-}
-
-func splitWords(s string) []string {
-	var words []string
-	var current []rune
-	for _, r := range s {
-		current = append(current, r)
-		if r == ' ' || r == '\n' {
-			words = append(words, string(current))
-			current = nil
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
 		}
 	}
-	if len(current) > 0 { words = append(words, string(current)) }
-	return words
+
+	h.sessions.AddMessage(req.SessionID, session.Message{Role: "assistant", Content: fullReply, Timestamp: time.Now().UTC().Format(time.RFC3339), Confidence: "Medium"})
+
+	fmt.Fprintf(w, "data: [DONE]\n\n")
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
 }
+
+

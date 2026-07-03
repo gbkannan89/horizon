@@ -97,6 +97,9 @@ logs/
 .terraform/
 crash.log
 
+# Planning workspace
+temp/
+
 # Misc
 *.bak
 *.tmp

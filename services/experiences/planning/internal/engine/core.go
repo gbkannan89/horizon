@@ -17,6 +17,7 @@ const (
 	CTOptimization    CardType = "Optimization"
 	CTSimulation      CardType = "Simulation"
 	CTTimeline        CardType = "Timeline"
+	CTRecurring       CardType = "Recurring"
 )
 
 type Card struct {
@@ -115,6 +116,11 @@ type Inputs struct {
 	CashBalance       int64           `json:"cash_balance"`
 	MonthlyIncome     int64           `json:"monthly_income"`
 	MonthlyExpenses   int64           `json:"monthly_expenses"`
+	UpcomingRecurring int             `json:"upcoming_recurring"`
+	TotalBudgeted     int64           `json:"total_budgeted"`
+	TotalSpent        int64           `json:"total_spent"`
+	TotalRemaining    int64           `json:"total_remaining"`
+	BudgetCategories  []map[string]interface{} `json:"budget_categories"`
 	HasProjection     bool            `json:"has_projection"`
 	HasSimulation     bool            `json:"has_simulation"`
 	HasOptimization   bool            `json:"has_optimization"`
@@ -222,6 +228,10 @@ func (c *Composer) buildCards(inputs Inputs) []Card {
 	if inputs.EventCount > 0 {
 		cards = append(cards, Card{CardID: "tl", CardType: CTTimeline, Title: "Timeline",
 			Summary: fmt.Sprintf("%d events", inputs.EventCount), Priority: 12})
+	}
+	if inputs.UpcomingRecurring > 0 {
+		cards = append(cards, Card{CardID: "rec_tx", CardType: CTRecurring, Title: "Recurring Setup",
+			Summary: fmt.Sprintf("%d upcoming", inputs.UpcomingRecurring), Priority: 13})
 	}
 	return cards
 }

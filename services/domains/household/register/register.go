@@ -3,8 +3,10 @@ package register
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -403,3 +405,187 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 		"metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)},
 	})
 }
+
+// ---------------------------------------------------------------------------
+// E2E Test Harness — exported for external e2e tests (tests/e2e/)
+// ---------------------------------------------------------------------------
+
+// E2ETestHarness provides an in-memory test server for household E2E tests.
+type E2ETestHarness struct {
+	Mux *http.ServeMux
+	Svc *application.HouseholdService
+}
+
+// NewE2ETestHarness creates a test harness with an in-memory repository.
+func NewE2ETestHarness() *E2ETestHarness {
+	repo := newInMemRepository()
+	publisher := &noopPublisher{}
+	svc := application.NewHouseholdService(repo, publisher, time.Now)
+	h := &householdHandler{svc: svc}
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /api/v1/households", h.createHousehold)
+	mux.HandleFunc("GET /api/v1/households/{id}", h.getHousehold)
+	mux.HandleFunc("GET /api/v1/households", h.listHouseholds)
+	mux.HandleFunc("POST /api/v1/households/{id}/activate", h.activateHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/pause", h.pauseHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/resume", h.resumeHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/dissolve", h.dissolveHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/archive", h.archiveHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/members", h.addMember)
+	mux.HandleFunc("POST /api/v1/households/{id}/members/{userId}/accept", h.acceptInvite)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/members/{userId}", h.removeMember)
+	mux.HandleFunc("PUT /api/v1/households/{id}/members/{userId}/role", h.updateMemberRole)
+	mux.HandleFunc("POST /api/v1/households/{id}/goals", h.linkGoal)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/goals/{goalId}", h.unlinkGoal)
+	mux.HandleFunc("POST /api/v1/households/{id}/budgets", h.linkBudget)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/budgets/{budgetId}", h.unlinkBudget)
+	mux.HandleFunc("POST /api/v1/households/{id}/goals/{goalId}/contributions", h.addGoalContribution)
+	mux.HandleFunc("GET /api/v1/households/{id}/summary", h.getHouseholdSummary)
+
+	return &E2ETestHarness{Mux: mux, Svc: svc}
+}
+
+// RegisterRoutesOnMux registers the household routes on the provided mux.
+func (h *E2ETestHarness) RegisterRoutesOnMux(mux *http.ServeMux) {
+	// Routes are already registered in NewE2ETestHarness, but this method
+	// copies them to another mux for testing with httptest.
+	handler := &householdHandler{svc: h.Svc}
+	mux.HandleFunc("POST /api/v1/households", handler.createHousehold)
+	mux.HandleFunc("GET /api/v1/households/{id}", handler.getHousehold)
+	mux.HandleFunc("GET /api/v1/households", handler.listHouseholds)
+	mux.HandleFunc("POST /api/v1/households/{id}/activate", handler.activateHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/pause", handler.pauseHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/resume", handler.resumeHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/dissolve", handler.dissolveHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/archive", handler.archiveHousehold)
+	mux.HandleFunc("POST /api/v1/households/{id}/members", handler.addMember)
+	mux.HandleFunc("POST /api/v1/households/{id}/members/{userId}/accept", handler.acceptInvite)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/members/{userId}", handler.removeMember)
+	mux.HandleFunc("PUT /api/v1/households/{id}/members/{userId}/role", handler.updateMemberRole)
+	mux.HandleFunc("POST /api/v1/households/{id}/goals", handler.linkGoal)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/goals/{goalId}", handler.unlinkGoal)
+	mux.HandleFunc("POST /api/v1/households/{id}/budgets", handler.linkBudget)
+	mux.HandleFunc("DELETE /api/v1/households/{id}/budgets/{budgetId}", handler.unlinkBudget)
+	mux.HandleFunc("POST /api/v1/households/{id}/goals/{goalId}/contributions", handler.addGoalContribution)
+	mux.HandleFunc("GET /api/v1/households/{id}/summary", handler.getHouseholdSummary)
+}
+
+// inMemRepository provides a thread-safe in-memory store for testing.
+type inMemRepository struct {
+	mu         sync.Mutex
+	households map[string]*domain.Household
+	counter    int
+}
+
+func newInMemRepository() *inMemRepository {
+	return &inMemRepository{households: make(map[string]*domain.Household)}
+}
+
+func (r *inMemRepository) Save(_ context.Context, h *domain.Household) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	id := h.ID()
+	if id == "" {
+		r.counter++
+		id = fmt.Sprintf("HH%04d", r.counter)
+		now := time.Now().UTC()
+		rebuilt := domain.ReconstructFromDB(
+			id, h.Name(), h.HouseholdType(), h.HeadOfHouseholdID(),
+			h.Members(), h.Status(), h.Currency(), h.Country(),
+			h.TotalAssets(), h.TotalLiabilities(), h.TotalNetWorth(),
+			h.Health(), h.Tags(), h.Notes(),
+			h.LinkedAccounts(), h.LinkedGoals(), h.LinkedBudgets(),
+			h.GoalContributions(), now, now,
+		)
+		*h = *rebuilt
+		r.households[id] = rebuilt
+	} else {
+		r.households[id] = domain.ReconstructFromDB(
+			id, h.Name(), h.HouseholdType(), h.HeadOfHouseholdID(),
+			h.Members(), h.Status(), h.Currency(), h.Country(),
+			h.TotalAssets(), h.TotalLiabilities(), h.TotalNetWorth(),
+			h.Health(), h.Tags(), h.Notes(),
+			h.LinkedAccounts(), h.LinkedGoals(), h.LinkedBudgets(),
+			h.GoalContributions(), h.CreatedAt(), h.UpdatedAt(),
+		)
+	}
+	return nil
+}
+
+func (r *inMemRepository) GetByID(_ context.Context, id string) (*domain.Household, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	h, ok := r.households[id]
+	if !ok {
+		return nil, fmt.Errorf("household %s not found", id)
+	}
+	return h, nil
+}
+
+func (r *inMemRepository) ListByUser(_ context.Context, userID, cursor string, limit int) ([]*domain.Household, string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []*domain.Household
+	for _, h := range r.households {
+		if h.HeadOfHouseholdID() == userID {
+			result = append(result, h)
+			continue
+		}
+		for _, m := range h.Members() {
+			if m.UserID == userID && m.InviteStatus == "Accepted" {
+				result = append(result, h)
+				break
+			}
+		}
+	}
+	if limit <= 0 {
+		limit = 25
+	}
+	if len(result) > limit {
+		result = result[:limit]
+	}
+	return result, "", nil
+}
+
+func (r *inMemRepository) ListByStatus(_ context.Context, status domain.HouseholdStatus, cursor string, limit int) ([]*domain.Household, string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var result []*domain.Household
+	for _, h := range r.households {
+		if h.Status() == status {
+			result = append(result, h)
+		}
+	}
+	if limit <= 0 {
+		limit = 25
+	}
+	if len(result) > limit {
+		result = result[:limit]
+	}
+	return result, "", nil
+}
+
+func (r *inMemRepository) UpdateStatus(_ context.Context, id string, from, to domain.HouseholdStatus) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	h, ok := r.households[id]
+	if !ok {
+		return fmt.Errorf("household %s not found", id)
+	}
+	if h.Status() != from {
+		return fmt.Errorf("status mismatch")
+	}
+	r.households[id] = domain.ReconstructFromDB(
+		h.ID(), h.Name(), h.HouseholdType(), h.HeadOfHouseholdID(),
+		h.Members(), to, h.Currency(), h.Country(),
+		h.TotalAssets(), h.TotalLiabilities(), h.TotalNetWorth(),
+		h.Health(), h.Tags(), h.Notes(),
+		h.LinkedAccounts(), h.LinkedGoals(), h.LinkedBudgets(),
+		h.GoalContributions(), h.CreatedAt(), time.Now().UTC(),
+	)
+	return nil
+}
+
+// Ensure inMemRepository satisfies domain.Repository.
+var _ domain.Repository = (*inMemRepository)(nil)

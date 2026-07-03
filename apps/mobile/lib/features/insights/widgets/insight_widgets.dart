@@ -88,14 +88,14 @@ class _InsightTrendChartState extends State<InsightTrendChart> {
         LineChartData(
           gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 1, getDrawingHorizontalLine: (value) => FlLine(color: theme.colorScheme.outlineVariant, strokeWidth: 1)),
           titlesData: FlTitlesData(
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
             bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
               final idx = value.toInt();
               if (idx >= 0 && idx < data.labels.length) return Padding(padding: const EdgeInsets.only(top: 4), child: Text(data.labels[idx], style: theme.textTheme.labelSmall));
               return const SizedBox();
             })),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           borderData: FlBorderData(show: false),
           minX: 0, maxX: (data.values.length - 1).toDouble(),
@@ -105,7 +105,7 @@ class _InsightTrendChartState extends State<InsightTrendChart> {
             spots: data.values.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
             isCurved: true, color: theme.colorScheme.primary, barWidth: 3,
             belowBarData: BarAreaData(show: true, color: theme.colorScheme.primary.withValues(alpha: 0.1)),
-            dotData: FlDotData(show: true),
+            dotData: const FlDotData(show: true),
           )],
         ),
       ),

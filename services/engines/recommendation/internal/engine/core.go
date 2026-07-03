@@ -50,6 +50,7 @@ type Inputs struct {
 	SavingsRate     float64           `json:"savings_rate"`
 	InsuranceGap    float64           `json:"insurance_gap"`
 	HasTaxOpportunity bool            `json:"has_tax_opportunity"`
+	OverspentCategories map[string]int64 `json:"overspent_categories"`
 }
 
 // DebtInfo holds debt information for analysis.

@@ -29,8 +29,17 @@ func New() *Handlers {
 	return &Handlers{authService: NewJWTSvc(secret, accessTTL, refreshTTL)}
 }
 
+func NewWithSvc(svc *JWTSvc) *Handlers {
+	return &Handlers{authService: svc}
+}
+
 func RegisterRoutes(mux *http.ServeMux) {
 	h := New()
+	RegisterRoutesWithSvc(mux, h.authService)
+}
+
+func RegisterRoutesWithSvc(mux *http.ServeMux, svc *JWTSvc) {
+	h := NewWithSvc(svc)
 	mux.HandleFunc("POST /api/v1/auth/login", h.Login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", h.Refresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", h.Logout)

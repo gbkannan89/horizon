@@ -55,7 +55,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
       case InsightStatus.error:
         return SharedErrorView(message: state.error, onRetry: () => ref.read(insightProvider.notifier).refresh());
       case InsightStatus.empty:
-        return SharedEmptyView(icon: Icons.insights, title: 'No insights found', subtitle: 'Check back later for personalized insights');
+        return const SharedEmptyView(icon: Icons.insights, title: 'No insights found', subtitle: 'Check back later for personalized insights');
       case InsightStatus.loaded:
         return RefreshIndicator(
           onRefresh: () => ref.read(insightProvider.notifier).refresh(),
@@ -77,7 +77,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
                   child: Card(child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      SharedSectionHeader(title: 'Trends'),
+                      const SharedSectionHeader(title: 'Trends'),
                       const SizedBox(height: AppSpacing.sm),
                       InsightTrendChart(data: state.trends!),
                     ]),

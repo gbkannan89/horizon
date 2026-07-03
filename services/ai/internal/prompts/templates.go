@@ -113,6 +113,18 @@ func (m *Manager) registerDefaults() {
 		"advisor_summary": {
 			1: "Health Score: {{health_score}}/100. Risk Score: {{risk_score}}/100. Goals on track: {{goals_on_track}}/{{total_goals}}. Provide a comprehensive financial advisor summary covering all aspects of the user's financial life.",
 		},
+		"insight_spending": {
+			1: "Analyze the spending pattern anomaly: {{anomaly}}. Provide a personalized insight with actionable advice to help the user manage their discretionary spending better.",
+		},
+		"insight_saving": {
+			1: "The user has a current savings rate of {{savings_rate}}% and uninvested surplus cash. Explain this savings opportunity and suggest specific actions to optimize their cash flow for better long-term returns.",
+		},
+		"insight_risk": {
+			1: "The user's recent activity indicates a change in risk exposure. Identify key risk indicators from the provided data and explain how to mitigate potential negative impacts on their financial plan.",
+		},
+		"insight_goal": {
+			1: "Based on the current trajectory, provide a deep dive into the goal progress for the user. Highlight any risks of falling short and offer concrete steps to get back on track.",
+		},
 	}
 
 	for ptype, vers := range versions {

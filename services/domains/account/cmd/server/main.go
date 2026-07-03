@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/horizon/core/services/domains/account/register"
 )
 
 func main() {
@@ -20,6 +24,17 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"status":"ready"}`)
 	})
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" { dsn = "postgres://horizon:horizon@localhost:5432/horizon?sslmode=disable" }
+
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer pool.Close()
+
+	register.RegisterRoutes(mux, pool)
+
 	log.Printf("Starting Account service on :%s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("server failed: %v", err)

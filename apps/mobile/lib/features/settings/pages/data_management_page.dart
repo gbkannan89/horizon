@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/core/network/api_client.dart';
-import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 
 class DataManagementPage extends ConsumerWidget {
   const DataManagementPage({super.key});

@@ -43,7 +43,7 @@ func (r *mockRepo) Save(_ context.Context, h *domain.Household) error {
 			id, h.Name(), h.HouseholdType(), h.HeadOfHouseholdID(),
 			h.Members(), h.Status(), h.Currency(), h.Country(),
 			h.TotalAssets(), h.TotalLiabilities(), h.TotalNetWorth(),
-			h.Health(), h.Tags(),
+			h.Health(), h.Tags(), h.Notes(),
 			h.LinkedAccounts(), h.LinkedGoals(), h.LinkedBudgets(),
 			h.GoalContributions(), now, now,
 		)
@@ -1135,7 +1135,7 @@ func makeDomainHousehold(t *testing.T) *domain.Household {
 		"test-hh-id", "Test Household", domain.HHCouple, headID, members,
 		domain.HHStatusDraft, "USD", "US",
 		0, 0, 0, domain.HHHealthy,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		now, now,
 	)
 }

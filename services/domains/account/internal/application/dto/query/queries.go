@@ -15,6 +15,10 @@ type ListByStatusQuery struct {
 	Status string `json:"status" validate:"required"`
 	Cursor string `json:"cursor,omitempty"`; Limit int `json:"limit,omitempty"`
 }
+type ListByHouseholdQuery struct {
+	HouseholdID string `json:"household_id" validate:"required"`
+	Cursor      string `json:"cursor,omitempty"`; Limit int `json:"limit,omitempty"`
+}
 type AccountView struct {
 	AccountID      string `json:"account_id"`
 	AccountName    string `json:"account_name"`
@@ -23,6 +27,8 @@ type AccountView struct {
 	Currency       string `json:"currency"`
 	Status         string `json:"status"`
 	OwnerID        string `json:"owner_id"`
+	HouseholdID    string `json:"household_id,omitempty"`
+	Visibility     string `json:"visibility"`
 	Liquidity      string `json:"liquidity_profile"`
 	Health         string `json:"account_health"`
 	CreatedAt      string `json:"created_at"`

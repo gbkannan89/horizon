@@ -21,6 +21,11 @@ func RegisterRoutes(v1 *gin.RouterGroup, h *handler.Handler) {
 	prot := v1.Group("")
 	prot.Use(middleware.Authentication) // validates JWT from Authorization header
 
+	// SSE stream (Placeholder for gateway proxy to stream hub)
+	prot.GET("/stream/events", func(c *gin.Context) {
+		c.JSON(501, gin.H{"error": "Use the monolith's /api/v1/stream/events endpoint"})
+	})
+
 	// User routes
 	ug := prot.Group("/users")
 	ug.POST("", h.CreateUser)

@@ -8,6 +8,7 @@ import (
 type Goal struct {
 	id                   string
 	userID               string
+	householdID          *string
 	name                 string
 	importance           GoalImportance
 	gtype                GoalType
@@ -28,6 +29,7 @@ type Goal struct {
 
 func (g *Goal) ID() string                             { return g.id }
 func (g *Goal) UserID() string                         { return g.userID }
+func (g *Goal) HouseholdID() *string                   { return g.householdID }
 func (g *Goal) Name() string                           { return g.name }
 func (g *Goal) Importance() GoalImportance              { return g.importance }
 func (g *Goal) GoalType() GoalType                      { return g.gtype }
@@ -44,6 +46,8 @@ func (g *Goal) Tags() []string                          { return g.tags }
 func (g *Goal) Status() GoalStatus                      { return g.status }
 func (g *Goal) CreatedAt() time.Time                    { return g.createdAt }
 func (g *Goal) UpdatedAt() time.Time                    { return g.updatedAt }
+
+func (g *Goal) IsHouseholdGoal() bool                   { return g.householdID != nil }
 
 func (g *Goal) SetStatus(s GoalStatus) {
 	g.status = s
@@ -95,11 +99,11 @@ func (g *Goal) CanTransitionTo(target GoalStatus) error {
 
 
 // ReconstructFromDB creates a Goal from persistent storage without validation.
-func ReconstructFromDB(id, userID, name string, importance GoalImportance, gtype GoalType, subtype GoalSubtype,
+func ReconstructFromDB(id, userID string, householdID *string, name string, importance GoalImportance, gtype GoalType, subtype GoalSubtype,
 	sc SuccessCriteria, priority int, status GoalStatus, notes string, tags []string, createdAt, updatedAt time.Time,
 	targetDate *time.Time) *Goal {
 	return &Goal{
-		id: id, userID: userID, name: name, importance: importance, gtype: gtype, subtype: subtype,
+		id: id, userID: userID, householdID: householdID, name: name, importance: importance, gtype: gtype, subtype: subtype,
 		successCriteria: sc, priority: priority, status: status, notes: notes, tags: tags,
 		createdAt: createdAt, updatedAt: updatedAt, targetDate: targetDate,
 	}

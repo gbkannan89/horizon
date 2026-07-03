@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/horizon/core/services/ai/provider"
 )
 
 type InsightCategory string
@@ -91,12 +94,14 @@ type Inputs struct {
 	EventCount       int     `json:"event_count"`
 }
 
-type Composer struct{}
+type Composer struct{
+	ai provider.AIProvider
+}
 
-func NewComposer() *Composer { return &Composer{} }
+func NewComposer(ai provider.AIProvider) *Composer { return &Composer{ai: ai} }
 
-func (c *Composer) BuildDashboard(inputs Inputs) *InsightsDashboard {
-	insights := c.generate(inputs)
+func (c *Composer) BuildDashboard(ctx context.Context, inputs Inputs) *InsightsDashboard {
+	insights := c.generate(ctx, inputs)
 	byPriority := map[Priority]int{}
 	byCategory := map[InsightCategory]int{}
 	var critical, high, others []Insight
@@ -115,8 +120,8 @@ func (c *Composer) BuildDashboard(inputs Inputs) *InsightsDashboard {
 	}
 }
 
-func (c *Composer) BuildFeed(inputs Inputs, max int, cursor string) *InsightsFeed {
-	insights := c.generate(inputs)
+func (c *Composer) BuildFeed(ctx context.Context, inputs Inputs, max int, cursor string) *InsightsFeed {
+	insights := c.generate(ctx, inputs)
 	if max <= 0 { max = 20 }
 	hasMore := len(insights) > max
 	if len(insights) > max { insights = insights[:max] }
@@ -125,22 +130,22 @@ func (c *Composer) BuildFeed(inputs Inputs, max int, cursor string) *InsightsFee
 	return &InsightsFeed{Insights: insights, Total: len(insights), Cursor: nextCursor, HasMore: hasMore}
 }
 
-func (c *Composer) FilterByCategory(inputs Inputs, cat InsightCategory) []Insight {
-	all := c.generate(inputs)
+func (c *Composer) FilterByCategory(ctx context.Context, inputs Inputs, cat InsightCategory) []Insight {
+	all := c.generate(ctx, inputs)
 	var filtered []Insight
 	for _, ins := range all { if ins.Category == cat { filtered = append(filtered, ins) } }
 	return filtered
 }
 
-func (c *Composer) FilterByPriority(inputs Inputs, pri Priority) []Insight {
-	all := c.generate(inputs)
+func (c *Composer) FilterByPriority(ctx context.Context, inputs Inputs, pri Priority) []Insight {
+	all := c.generate(ctx, inputs)
 	var filtered []Insight
 	for _, ins := range all { if ins.Priority == pri { filtered = append(filtered, ins) } }
 	return filtered
 }
 
-func (c *Composer) Search(inputs Inputs, q string) []Insight {
-	all := c.generate(inputs)
+func (c *Composer) Search(ctx context.Context, inputs Inputs, q string) []Insight {
+	all := c.generate(ctx, inputs)
 	var matched []Insight
 	q = strings.ToLower(q)
 	for _, ins := range all {
@@ -151,8 +156,8 @@ func (c *Composer) Search(inputs Inputs, q string) []Insight {
 	return matched
 }
 
-func (c *Composer) GetByID(inputs Inputs, id string) *Insight {
-	for _, ins := range c.generate(inputs) {
+func (c *Composer) GetByID(ctx context.Context, inputs Inputs, id string) *Insight {
+	for _, ins := range c.generate(ctx, inputs) {
 		if ins.InsightID == id { return &ins }
 	}
 	return nil
@@ -165,7 +170,7 @@ func (c *Composer) addMeta(ins Insight, inputs Inputs, sev string) Insight {
 	return ins
 }
 
-func (c *Composer) generate(inputs Inputs) []Insight {
+func (c *Composer) generate(ctx context.Context, inputs Inputs) []Insight {
 	now := time.Now().UTC().Format(time.RFC3339)
 	var insights []Insight
 
@@ -281,6 +286,33 @@ func (c *Composer) generate(inputs Inputs) []Insight {
 		add(Insight{InsightID: "ins-ms", Category: ICMilestone, Title: "Milestones Reached", Priority: PriorityLow, SourceEngine: "Goal", Confidence: "High",
 			Summary: fmt.Sprintf("%d milestone(s)", inputs.MilestoneCount),
 			Metadata: map[string]interface{}{"count": inputs.MilestoneCount}}, "achievement")
+	}
+
+	if c.ai != nil {
+		data := map[string]interface{}{
+			"health_score": inputs.HealthScore,
+			"savings_rate": inputs.SavingsRate,
+			"net_worth":    inputs.NetWorth,
+			"spending_anomaly": inputs.SpendingAnomaly,
+		}
+		resp, err := c.ai.GenerateInsights(ctx, provider.GenerateInsightsRequest{Data: data})
+		if err == nil && resp != nil {
+			for i, aiInsight := range resp.Insights {
+				cat := ICBehaviour
+				if aiInsight.Type == "savings_opportunity" { cat = ICSavings }
+				add(Insight{
+					InsightID:    fmt.Sprintf("ins-ai-%d", i),
+					Category:     cat,
+					Title:        aiInsight.Title,
+					Priority:     PriorityMedium,
+					SourceEngine: "AI",
+					Confidence:   aiInsight.Confidence,
+					Summary:      aiInsight.Summary,
+					Description:  aiInsight.Explanation,
+					Metadata:     map[string]interface{}{"ai_generated": true},
+				}, "info")
+			}
+		}
 	}
 
 	return insights

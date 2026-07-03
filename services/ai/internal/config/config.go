@@ -15,6 +15,8 @@ type Config struct {
 	OllamaModel string        `json:"ollama_model"`
 	Timeout     time.Duration `json:"timeout"`
 	Retries     int           `json:"retries"`
+	CBThreshold int           `json:"cb_threshold"`
+	CBTimeout   time.Duration `json:"cb_timeout"`
 }
 
 func Load() *Config {
@@ -25,12 +27,14 @@ func Load() *Config {
 	ollamaModel := env("OLLAMA_MODEL", "llama3")
 	timeoutSec := intEnv("AI_TIMEOUT_SECONDS", 30)
 	retries := intEnv("AI_RETRIES", 2)
+	cbThreshold := intEnv("AI_CB_THRESHOLD", 3)
+	cbTimeoutSec := intEnv("AI_CB_TIMEOUT_SECONDS", 60)
 
 	return &Config{
 		Provider: p, Port: port, MaxHistory: 50,
 		AIEnabled: enabled, OllamaURL: ollamaURL,
 		OllamaModel: ollamaModel, Timeout: time.Duration(timeoutSec) * time.Second,
-		Retries: retries,
+		Retries: retries, CBThreshold: cbThreshold, CBTimeout: time.Duration(cbTimeoutSec) * time.Second,
 	}
 }
 

@@ -28,12 +28,12 @@ class PlanningPage extends ConsumerWidget {
         data: (dash) => ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            SharedSectionHeader(title: 'Financial Planning'),
+            const SharedSectionHeader(title: 'Financial Planning'),
             const SizedBox(height: AppSpacing.sm),
             _section(theme, 'Projections', Icons.query_stats, Colors.cyan, 'View your financial projections', () => context.push('/planning/projections')),
             _section(theme, 'Scenarios', Icons.compare_arrows, Colors.indigo, 'Create and compare scenarios', () => context.push('/planning/scenarios')),
             const SizedBox(height: AppSpacing.md),
-            SharedSectionHeader(title: 'Planning Tools'),
+            const SharedSectionHeader(title: 'Planning Tools'),
             const SizedBox(height: AppSpacing.sm),
             _section(theme, 'Budget Planning', Icons.account_balance_wallet, Colors.green, 'Set and track budgets', () => context.push('/planning/budget')),
             _section(theme, 'Retirement Planning', Icons.beach_access, Colors.blue, 'Plan for retirement', () => context.push('/planning/retirement')),

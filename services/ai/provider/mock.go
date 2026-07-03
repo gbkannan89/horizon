@@ -44,11 +44,36 @@ func (m *MockProvider) Summarize(ctx context.Context, req SummarizeRequest) (*Su
 	}, nil
 }
 
+func (m *MockProvider) GenerateInsights(ctx context.Context, req GenerateInsightsRequest) (*GenerateInsightsResponse, error) {
+	// Generate mock insights
+	insights := []GeneratedInsight{
+		{
+			Type:        "spending_pattern",
+			Title:       "High Discretionary Spending",
+			Summary:     "You spent 25% more on dining out this month.",
+			Explanation: "Based on your transaction history, your discretionary spending on dining out has increased significantly compared to the last 3 months. Consider setting a budget limit to stay on track with your savings goal.",
+			Confidence:  "High",
+		},
+		{
+			Type:        "savings_opportunity",
+			Title:       "Potential to Increase Savings",
+			Summary:     "You have uninvested surplus cash.",
+			Explanation: "Your checking account balance has consistently remained above your monthly expenses plus buffer. You could safely transfer ₹15,000 to your investment portfolio to improve long-term returns.",
+			Confidence:  "Medium",
+		},
+	}
+	
+	return &GenerateInsightsResponse{
+		Insights: insights,
+		Provider: m.Name,
+	}, nil
+}
+
 func (m *MockProvider) Capabilities() Capabilities {
 	return Capabilities{
 		Provider: m.Name, Chat: true, Explanation: true, Summarize: true,
 		Streaming: false, ToolCalling: false, Embeddings: false, Vision: false,
-		MaxContext: 4096, Models: []string{"mock-1"},
+		Insights: true, MaxContext: 4096, Models: []string{"mock-1"},
 	}
 }
 

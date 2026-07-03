@@ -1,10 +1,10 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -111,71 +111,39 @@ type Inputs struct {
 	Preferences  []Preference   `json:"preferences"`
 }
 
-// StateRepository manages notification state in-memory.
-type StateRepository struct {
-	mu    sync.RWMutex
-	items map[string]*stateEntry
+type StateRepository interface {
+	Get(ctx context.Context, userID, notifID string) (State, bool)
+	SetState(ctx context.Context, userID, notifID string, s State) error
+	Snooze(ctx context.Context, userID, notifID string, until string) error
 }
 
-type stateEntry struct {
-	State   State
-	SnoozeUntil string
-}
-
-func NewStateRepo() *StateRepository {
-	return &StateRepository{items: make(map[string]*stateEntry)}
-}
-
-func (r *StateRepository) Get(id string) (State, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	e, ok := r.items[id]
-	if !ok { return "", false }
-	return e.State, true
-}
-
-func (r *StateRepository) SetState(id string, s State) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if e, ok := r.items[id]; ok {
-		e.State = s
-	} else {
-		r.items[id] = &stateEntry{State: s}
-	}
-}
-
-func (r *StateRepository) Snooze(id string, until string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if e, ok := r.items[id]; ok {
-		e.State = StateSnoozed; e.SnoozeUntil = until
-	} else {
-		r.items[id] = &stateEntry{State: StateSnoozed, SnoozeUntil: until}
-	}
+type PreferenceRepository interface {
+	GetPreferences(ctx context.Context, userID string) ([]Preference, error)
+	SavePreferences(ctx context.Context, userID string, prefs []Preference) error
 }
 
 type Composer struct{}
 
 func NewComposer() *Composer { return &Composer{} }
 
-func (c *Composer) BuildCenter(inputs Inputs, prefs map[Category]Preference, stateRepo *StateRepository, limit int, cursor string) *NotificationCenter {
+func (c *Composer) BuildCenter(ctx context.Context, inputs Inputs, prefs map[Category]Preference, stateRepo StateRepository, limit int, cursor string) *NotificationCenter {
 	notifs := c.generate(inputs)
-	return c.buildFeed(notifs, prefs, stateRepo, limit, cursor)
+	return c.buildFeed(ctx, inputs.UserID, notifs, prefs, stateRepo, limit, cursor)
 }
 
-func (c *Composer) BuildUnread(inputs Inputs, prefs map[Category]Preference, stateRepo *StateRepository) *NotificationCenter {
+func (c *Composer) BuildUnread(ctx context.Context, inputs Inputs, prefs map[Category]Preference, stateRepo StateRepository) *NotificationCenter {
 	notifs := c.generate(inputs)
-	return c.buildFeed(notifs, prefs, stateRepo, 50, "")
+	return c.buildFeed(ctx, inputs.UserID, notifs, prefs, stateRepo, 50, "")
 }
 
-func (c *Composer) BuildHistory(inputs Inputs, prefs map[Category]Preference, stateRepo *StateRepository, limit int, cursor string) *NotificationCenter {
+func (c *Composer) BuildHistory(ctx context.Context, inputs Inputs, prefs map[Category]Preference, stateRepo StateRepository, limit int, cursor string) *NotificationCenter {
 	notifs := c.generate(inputs)
-	return c.buildFeed(notifs, prefs, stateRepo, limit, cursor)
+	return c.buildFeed(ctx, inputs.UserID, notifs, prefs, stateRepo, limit, cursor)
 }
 
-func (c *Composer) Search(inputs Inputs, prefs map[Category]Preference, stateRepo *StateRepository, q string) []Notification {
+func (c *Composer) Search(ctx context.Context, inputs Inputs, prefs map[Category]Preference, stateRepo StateRepository, q string) []Notification {
 	notifs := c.generate(inputs)
-	filtered := c.applyPrefs(notifs, prefs, stateRepo)
+	filtered := c.applyPrefs(ctx, inputs.UserID, notifs, prefs, stateRepo)
 	q = strings.ToLower(q)
 	var matched []Notification
 	for _, n := range filtered {
@@ -186,19 +154,19 @@ func (c *Composer) Search(inputs Inputs, prefs map[Category]Preference, stateRep
 	return matched
 }
 
-func (c *Composer) GetByID(inputs Inputs, prefs map[Category]Preference, stateRepo *StateRepository, id string) *Notification {
+func (c *Composer) GetByID(ctx context.Context, inputs Inputs, prefs map[Category]Preference, stateRepo StateRepository, id string) *Notification {
 	for _, n := range c.generate(inputs) {
 		if n.NotifID == id {
 			// Apply state from repo
-			if s, ok := stateRepo.Get(id); ok { n.State = s }
+			if s, ok := stateRepo.Get(ctx, inputs.UserID, id); ok { n.State = s }
 			return &n
 		}
 	}
 	return nil
 }
 
-func (c *Composer) buildFeed(notifs []Notification, prefs map[Category]Preference, stateRepo *StateRepository, limit int, cursor string) *NotificationCenter {
-	filtered := c.applyPrefs(notifs, prefs, stateRepo)
+func (c *Composer) buildFeed(ctx context.Context, userID string, notifs []Notification, prefs map[Category]Preference, stateRepo StateRepository, limit int, cursor string) *NotificationCenter {
+	filtered := c.applyPrefs(ctx, userID, notifs, prefs, stateRepo)
 
 	sort.Slice(filtered, func(i, j int) bool {
 		wi := c.weight(filtered[i].Priority)
@@ -244,11 +212,11 @@ func (c *Composer) buildPreferencesMap(prefs []Preference) map[Category]Preferen
 	return m
 }
 
-func (c *Composer) applyPrefs(notifs []Notification, prefs map[Category]Preference, repo *StateRepository) []Notification {
+func (c *Composer) applyPrefs(ctx context.Context, userID string, notifs []Notification, prefs map[Category]Preference, repo StateRepository) []Notification {
 	var filtered []Notification
 	for _, n := range notifs {
 		// Apply persisted state
-		if s, ok := repo.Get(n.NotifID); ok {
+		if s, ok := repo.Get(ctx, userID, n.NotifID); ok {
 			n.State = s
 			if s == StateDismissed || s == StateArchived { continue }
 			if s == StateSnoozed {

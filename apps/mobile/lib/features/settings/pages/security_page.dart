@@ -112,11 +112,11 @@ class _SecurityPageState extends ConsumerState<SecurityPage> {
           const SizedBox(height: 16),
           Card(
             child: Column(children: [
-              ListTile(
-                leading: const Icon(Icons.devices),
-                title: const Text('Active Sessions'),
-                subtitle: const Text('Manage your logged-in devices'),
-                trailing: const Icon(Icons.chevron_right, size: 18),
+              const ListTile(
+                leading: Icon(Icons.devices),
+                title: Text('Active Sessions'),
+                subtitle: Text('Manage your logged-in devices'),
+                trailing: Icon(Icons.chevron_right, size: 18),
               ),
               ListTile(
                 leading: Icon(Icons.logout, color: theme.colorScheme.error),

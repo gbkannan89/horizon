@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:horizon_mobile/app/theme.dart';
-import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import 'package:horizon_mobile/features/auth/repositories/auth_repository.dart';
 import 'package:horizon_mobile/shared/providers/auth_state.dart';
 

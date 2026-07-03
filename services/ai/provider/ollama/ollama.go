@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/horizon/core/services/ai/internal/provider"
+	"github.com/horizon/core/services/ai/provider"
 )
 
 // OllamaProvider communicates with a local Ollama server.
@@ -56,7 +56,12 @@ func (o *OllamaProvider) Chat(ctx context.Context, req provider.ChatRequest) (*p
 	if !o.enabled { return nil, provider.ErrNotImplemented }
 
 	messages := []map[string]string{}
-	for _, h := range req.History {
+	// Simple token/context limit: keep at most last 10 messages
+	hist := req.History
+	if len(hist) > 10 {
+		hist = hist[len(hist)-10:]
+	}
+	for _, h := range hist {
 		messages = append(messages, map[string]string{"role": h.Role, "content": h.Content})
 	}
 	messages = append(messages, map[string]string{"role": "user", "content": req.Message})
@@ -84,6 +89,84 @@ func (o *OllamaProvider) Chat(ctx context.Context, req provider.ChatRequest) (*p
 		Provider:   o.name,
 		SessionID:  req.SessionID,
 	}, nil
+}
+
+func (o *OllamaProvider) StreamChat(ctx context.Context, req provider.ChatRequest) (<-chan string, error) {
+	if !o.enabled {
+		return nil, provider.ErrNotImplemented
+	}
+
+	messages := []map[string]string{}
+	hist := req.History
+	if len(hist) > 10 {
+		hist = hist[len(hist)-10:]
+	}
+	for _, h := range hist {
+		messages = append(messages, map[string]string{"role": h.Role, "content": h.Content})
+	}
+	messages = append(messages, map[string]string{"role": "user", "content": req.Message})
+
+	body := map[string]interface{}{
+		"model":    o.model,
+		"messages": messages,
+		"stream":   true,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", o.endpoint+"/api/chat", bytes.NewReader(jsonBody))
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := o.client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("do request: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, &provider.ProviderError{
+			Code: "HTTP_ERROR", Message: fmt.Sprintf("Ollama error %d: %s", resp.StatusCode, string(respBody)),
+			Provider: o.name, Retryable: false,
+		}
+	}
+
+	ch := make(chan string)
+	go func() {
+		defer close(ch)
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+		for {
+			var chunk struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+				Done bool `json:"done"`
+			}
+			if err := decoder.Decode(&chunk); err != nil {
+				break
+			}
+			if chunk.Message.Content != "" {
+				select {
+				case ch <- chunk.Message.Content:
+				case <-ctx.Done():
+					return
+				}
+			}
+			if chunk.Done {
+				break
+			}
+		}
+	}()
+
+	return ch, nil
 }
 
 func (o *OllamaProvider) Explain(ctx context.Context, req provider.ExplainRequest) (*provider.ExplainResponse, error) {
@@ -175,10 +258,11 @@ func (o *OllamaProvider) Health(ctx context.Context) (*provider.HealthResponse, 
 }
 
 func (o *OllamaProvider) Capabilities() provider.Capabilities {
+	models := o.discoverModels(context.Background())
 	return provider.Capabilities{
-		Provider: o.name, Chat: o.enabled, Explanation: o.enabled, Summarize: o.enabled,
-		Streaming: true, ToolCalling: false, Embeddings: true, Vision: false,
-		MaxContext: 8192, Models: []string{o.model},
+		Provider: o.name, Chat: true, Explanation: true, Summarize: true, Insights: true,
+		Streaming: true, ToolCalling: false, Embeddings: false, Vision: false,
+		MaxContext: 8192, Models: models,
 	}
 }
 
@@ -256,4 +340,44 @@ func (o *OllamaProvider) discoverModels(ctx context.Context) []string {
 	var models []string
 	for _, m := range tags.Models { models = append(models, m.Name) }
 	return models
+}
+
+func (o *OllamaProvider) GenerateInsights(ctx context.Context, req provider.GenerateInsightsRequest) (*provider.GenerateInsightsResponse, error) {
+	// A simple prompt asking Ollama to generate insights in JSON format
+	prompt := "Analyze the following financial data and provide proactive insights (like spending patterns, savings opportunities). Format as JSON array with type, title, summary, explanation, and confidence."
+	dataStr, _ := json.Marshal(req.Data)
+	prompt += "\nData: " + string(dataStr)
+
+	apiReq := map[string]interface{}{
+		"model":  "llama3",
+		"prompt": prompt,
+		"stream": false,
+		"format": "json",
+	}
+
+	var apiResp struct {
+		Response string `json:"response"`
+	}
+	if err := o.doRequest(ctx, "/api/generate", apiReq, &apiResp); err != nil {
+		return nil, err
+	}
+
+	var insights []provider.GeneratedInsight
+	if err := json.Unmarshal([]byte(apiResp.Response), &insights); err != nil {
+		// Fallback to basic if parsing fails
+		insights = []provider.GeneratedInsight{
+			{
+				Type:        "general",
+				Title:       "AI Insight Generated",
+				Summary:     "Generated via Ollama.",
+				Explanation: apiResp.Response,
+				Confidence:  "Medium",
+			},
+		}
+	}
+
+	return &provider.GenerateInsightsResponse{
+		Insights: insights,
+		Provider: o.name,
+	}, nil
 }

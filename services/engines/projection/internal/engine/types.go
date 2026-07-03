@@ -23,8 +23,11 @@ type Inputs struct {
 	TotalAssets     int64             `json:"total_assets"`
 	TotalLiabilities int64            `json:"total_liabilities"`
 	MonthlyIncome   int64             `json:"monthly_income"`
-	MonthlyExpenses int64             `json:"monthly_expenses"`
-	CashBalance     int64             `json:"cash_balance"`
+	MonthlyExpenses   int64             `json:"monthly_expenses"`
+	RecurringIncome   int64             `json:"recurring_income"`
+	RecurringExpenses int64             `json:"recurring_expenses"`
+	BudgetExpenses    int64             `json:"budget_expenses"`
+	CashBalance       int64             `json:"cash_balance"`
 	GoalValues      map[string]int64  `json:"goal_values"`
 	GoalTargets     map[string]int64  `json:"goal_targets"`
 	AssetValues     []int64           `json:"asset_values"`

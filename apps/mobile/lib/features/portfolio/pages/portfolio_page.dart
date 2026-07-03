@@ -75,10 +75,12 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
 
   Widget _buildBody(ThemeData theme, PfState state) {
     if (state.loading) return const SharedLoadingView();
-    if (state.error != null) return SharedErrorView(
+    if (state.error != null) {
+      return SharedErrorView(
       message: state.error,
       onRetry: () => ref.read(pfStateProvider.notifier).load(),
     );
+    }
 
     return RefreshIndicator(
       onRefresh: () => ref.read(pfStateProvider.notifier).load(),

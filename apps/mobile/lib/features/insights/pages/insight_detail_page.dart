@@ -26,7 +26,7 @@ class InsightDetailPage extends ConsumerWidget {
         loading: () => const SharedLoadingView(),
         error: (e, _) => SharedErrorView(message: e.toString()),
         data: (item) {
-          if (item == null) return SharedEmptyView(icon: Icons.search_off, title: 'Insight not found');
+          if (item == null) return const SharedEmptyView(icon: Icons.search_off, title: 'Insight not found');
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [

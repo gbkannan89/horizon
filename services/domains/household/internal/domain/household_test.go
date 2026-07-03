@@ -1086,7 +1086,7 @@ func TestReconstructFromDB(t *testing.T) {
 		"hh-recon", "Reconstructed Home", HHFamily, headID, members,
 		HHStatusActive, "EUR", "EU",
 		50000, 15000, 35000, HHHealthy,
-		[]string{"tag1", "tag2"},
+		[]string{"tag1", "tag2"}, "",
 		accounts, goals, budgets, contribs,
 		now, now,
 	)
@@ -1116,7 +1116,7 @@ func TestReconstructFromDB(t *testing.T) {
 			"hh-nil", "Nil Test", HHSingle, headID, members,
 			HHStatusDraft, "USD", "US",
 			0, 0, 0, HHHealthy,
-			nil, nil, nil, nil, nil,
+			nil, "", nil, nil, nil, nil,
 			now, now,
 		)
 		assert.NotNil(t, h2.Tags())
@@ -1148,7 +1148,7 @@ func testDraftHousehold() *Household {
 		},
 		HHStatusDraft, "USD", "US",
 		0, 0, 0, HHHealthy,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		time.Now().UTC(), time.Now().UTC(),
 	)
 }
@@ -1165,7 +1165,7 @@ func testActiveHousehold() *Household {
 		},
 		HHStatusActive, "USD", "US",
 		10000, 3000, 7000, HHHealthy,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		time.Now().UTC(), time.Now().UTC(),
 	)
 }
@@ -1179,7 +1179,7 @@ func testPausedHousehold() *Household {
 		},
 		HHStatusPaused, "USD", "US",
 		5000, 1000, 4000, HHHealthy,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		time.Now().UTC(), time.Now().UTC(),
 	)
 }
@@ -1193,7 +1193,7 @@ func testDissolvedHousehold() *Household {
 		},
 		HHStatusDissolved, "USD", "US",
 		0, 0, 0, HHCritical,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		time.Now().UTC(), time.Now().UTC(),
 	)
 }
@@ -1207,7 +1207,7 @@ func testArchivedHousehold() *Household {
 		},
 		HHStatusArchived, "USD", "US",
 		0, 0, 0, HHCritical,
-		[]string{}, nil, nil, nil, nil,
+		[]string{}, "", nil, nil, nil, nil,
 		time.Now().UTC(), time.Now().UTC(),
 	)
 }

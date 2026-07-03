@@ -10,7 +10,9 @@ type GoalFactory struct{}
 func NewGoalFactory() *GoalFactory { return &GoalFactory{} }
 
 func (f *GoalFactory) Create(
-	id, userID, name string,
+	id, userID string,
+	householdID *string,
+	name string,
 	importance GoalImportance,
 	gtype GoalType,
 	subtype GoalSubtype,
@@ -55,6 +57,7 @@ func (f *GoalFactory) Create(
 	return &Goal{
 		id:                   id,
 		userID:               userID,
+		householdID:          householdID,
 		name:                 name,
 		importance:           importance,
 		gtype:                gtype,

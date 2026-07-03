@@ -52,13 +52,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
 
   Widget _buildBody(ThemeData theme, AcctDetailState state) {
     if (state.loading) return const Center(child: CircularProgressIndicator());
-    if (state.error != null) return Center(
+    if (state.error != null) {
+      return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-        const SizedBox(height: 16), Text('Could not load account details'),
+        const SizedBox(height: 16), const Text('Could not load account details'),
         FilledButton.icon(onPressed: () => ref.read(acctDetailProvider(widget.accountId).notifier).load(), icon: const Icon(Icons.refresh), label: const Text('Try Again')),
       ]),
     );
+    }
     if (state.detail == null) return const Center(child: Text('No data'));
 
     final d = state.detail!;

@@ -17,15 +17,27 @@ class AcctState {
   final BalanceSummaryData? balances; final CashFlowData? cashFlow;
   final AcctHealthData? health; final String? error;
   final List<AcctCardData> filteredAccounts; final String filterType;
+  final String? householdId;
+  final List<HouseholdAccountView> householdAccounts;
 
-  AcctState({this.loading = false, this.dash, this.list, this.balances, this.cashFlow, this.health, this.error, this.filteredAccounts = const [], this.filterType = ''});
+  AcctState({this.loading = false, this.dash, this.list, this.balances, this.cashFlow, this.health, this.error, this.filteredAccounts = const [], this.filterType = '', this.householdId, this.householdAccounts = const []});
 }
 
 class AcctStateNotifier extends StateNotifier<AcctState> {
   final AcctRepository _repo;
   AcctStateNotifier(this._repo) : super(AcctState());
 
-  Future<void> load({String? userId}) async {
+  Future<void> load({String? userId, String? householdId}) async {
+    if (householdId != null) {
+      state = AcctState(loading: true, householdId: householdId);
+      try {
+        final r = await _repo.getHouseholdAccounts(householdId: householdId);
+        state = AcctState(householdId: householdId, householdAccounts: r.data?.accounts ?? []);
+      } catch (e) {
+        state = AcctState(error: e.toString(), householdId: householdId);
+      }
+      return;
+    }
     state = AcctState(loading: true);
     try {
       final r = await Future.wait([
@@ -66,7 +78,14 @@ class AccountsPage extends ConsumerStatefulWidget {
 
 class _AccountsPageState extends ConsumerState<AccountsPage> {
   @override
-  void initState() { super.initState(); Future.microtask(() => ref.read(acctStateProvider.notifier).load()); }
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final uri = GoRouterState.of(context).uri;
+      final householdId = uri.queryParameters['household_id'];
+      ref.read(acctStateProvider.notifier).load(householdId: householdId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,10 +99,40 @@ class _AccountsPageState extends ConsumerState<AccountsPage> {
 
   Widget _buildBody(ThemeData theme, AcctState state) {
     if (state.loading) return const SharedLoadingView();
-    if (state.error != null) return SharedErrorView(
+    if (state.error != null) {
+      return SharedErrorView(
       message: state.error,
-      onRetry: () => ref.read(acctStateProvider.notifier).load(),
+      onRetry: () => ref.read(acctStateProvider.notifier).load(householdId: state.householdId),
     );
+    }
+
+    if (state.householdId != null) {
+      final accts = state.householdAccounts;
+      return RefreshIndicator(
+        onRefresh: () => ref.read(acctStateProvider.notifier).load(householdId: state.householdId),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Household Accounts (${accts.length})', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            if (accts.isEmpty)
+              const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No household accounts'))),
+            ...accts.map((a) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                child: ListTile(
+                  leading: const Icon(Icons.account_balance),
+                  title: Text(a.accountName),
+                  subtitle: Text('${a.accountType} · ${a.currency}'),
+                  trailing: Text(a.status, style: TextStyle(color: a.status == 'Active' ? Colors.green : Colors.grey)),
+                  onTap: () => context.push('/accounts/${a.accountId}'),
+                ),
+              ),
+            )),
+          ],
+        ),
+      );
+    }
 
     final accts = state.filteredAccounts;
     return RefreshIndicator(

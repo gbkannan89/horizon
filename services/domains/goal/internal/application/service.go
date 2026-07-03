@@ -37,8 +37,9 @@ func (s *GoalService) Create(ctx context.Context, cmd command.CreateGoalCommand)
 	}
 	sc := domain.SuccessCriteria{Model: domain.SuccessModel(cmd.SuccessModel), TargetValue: cmd.TargetValue, TargetMonths: cmd.TargetMonths, CustomDesc: cmd.CustomDesc, CustomTargetVal: cmd.CustomTargetVal}
 
+	var hhid *string // M-027 TODO: Set from command if provided
 	now := s.now()
-	goal, err := s.factory.Create("", cmd.UserID, cmd.Name, imp, gtype, subtype, sc, cmd.Priority, td, true, cmd.RiskTolerance, cmd.Notes, nil, cmd.Tags, nil, now)
+	goal, err := s.factory.Create("", cmd.UserID, hhid, cmd.Name, imp, gtype, subtype, sc, cmd.Priority, td, true, cmd.RiskTolerance, cmd.Notes, nil, cmd.Tags, nil, now)
 	if err != nil {
 		return nil, err
 	}
@@ -243,8 +244,16 @@ func (s *GoalService) ListByType(ctx context.Context, q query.ListByTypeQuery) (
 	return toPaginated(goals, cursor), nil
 }
 
+func (s *GoalService) ListByHousehold(ctx context.Context, q query.ListByHouseholdQuery) (*query.PaginatedResult, error) {
+	goals, cursor, err := s.repo.ListByHousehold(ctx, q.HouseholdID, q.Cursor, q.Limit)
+	if err != nil {
+		return nil, err
+	}
+	return toPaginated(goals, cursor), nil
+}
+
 func toGoalView(g *domain.Goal) *query.GoalView {
-	return &query.GoalView{
+	v := &query.GoalView{
 		GoalID: g.ID(), UserID: g.UserID(), Name: g.Name(),
 		Importance: string(g.Importance()), GoalType: string(g.GoalType()),
 		Subtype: string(g.Subtype()), Priority: g.Priority(),
@@ -253,6 +262,10 @@ func toGoalView(g *domain.Goal) *query.GoalView {
 		Status: string(g.Status()), HasTargetDate: g.TargetDate() != nil,
 		CreatedAt: g.CreatedAt().Format(time.RFC3339),
 	}
+	if g.HouseholdID() != nil {
+		v.HouseholdID = *g.HouseholdID()
+	}
+	return v
 }
 
 func toPaginated(goals []*domain.Goal, cursor string) *query.PaginatedResult {

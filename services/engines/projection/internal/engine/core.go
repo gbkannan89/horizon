@@ -83,8 +83,10 @@ func (e *Engine) projectNetWorth(inputs Inputs, day int) int64 {
 
 func (e *Engine) projectCashFlow(inputs Inputs, day int) int64 {
 	years := float64(day) / 365.0
-	income := float64(inputs.MonthlyIncome) * (1.0 + e.assumptions.SalaryGrowthRate/100.0*years)
-	expenses := float64(inputs.MonthlyExpenses) * (1.0 + e.assumptions.ExpenseGrowthRate/100.0*years)
+	income := (float64(inputs.MonthlyIncome) + float64(inputs.RecurringIncome)) * (1.0 + e.assumptions.SalaryGrowthRate/100.0*years)
+	baseExp := inputs.MonthlyExpenses + inputs.RecurringExpenses
+	if inputs.BudgetExpenses > 0 { baseExp = inputs.BudgetExpenses + inputs.RecurringExpenses }
+	expenses := float64(baseExp) * (1.0 + e.assumptions.ExpenseGrowthRate/100.0*years)
 	return int64(income - expenses)
 }
 

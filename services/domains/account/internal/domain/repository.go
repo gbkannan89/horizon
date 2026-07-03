@@ -10,4 +10,5 @@ type Repository interface {
 	ListByType(ctx context.Context, ownerID string, at AccountType, cursor string, limit int) ([]*Account, string, error)
 	ListByStatus(ctx context.Context, ownerID string, status AccountStatus, cursor string, limit int) ([]*Account, string, error)
 	ListByInstitution(ctx context.Context, institutionID string, cursor string, limit int) ([]*Account, string, error)
+	ListByHousehold(ctx context.Context, householdID string, cursor string, limit int) ([]*Account, string, error)
 }

@@ -18,6 +18,12 @@ type DataProviders struct {
 	Simulation  SimProvider
 	Events      EventProvider
 	Scenarios   ScenarioProvider
+	Budget      BudgetProvider
+	Recurring   RecurringProvider
+}
+
+type RecurringProvider interface {
+	GetUpcomingCount(ctx context.Context, userID string) (int, error)
 }
 
 type GoalProvider interface {
@@ -49,6 +55,9 @@ type EventProvider interface {
 }
 type ScenarioProvider interface {
 	GetScenarios(ctx context.Context, userID string) ([]engine.Scenario, error)
+}
+type BudgetProvider interface {
+	GetBudgetSummary(ctx context.Context, userID string) (totalBudgeted, totalSpent, totalRemaining int64, categories []map[string]interface{}, err error)
 }
 
 type Aggregator struct {
@@ -145,6 +154,31 @@ func (a *Aggregator) Aggregate(ctx context.Context, userID string, mode engine.P
 		scenarios, err := a.providers.Scenarios.GetScenarios(ctx, userID)
 		if err != nil { errs <- err; return }
 		mu.Lock(); inputs.Scenarios = scenarios; inputs.HasAlternatives = len(scenarios) > 0; mu.Unlock()
+	}()
+
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if a.providers.Budget != nil {
+			budgeted, spent, rem, cats, err := a.providers.Budget.GetBudgetSummary(ctx, userID)
+			if err == nil {
+				mu.Lock()
+				inputs.TotalBudgeted = budgeted
+				inputs.TotalSpent = spent
+				inputs.TotalRemaining = rem
+				inputs.BudgetCategories = cats
+				mu.Unlock()
+			}
+		}
+	}()
+
+	wg.Add(1); go func() {
+		defer wg.Done()
+		if a.providers.Recurring != nil {
+			count, err := a.providers.Recurring.GetUpcomingCount(ctx, userID)
+			if err == nil {
+				mu.Lock(); inputs.UpcomingRecurring = count; mu.Unlock()
+			}
+		}
 	}()
 
 	wg.Wait()

@@ -40,11 +40,22 @@ class TransactionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      transaction.description ?? transaction.eventType,
-                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            transaction.description ?? transaction.eventType,
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (transaction.tags?.contains('recurring') == true)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Icon(Icons.repeat, size: 14, color: theme.colorScheme.primary),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(

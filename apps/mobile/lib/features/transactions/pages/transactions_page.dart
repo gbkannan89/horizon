@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:horizon_mobile/app/theme.dart';
 import 'package:horizon_mobile/shared/widgets/shared_widgets.dart';
 import '../state/transaction_state.dart';
 import '../widgets/transaction_widgets.dart';

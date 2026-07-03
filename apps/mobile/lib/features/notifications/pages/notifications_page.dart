@@ -52,7 +52,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       case NotificationStatus.error:
         return SharedErrorView(message: state.error, onRetry: () => ref.read(notificationProvider.notifier).load());
       case NotificationStatus.empty:
-        return SharedEmptyView(icon: Icons.notifications_none, title: 'No notifications', subtitle: 'You\'re all caught up');
+        return const SharedEmptyView(icon: Icons.notifications_none, title: 'No notifications', subtitle: 'You\'re all caught up');
       case NotificationStatus.loaded:
         return RefreshIndicator(
           onRefresh: () => ref.read(notificationProvider.notifier).load(),

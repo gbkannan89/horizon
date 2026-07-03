@@ -18,6 +18,7 @@ type Inputs struct {
 	AllocationAdherence  float64 `json:"allocation_adherence"`
 	SavingsConsistency   float64 `json:"savings_consistency"`
 	PortfolioDrift       float64 `json:"portfolio_drift"`
+	BudgetAdherence      float64 `json:"budget_adherence"`
 	PreviousOverallScore int     `json:"previous_overall_score"`
 }
 
@@ -55,7 +56,7 @@ func (e *Engine) computeDimensions(inputs Inputs) []DimensionScore {
 		{"InsuranceHealth", e.scoreInsurance(inputs.InsuranceCoverage), 5, 0},
 		{"RetirementHealth", e.scoreRetirement(inputs.RetirementFundedRatio), 10, 0},
 		{"BehaviourHealth", e.scoreBehaviour(inputs.AllocationAdherence, inputs.SavingsConsistency), 5, 0},
-		{"HouseholdHealth", 80, 5, 0},
+		{"BudgetHealth", e.scoreBudget(inputs.BudgetAdherence), 5, 0},
 		{"PortfolioHealth", e.scorePortfolio(inputs.PortfolioDrift), 5, 0},
 	}
 }
@@ -111,4 +112,7 @@ func (e *Engine) scoreRetirement(fr float64) float64 {
 func (e *Engine) scoreBehaviour(adherence, consistency float64) float64 { return (adherence + consistency) / 2 }
 func (e *Engine) scorePortfolio(drift float64) float64 {
 	switch { case drift <= 2: return 100; case drift <= 5: return 80; case drift <= 10: return 60; case drift <= 15: return 40; default: return 20 }
+}
+func (e *Engine) scoreBudget(adherence float64) float64 {
+	switch { case adherence >= 90: return 100; case adherence >= 75: return 80; case adherence >= 50: return 60; case adherence >= 25: return 40; default: return 20 }
 }

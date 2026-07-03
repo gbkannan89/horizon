@@ -199,16 +199,12 @@ func (h *Handlers) GetTimeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetBudget(w http.ResponseWriter, r *http.Request) {
+	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r), parseMode(r))
+	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
-		"total_budget": 109000, "total_spent": 107500, "surplus": 1500,
-		"categories": []map[string]interface{}{
-			{"category": "Housing", "planned": 45000, "actual": 43500, "remaining": 1500},
-			{"category": "Food", "planned": 15000, "actual": 16200, "remaining": -1200},
-			{"category": "Transport", "planned": 8000, "actual": 7200, "remaining": 800},
-			{"category": "Utilities", "planned": 6000, "actual": 5800, "remaining": 200},
-			{"category": "Entertainment", "planned": 5000, "actual": 4800, "remaining": 200},
-			{"category": "Savings", "planned": 30000, "actual": 30000, "remaining": 0},
-		},
+		"total_budgeted": inputs.TotalBudgeted, "total_spent": inputs.TotalSpent, "total_remaining": inputs.TotalRemaining,
+		"categories": inputs.BudgetCategories,
 	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
 }
 
@@ -221,15 +217,35 @@ func (h *Handlers) GetRetirement(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetEmergencyFund(w http.ResponseWriter, r *http.Request) {
+	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r), parseMode(r))
+	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
+	
+	expenses := inputs.MonthlyExpenses
+	if inputs.TotalBudgeted > 0 { expenses = inputs.TotalBudgeted }
+	if expenses <= 0 { expenses = 100000 }
+	
+	monthsCovered := float64(inputs.CashBalance) / float64(expenses)
+	targetMonths := 6.0
+	targetAmount := float64(expenses) * targetMonths
+	progress := 0.0
+	if targetAmount > 0 { progress = (float64(inputs.CashBalance) / targetAmount) * 100.0 }
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
-		"current_savings": 450000, "target_amount": 600000, "months_covered": 4.5,
-		"target_months": 6, "monthly_expenses": 100000, "progress_pct": 75, "status": "In Progress",
+		"current_savings": inputs.CashBalance, "target_amount": int64(targetAmount), "months_covered": monthsCovered,
+		"target_months": targetMonths, "monthly_expenses": expenses, "progress_pct": int(progress), "status": "In Progress",
 	}, "metadata": map[string]string{"timestamp": time.Now().UTC().Format(time.RFC3339)}})
 }
 
 func (h *Handlers) GetDebtPayoff(w http.ResponseWriter, r *http.Request) {
+	inputs, err := h.aggregator.Aggregate(r.Context(), getDefaultUserID(r), parseMode(r))
+	if err != nil { writeError(w, http.StatusInternalServerError, "AGGREGATION_ERROR", err.Error()); return }
+	
+	income := float64(inputs.MonthlyIncome)
+	if income <= 0 { income = 150000 }
+	dti := (90000.0 / income) * 100.0
+	
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true, "data": map[string]interface{}{
-		"total_debt": 4545000, "total_monthly": 90000, "debt_to_income_ratio": 28.0,
+		"total_debt": 4545000, "total_monthly": 90000, "debt_to_income_ratio": dti,
 		"debts": []map[string]interface{}{
 			{"name": "Home Loan", "principal": 4500000, "interest_rate": 8.5, "monthly_emi": 45000, "remaining_months": 180},
 			{"name": "Credit Card", "principal": 45000, "interest_rate": 42.0, "monthly_emi": 45000, "remaining_months": 1},

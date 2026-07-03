@@ -68,7 +68,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Widget _buildIdle(ThemeData theme, SearchState state) {
     if (state.recentSearches.isEmpty) {
-      return SharedEmptyView(
+      return const SharedEmptyView(
         icon: Icons.search,
         title: 'Search your finances',
         subtitle: 'Find accounts, transactions, goals, and more',
@@ -99,7 +99,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Widget _buildResults(ThemeData theme, SearchState state) {
     if (state.results.isEmpty) {
-      return SharedEmptyView(
+      return const SharedEmptyView(
         icon: Icons.search_off,
         title: 'No results found',
         subtitle: 'Try a different search term',
@@ -114,7 +114,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     }
 
     if (grouped.isEmpty) {
-      return SharedEmptyView(icon: Icons.filter_alt_off, title: 'No results for this filter', subtitle: 'Try a different module filter');
+      return const SharedEmptyView(icon: Icons.filter_alt_off, title: 'No results for this filter', subtitle: 'Try a different module filter');
     }
 
     return ListView(

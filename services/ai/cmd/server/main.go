@@ -9,7 +9,7 @@ import (
 	"github.com/horizon/core/services/ai/internal/config"
 	ctxpkg "github.com/horizon/core/services/ai/internal/context"
 	"github.com/horizon/core/services/ai/internal/prompts"
-	"github.com/horizon/core/services/ai/internal/provider/ollama"
+	"github.com/horizon/core/services/ai/provider/ollama"
 	"github.com/horizon/core/services/ai/internal/registry"
 	"github.com/horizon/core/services/ai/internal/runtime"
 	"github.com/horizon/core/services/ai/internal/session"
@@ -17,7 +17,7 @@ import (
 
 func main() {
 	cfg := config.Load()
-	reg := registry.New()
+	reg := registry.New(cfg.CBThreshold, cfg.CBTimeout)
 
 	// Build Ollama provider
 	ollamaProvider := ollama.New(ollama.Config{

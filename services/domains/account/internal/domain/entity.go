@@ -59,6 +59,10 @@ func (a *Account) Notes() string                  { return a.notes }
 func (a *Account) CreatedAt() time.Time           { return a.createdAt }
 func (a *Account) UpdatedAt() time.Time           { return a.updatedAt }
 
+func (a *Account) IsVisibleToHousehold() bool {
+	return a.householdID != nil && (a.visibility == VisHousehold || a.visibility == VisShared)
+}
+
 func (a *Account) SetStatus(s AccountStatus) {
 	a.status = s; a.updatedAt = time.Now().UTC()
 }
@@ -77,11 +81,11 @@ func (a *Account) CanTransitionTo(target AccountStatus) error {
 	return fmt.Errorf("cannot transition from %s to %s", a.status, target)
 }
 
-func ReconstructFromDB(id, ownerID, name, currency string, acctType AccountType, cls AccountClassification,
+func ReconstructFromDB(id, ownerID string, householdID *string, name, currency string, acctType AccountType, cls AccountClassification,
 	status AccountStatus, openedDate time.Time, lp LiquidityProfile, ah AccountHealth, vis Visibility,
 	tags []string, createdAt, updatedAt time.Time) *Account {
 	return &Account{
-		id: id, ownerID: ownerID, accountName: name, currency: currency, accountType: acctType,
+		id: id, ownerID: ownerID, householdID: householdID, accountName: name, currency: currency, accountType: acctType,
 		classification: cls, status: status, openedDate: openedDate,
 		liquidityProfile: lp, accountHealth: ah, visibility: vis,
 		tags: tags, createdAt: createdAt, updatedAt: updatedAt,

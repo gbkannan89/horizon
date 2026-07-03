@@ -1,0 +1,17 @@
+module github.com/horizon/core/services/domains/recurring
+
+go 1.24
+
+require github.com/horizon/core/packages/events v0.0.0-00010101000000-000000000000
+
+require (
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.7.1 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
+)
+
+replace github.com/horizon/core/packages/errors => ../../../packages/errors
+
+replace github.com/horizon/core/packages/events => ../../../packages/events

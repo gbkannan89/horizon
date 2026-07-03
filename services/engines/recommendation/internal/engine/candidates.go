@@ -48,6 +48,17 @@ func (e *Engine) identifyOpportunities(inputs Inputs) []Recommendation {
 			Evidence: []string{"Coverage: " + fmtFlt(inputs.EmergencyMonths) + " months"},
 		})
 	}
+	for cat, overspend := range inputs.OverspentCategories {
+		if overspend > 0 {
+			recs = append(recs, Recommendation{
+				Title: "Reduce spending in " + cat, Category: RCCashFlow,
+				Summary: "Overspent by " + fmtMoney(overspend),
+				Action: "Adjust budget or reduce spending for " + cat,
+				ExpectedImprovement: "Improve cash flow and budget adherence",
+				Evidence: []string{"Overspend: " + fmtMoney(overspend), "Category: " + cat},
+			})
+		}
+	}
 	if inputs.CashFlowSurplus > 0 {
 		recs = append(recs, Recommendation{
 			Title: "Allocate surplus", Category: RCCashFlow,
