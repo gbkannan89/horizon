@@ -33,6 +33,7 @@ import (
 	schedReportsReg "github.com/horizon/core/services/engines/scheduled-reports/register"
 	taxReg "github.com/horizon/core/services/engines/tax-planning/register"
 	currencyReg "github.com/horizon/core/services/engines/currency/register"
+	docReg "github.com/horizon/core/services/engines/documents/register"
 	rulesReg "github.com/horizon/core/services/domains/rules/register"
 	streamReg "github.com/horizon/core/services/infra/events/register"
 )
@@ -111,6 +112,9 @@ func main() {
 
 	// Currency / multi-currency engine
 	currencyReg.RegisterRoutes(mux)
+
+	// Document management engine
+	docReg.RegisterRoutes(mux)
 
 	// Account domain — household account listings
 	acctDomainReg.RegisterRoutes(mux, pool)

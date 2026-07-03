@@ -22,5 +22,6 @@ use (
 	./services/engines/optimization
 	./services/engines/tax-planning
 	./services/engines/currency
+	./services/engines/documents
 	./packages/errors
 )
