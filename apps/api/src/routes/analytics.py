@@ -1,8 +1,18 @@
 import logging
+from typing import List
 from datetime import datetime, date, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from ..database import get_db
-from ..schemas import UserOut
+from ..schemas import (
+    UserOut, RecurringDetectionOut, RecurringConfirmIn,
+    SpendingPatternOut, SubscriptionCandidateOut, LapsedSubscriptionOut,
+    FullAnalysisOut
+)
+from ..services.analytics_engine import (
+    detect_recurring_transactions, analyze_spending_patterns,
+    detect_subscriptions, detect_lapsed_subscriptions,
+    generate_spending_nudges, run_full_analysis, add_confirmed_recurring
+)
 from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -167,3 +177,90 @@ def portfolio_summary(
         "allocation": allocation,
         "assets": asset_list,
     }
+
+
+# ── RECURRING DETECTION ────────────────────────────────────────────────────
+@router.get("/recurring-detection", response_model=List[RecurringDetectionOut])
+def get_recurring_detection(
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        results = detect_recurring_transactions(current_user.id, conn)
+        return results
+    except Exception as e:
+        logger.error(f"Recurring detection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/recurring-detection/confirm")
+def confirm_recurring(
+    confirmation: RecurringConfirmIn,
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        result = add_confirmed_recurring(current_user.id, confirmation.dict(), conn)
+        if "error" in result:
+            raise HTTPException(status_code=409, detail=result["error"])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Confirm recurring error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── SPENDING PATTERNS ──────────────────────────────────────────────────────
+@router.get("/spending-patterns", response_model=SpendingPatternOut)
+def get_spending_patterns(
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        results = analyze_spending_patterns(current_user.id, conn)
+        return results
+    except Exception as e:
+        logger.error(f"Spending patterns error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── SUBSCRIPTION DETECTION ─────────────────────────────────────────────────
+@router.get("/subscriptions/detect", response_model=List[SubscriptionCandidateOut])
+def get_subscription_candidates(
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        results = detect_subscriptions(current_user.id, conn)
+        return results
+    except Exception as e:
+        logger.error(f"Subscription detection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/subscriptions/lapsed", response_model=List[LapsedSubscriptionOut])
+def get_lapsed_subscriptions(
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        results = detect_lapsed_subscriptions(current_user.id, conn)
+        return results
+    except Exception as e:
+        logger.error(f"Lapsed subscription detection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── FULL ANALYSIS ───────────────────────────────────────────────────────────
+@router.post("/run-analysis", response_model=FullAnalysisOut)
+def run_analysis(
+    current_user: UserOut = Depends(get_current_user),
+    conn = Depends(get_db)
+):
+    try:
+        results = run_full_analysis(current_user.id, conn)
+        return results
+    except Exception as e:
+        logger.error(f"Full analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

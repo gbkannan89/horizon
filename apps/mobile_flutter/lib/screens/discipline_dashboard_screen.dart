@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:provider/provider.dart';
 import '../models/wishlist_item.dart';
 import '../models/discipline_aggregates.dart';
 import '../services/discipline_service.dart';
+import '../providers/financial_provider.dart';
 import '../utils/ui_utils.dart';
+import 'collections_list_screen.dart';
 
 class DisciplineDashboardScreen extends StatefulWidget {
   final DisciplineService disciplineService;
@@ -48,6 +51,9 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      if (mounted) {
+        Provider.of<FinancialProvider>(context, listen: false).loadCollections();
+      }
       final futures = await Future.wait([
         widget.disciplineService.getPayYourselfFirst(),
         widget.disciplineService.getZeroBasedBudget(),
@@ -145,6 +151,8 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
             _buildGuardrailsCard(),
             const SizedBox(height: 16),
             _buildEmergencyFundCard(),
+            const SizedBox(height: 16),
+            _buildCollectionsCard(),
             const SizedBox(height: 16),
             _buildWishlistCard(),
             const SizedBox(height: 60),
@@ -350,6 +358,117 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
               ),
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollectionsCard() {
+    return Consumer<FinancialProvider>(
+      builder: (context, fp, _) {
+        final active = fp.collections.where((c) => c['status'] == 'active').toList();
+        final totalExpected = active.fold<double>(0, (s, c) => s + ((c['total_expected'] ?? 0).toDouble()));
+        final totalCollected = active.fold<double>(0, (s, c) => s + ((c['total_collected'] ?? 0).toDouble()));
+        final memberCount = active.fold<int>(0, (s, c) => s + ((c['member_count'] ?? 0) as int));
+        final paidCount = active.fold<int>(0, (s, c) => s + ((c['paid_count'] ?? 0) as int));
+
+        return _buildGamifiedCard(
+          title: 'Collections',
+          icon: Icons.people_alt_rounded,
+          gradient: const [Color(0xFF6B46C1), Color(0xFFA78BFA)],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (active.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    children: [
+                      Icon(Icons.people_outline, size: 36, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text('No active collections', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                      SizedBox(height: 4),
+                      Text('Track group payments from friends & family.',
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                )
+              else ...[
+                Row(
+                  children: [
+                    _collectionStat(
+                      'Active', '${active.length}',
+                      Icons.play_circle_outline, const Color(0xFF6B46C1)),
+                    const SizedBox(width: 20),
+                    _collectionStat(
+                      'Collected', '₹${_fmt(totalCollected)}',
+                      Icons.account_balance_wallet_outlined, const Color(0xFF059669)),
+                    const SizedBox(width: 20),
+                    _collectionStat(
+                      'Pending', '${memberCount - paidCount}',
+                      Icons.pending_actions, const Color(0xFFF59E0B)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearPercentIndicator(
+                    lineHeight: 10,
+                    percent: totalExpected > 0 ? (totalCollected / totalExpected).clamp(0.0, 1.0) : 0.0,
+                    progressColor: const Color(0xFF6B46C1),
+                    backgroundColor: const Color(0xFF6B46C1).withValues(alpha: 0.1),
+                    barRadius: const Radius.circular(6),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                if (totalExpected > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text('₹${_fmt(totalCollected)} of ₹${_fmt(totalExpected)} collected',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CollectionsListScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: Text(active.isEmpty ? 'Create Collection' : 'View All Collections'),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    foregroundColor: const Color(0xFF6B46C1),
+                    side: const BorderSide(color: Color(0xFFA78BFA)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _fmt(dynamic val) {
+    if (val == null) return '0';
+    final n = (val is num) ? val : double.tryParse(val.toString()) ?? 0;
+    if (n >= 100000) return '${(n / 100000).toStringAsFixed(1)}L';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return n.toStringAsFixed(0);
+  }
+
+  Widget _collectionStat(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );

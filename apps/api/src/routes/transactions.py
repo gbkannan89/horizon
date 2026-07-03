@@ -3,10 +3,12 @@ import logging
 import codecs
 import os
 import tempfile
+from typing import Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from ..database import get_db
-from ..schemas import UserOut, UploadSummary
+from ..schemas import UserOut, UploadSummary, UploadAnalysisOut
+from ..services.analytics_engine import run_full_analysis
 from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -183,9 +185,10 @@ def _parse_excel(file) -> dict:
         os.unlink(tmp_path)
 
 
-@router.post("/upload", response_model=UploadSummary)
+@router.post("/upload", response_model=UploadAnalysisOut)
 def upload_statement(
     file: UploadFile = File(...),
+    run_analysis: Optional[bool] = Query(False, description="Run full analysis after upload"),
     current_user: UserOut = Depends(get_current_user),
     conn = Depends(get_db)
 ):
@@ -220,11 +223,16 @@ def upload_statement(
                 inserted += 1
             conn.commit()
 
-        return UploadSummary(
+        analysis_result = None
+        if run_analysis and inserted > 0:
+            analysis_result = run_full_analysis(current_user.id, conn)
+
+        return UploadAnalysisOut(
             inserted=inserted,
             skipped=skipped,
             duplicates=duplicates,
-            total_parsed=len(transactions) + skipped
+            total_parsed=len(transactions) + skipped,
+            analysis=analysis_result
         )
 
     except HTTPException:

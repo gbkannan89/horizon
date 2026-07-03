@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date as date_type
 
 class UserRegister(BaseModel):
@@ -342,6 +342,154 @@ class SubscriptionInsightOut(BaseModel):
     status: str
     savings_opportunity: float
     notes: Optional[str]
+
+# ── Analytics / Recurring Detection Schemas ──────────────────────────────────
+class RecurringDetectionOut(BaseModel):
+    name: str
+    amount: float
+    frequency: str
+    confidence: float
+    occurrences: int
+    first_date: str
+    last_date: str
+    category: str
+    bucket: str
+    is_subscription: bool
+    amount_variation: float
+
+
+class RecurringConfirmIn(BaseModel):
+    name: str
+    amount: float
+    frequency: str
+    category: str = "Misc"
+    bucket: str = "Wants"
+    due_day: int = 1
+    is_subscription: bool = False
+
+
+class CategoryTrendOut(BaseModel):
+    category: str
+    current_amount: float
+    previous_amount: float
+    change_pct: float
+
+
+class AnomalyOut(BaseModel):
+    id: int
+    name: str
+    amount: float
+    category: str
+    date: str
+    z_score: float
+    reason: str
+
+
+class ForecastOut(BaseModel):
+    current_spent: float
+    projected_total: float
+    average_monthly: float
+    days_elapsed: int
+    days_in_month: int
+
+
+class SpendingPatternOut(BaseModel):
+    category_breakdown: list = []
+    category_trends: List[CategoryTrendOut]
+    weekday_distribution: dict = {}
+    weekend_boost_pct: float
+    anomalies: List[AnomalyOut]
+    forecast: ForecastOut
+    top_merchants: list = []
+
+
+class SubscriptionCandidateOut(BaseModel):
+    name: str
+    amount: float
+    monthly_cost: float
+    annual_cost: float
+    frequency: str
+    confidence: float
+    is_new: bool
+    savings_opportunity: float
+    category: str
+    bucket: str
+    occurrences: int
+    last_date: str
+
+
+class LapsedSubscriptionOut(BaseModel):
+    bill_id: int
+    name: str
+    monthly_cost: float
+    annual_cost: float
+    status: str
+    savings_opportunity: float
+    days_since_last_charge: int
+
+
+class FullAnalysisOut(BaseModel):
+    recurring_detections: List[RecurringDetectionOut]
+    subscription_candidates: List[SubscriptionCandidateOut]
+    lapsed_subscriptions: List[LapsedSubscriptionOut]
+    spending_patterns: SpendingPatternOut
+    nudges_generated: int
+
+
+class UploadAnalysisOut(BaseModel):
+    inserted: int
+    skipped: int
+    duplicates: int
+    total_parsed: int
+    analysis: Optional[FullAnalysisOut] = None
+
+
+# ── Collection Tracking Schemas ────────────────────────────────────────────
+class CollectionMemberCreate(BaseModel):
+    name: str
+    expected_amount: float = Field(..., ge=0)
+    paid_amount: float = 0
+    paid_date: Optional[date_type] = None
+    status: str = "pending"
+    notes: Optional[str] = None
+
+
+class CollectionCreate(BaseModel):
+    label: str
+    description: Optional[str] = None
+    members: List[CollectionMemberCreate] = []
+
+
+class CollectionMemberOut(BaseModel):
+    id: int
+    collection_id: int
+    name: str
+    expected_amount: float
+    paid_amount: float
+    paid_date: Optional[date_type]
+    status: str
+    notes: Optional[str]
+    created_at: datetime
+
+
+class CollectionOut(BaseModel):
+    id: int
+    user_id: int
+    label: str
+    description: Optional[str]
+    total_expected: float
+    total_collected: float
+    status: str
+    created_at: datetime
+    member_count: int = 0
+    paid_count: int = 0
+    members: List[CollectionMemberOut] = []
+
+
+class MemberPayment(BaseModel):
+    paid_amount: float = Field(..., ge=0)
+    paid_date: date_type
+
 
 # Insurance Schemas
 class InsuranceCreate(BaseModel):

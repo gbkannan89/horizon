@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS incomes (
     type VARCHAR(50) NOT NULL,          -- 'salary', 'business', 'passive'
     amount NUMERIC(20, 2) NOT NULL,
     frequency VARCHAR(50) NOT NULL,     -- 'monthly', 'annual'
+    pf_employee NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    pf_employer NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    shares_deduction NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -102,6 +105,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(50) DEFAULT 'salari
 ALTER TABLE users ADD COLUMN IF NOT EXISTS risk_profile VARCHAR(50) DEFAULT 'moderate';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS household_id INTEGER REFERENCES households(id) ON DELETE SET NULL;
 ALTER TABLE incomes ADD COLUMN IF NOT EXISTS label VARCHAR(255);
+ALTER TABLE incomes ADD COLUMN IF NOT EXISTS pf_employee NUMERIC(20, 2) DEFAULT 0.00 NOT NULL;
+ALTER TABLE incomes ADD COLUMN IF NOT EXISTS pf_employer NUMERIC(20, 2) DEFAULT 0.00 NOT NULL;
+ALTER TABLE incomes ADD COLUMN IF NOT EXISTS shares_deduction NUMERIC(20, 2) DEFAULT 0.00 NOT NULL;
 
 CREATE TABLE IF NOT EXISTS goals (
     id SERIAL PRIMARY KEY,
@@ -215,5 +221,29 @@ CREATE TABLE IF NOT EXISTS insurances (
     premium_frequency VARCHAR(50) NOT NULL, -- 'monthly', 'quarterly', 'yearly'
     coverage_amount NUMERIC(20, 2),
     renewal_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Collection Tracking (group payments from multiple people)
+CREATE TABLE IF NOT EXISTS collections (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    label VARCHAR(255) NOT NULL,
+    description TEXT,
+    total_expected NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    total_collected NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'active', -- 'active', 'settled', 'cancelled'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS collection_members (
+    id SERIAL PRIMARY KEY,
+    collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    expected_amount NUMERIC(20, 2) NOT NULL,
+    paid_amount NUMERIC(20, 2) DEFAULT 0.00,
+    paid_date DATE,
+    status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'partial', 'paid'
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

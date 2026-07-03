@@ -720,10 +720,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!loaded) return const SizedBox.shrink();
 
     final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+
+    final List<Map<String, dynamic>> sortedBills = p.upcomingBills.map((b) {
+      int dueDay = b['due_day'] ?? 1;
+      DateTime dueDate = DateTime(now.year, now.month, dueDay.clamp(1, daysInMonth));
+      if (dueDate.isBefore(now)) {
+        dueDate = DateTime(now.year, now.month + 1, dueDay.clamp(1, daysInMonth));
+      }
+      int daysLeft = dueDate.difference(now).inDays;
+      return {
+        'bill': b,
+        'dueDate': dueDate,
+        'daysLeft': daysLeft,
+      };
+    }).toList();
+    sortedBills.sort((a, b) => (a['daysLeft'] as int).compareTo(b['daysLeft'] as int));
+
     return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _cardHeader('Upcoming Bills', Icons.event_note_rounded, const Color(0xFFEF4444)),
       const SizedBox(height: 16),
-      if (p.upcomingBills.isEmpty)
+      if (sortedBills.isEmpty)
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Row(children: [
@@ -733,42 +750,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ]),
         )
       else
-        ...p.upcomingBills.map((bill) {
-        int dueDay = bill['due_day'] ?? 1;
-        int daysLeft = dueDay - now.day;
-        if (daysLeft < 0) daysLeft += 30; // rough estimation for next month
-        
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: const Color(0xFFEF4444).withValues(alpha: 0.1), shape: BoxShape.circle),
-                    child: const Icon(Icons.receipt_long_outlined, color: Color(0xFFEF4444), size: 16),
+        ...sortedBills.take(6).map((item) {
+          final bill = item['bill'] as Map<String, dynamic>;
+          final daysLeft = item['daysLeft'] as int;
+          final bucket = bill['bucket'] ?? 'Needs';
+          final category = bill['category'] ?? '';
+          final name = bill['name'] ?? 'Bill';
+          final amount = (bill['amount'] ?? 0).toDouble();
+
+          final bucketColor = _billBucketColor(bucket);
+          final billIcon = _billCategoryIcon(category, bucket);
+          final dueText = daysLeft == 0 ? 'Due Today' : daysLeft == 1 ? 'Due Tomorrow' : '$daysLeft days';
+          final urgencyColor = daysLeft == 0 ? const Color(0xFFEF4444) : daysLeft <= 3 ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8);
+          final progress = daysLeft <= 30 ? (30 - daysLeft) / 30.0 : 0.0;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: bucketColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
+                  child: Icon(billIcon, color: bucketColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(bill['name'] ?? 'Bill', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      Text(
-                        daysLeft == 0 ? 'Due Today' : 'Due in $daysLeft day${daysLeft > 1 ? 's' : ''}',
-                        style: TextStyle(color: daysLeft <= 3 ? const Color(0xFFEF4444) : Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(name,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          Text('₹${_formatNum(amount)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B))),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: bucketColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(bucket,
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: bucketColor)),
+                          ),
+                          const SizedBox(width: 6),
+                          if (category.isNotEmpty)
+                            Text(category,
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                          const Spacer(),
+                          Icon(Icons.schedule, size: 11, color: urgencyColor),
+                          const SizedBox(width: 3),
+                          Text(dueText,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: urgencyColor)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress.clamp(0.0, 1.0),
+                          backgroundColor: bucketColor.withValues(alpha: 0.08),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            daysLeft == 0 ? const Color(0xFFEF4444) : bucketColor,
+                          ),
+                          minHeight: 3,
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              Text('₹${_formatNum((bill['amount'] ?? 0).toDouble())}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            ],
-          ),
-        );
-      }),
+                ),
+              ],
+            ),
+          );
+        }),
     ]));
+  }
+
+  Color _billBucketColor(String bucket) {
+    switch (bucket) {
+      case 'Savings': return const Color(0xFF059669);
+      case 'Wants': return const Color(0xFF6B46C1);
+      default: return const Color(0xFFE88A1A);
+    }
+  }
+
+  IconData _billCategoryIcon(String category, String bucket) {
+    switch (category.toUpperCase()) {
+      case 'RENT':
+      case 'HOUSING': return Icons.home_outlined;
+      case 'ELECTRICITY':
+      case 'UTILITIES':
+      case 'WATER': return Icons.bolt_outlined;
+      case 'INTERNET': return Icons.wifi_outlined;
+      case 'INSURANCE': return Icons.health_and_safety_outlined;
+      case 'EDUCATION': return Icons.school_outlined;
+      case 'ENTERTAINMENT':
+      case 'SUBSCRIPTION': return Icons.tv_outlined;
+      case 'DEBT':
+      case 'LOAN': return Icons.account_balance_outlined;
+      case 'GROCERIES':
+      case 'FOOD': return Icons.restaurant_outlined;
+      case 'TRANSPORT': return Icons.directions_car_outlined;
+      case 'INVESTMENT':
+      case 'SAVINGS': return Icons.savings_outlined;
+      default:
+        if (bucket == 'Savings') return Icons.savings_outlined;
+        if (bucket == 'Wants') return Icons.shopping_bag_outlined;
+        return Icons.receipt_long_outlined;
+    }
   }
 
   // ── Shared helpers ─────────────────────────────────────────────────────────

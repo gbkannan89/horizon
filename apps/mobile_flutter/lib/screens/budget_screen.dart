@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/financial_provider.dart';
 import '../utils/ui_utils.dart';
 import '../main.dart';
+import 'statement_insights_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -14,7 +16,10 @@ class BudgetScreen extends StatefulWidget {
 }
 
 class _BudgetScreenState extends State<BudgetScreen> {
-  int _visibleCount = 3;
+  int _visibleCount = 5;
+  int _touchedIndex = -1;
+  bool _showActualSpent = true;
+  String? _selectedBucket; // null = All, 'Needs', 'Wants', 'Savings'
 
   String _getMonthName(int month, int year) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -23,23 +28,58 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
   void _showUploadProgressDialog(BuildContext context, String filePath) {
     final prov = Provider.of<FinancialProvider>(context, listen: false);
-    
-    UiUtils.showSnack(
-      context, 
-      'Processing statement in background. This might take a moment...',
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Analyze Statement?'),
+        content: const Text('Would you like to analyze this statement for recurring payments, spending patterns, and subscriptions?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _doUpload(context, filePath, false);
+            },
+            child: const Text('Just Upload'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _doUpload(context, filePath, true);
+            },
+            child: const Text('Upload & Analyze'),
+          ),
+        ],
+      ),
     );
-    
-    prov.uploadStatement(filePath).then((insertedCount) {
+  }
+
+  void _doUpload(BuildContext context, String filePath, bool runAnalysis) {
+    final prov = Provider.of<FinancialProvider>(context, listen: false);
+
+    UiUtils.showSnack(
+      context,
+      runAnalysis ? 'Uploading and analyzing statement...' : 'Uploading statement...',
+    );
+
+    prov.uploadStatement(filePath, runAnalysis: runAnalysis).then((insertedCount) {
       if (navigatorKey.currentContext != null) {
         UiUtils.showSnack(
-          navigatorKey.currentContext!, 
-          'Uploaded: $insertedCount new transactions'
+          navigatorKey.currentContext!,
+          'Uploaded: $insertedCount new transactions',
         );
+        if (runAnalysis && prov.lastAnalysisResult != null) {
+          Navigator.of(navigatorKey.currentContext!).push(
+            MaterialPageRoute(
+              builder: (_) => const StatementInsightsScreen(),
+            ),
+          );
+        }
       }
     }).catchError((e) {
       if (navigatorKey.currentContext != null) {
         UiUtils.showSnack(
-          navigatorKey.currentContext!, 
+          navigatorKey.currentContext!,
           'Upload failed: $e',
           isError: true,
         );
@@ -398,6 +438,42 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
+  List<dynamic> _filteredExpenses(FinancialProvider p) {
+    if (_selectedBucket == null) return p.recentExpenses;
+    return p.recentExpenses.where((e) => e['bucket'] == _selectedBucket).toList();
+  }
+
+  Widget _filterChip(String label, String? bucket, Color color) {
+    final selected = _selectedBucket == bucket;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedBucket = bucket;
+            _visibleCount = 5;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _formatBadge(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -578,6 +654,295 @@ class _BudgetScreenState extends State<BudgetScreen> {
             barRadius: const Radius.circular(8),
             padding: EdgeInsets.zero,
           )
+        ],
+      ),
+    );
+  }
+
+  List<PieChartSectionData> _getPieChartSections(FinancialProvider provider) {
+    double needsValue = _showActualSpent ? provider.needsSpent : provider.needsBudget;
+    double wantsValue = _showActualSpent ? provider.wantsSpent : provider.wantsBudget;
+    double savingsValue = _showActualSpent ? provider.savingsSpent : provider.savingsBudget;
+    
+    double total = needsValue + wantsValue + savingsValue;
+    if (total == 0) {
+      return [
+        PieChartSectionData(
+          color: Colors.grey.shade300,
+          value: 1,
+          title: '',
+          radius: 40,
+        )
+      ];
+    }
+
+    final needsPct = (needsValue / total * 100).round();
+    final wantsPct = (wantsValue / total * 100).round();
+    final savingsPct = (savingsValue / total * 100).round();
+
+    return [
+      PieChartSectionData(
+        color: const Color(0xFFE88A1A),
+        value: needsValue,
+        title: needsPct > 5 ? '$needsPct%' : '',
+        radius: _touchedIndex == 0 ? 46.0 : 40.0,
+        titleStyle: TextStyle(
+          fontSize: _touchedIndex == 0 ? 15.0 : 12.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: const Color(0xFF6B46C1),
+        value: wantsValue,
+        title: wantsPct > 5 ? '$wantsPct%' : '',
+        radius: _touchedIndex == 1 ? 46.0 : 40.0,
+        titleStyle: TextStyle(
+          fontSize: _touchedIndex == 1 ? 15.0 : 12.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: const Color(0xFF059669),
+        value: savingsValue,
+        title: savingsPct > 5 ? '$savingsPct%' : '',
+        radius: _touchedIndex == 2 ? 46.0 : 40.0,
+        titleStyle: TextStyle(
+          fontSize: _touchedIndex == 2 ? 15.0 : 12.0,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildPieChartCard(FinancialProvider provider) {
+    double totalBudget = provider.needsBudget + provider.wantsBudget + provider.savingsBudget;
+    double displayedTotal = _showActualSpent ? provider.totalSpent : totalBudget;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header / Toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _showActualSpent ? 'Spending Breakdown' : 'Budget Targets',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(3),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _showActualSpent = true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _showActualSpent ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                          boxShadow: _showActualSpent
+                              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                              : null,
+                        ),
+                        child: Text(
+                          'Actual',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _showActualSpent ? const Color(0xFF1E3A8A) : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _showActualSpent = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: !_showActualSpent ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                          boxShadow: !_showActualSpent
+                              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                              : null,
+                        ),
+                        child: Text(
+                          'Target',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: !_showActualSpent ? const Color(0xFF1E3A8A) : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          
+          // Pie Chart Stack
+          SizedBox(
+            height: 180,
+            child: Stack(
+              children: [
+                PieChart(
+                  PieChartData(
+                    pieTouchData: PieTouchData(
+                      touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                        setState(() {
+                          if (!event.isInterestedForInteractions ||
+                              pieTouchResponse == null ||
+                              pieTouchResponse.touchedSection == null) {
+                            _touchedIndex = -1;
+                            return;
+                          }
+                          _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                        });
+                      },
+                    ),
+                    borderData: FlBorderData(show: false),
+                    sectionsSpace: 4,
+                    centerSpaceRadius: 55,
+                    sections: _getPieChartSections(provider),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _showActualSpent ? 'Total Spent' : 'Total Target',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₹${displayedTotal.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Custom Legend / Info Rows
+          Column(
+            children: [
+              _buildLegendRow(
+                'Needs',
+                _showActualSpent ? provider.needsSpent : provider.needsBudget,
+                _showActualSpent ? provider.needsBudget : 0,
+                const Color(0xFFE88A1A),
+                50,
+              ),
+              const SizedBox(height: 10),
+              _buildLegendRow(
+                'Wants',
+                _showActualSpent ? provider.wantsSpent : provider.wantsBudget,
+                _showActualSpent ? provider.wantsBudget : 0,
+                const Color(0xFF6B46C1),
+                30,
+              ),
+              const SizedBox(height: 10),
+              _buildLegendRow(
+                'Savings',
+                _showActualSpent ? provider.savingsSpent : provider.savingsBudget,
+                _showActualSpent ? provider.savingsBudget : 0,
+                const Color(0xFF059669),
+                20,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendRow(String label, double amount, double limit, Color color, int targetPct) {
+    double spentPctOfLimit = limit > 0 ? (amount / limit * 100) : 0.0;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$label ($targetPct% target)',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                    ),
+                    Text(
+                      '₹${amount.toStringAsFixed(0)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                    ),
+                  ],
+                ),
+                if (_showActualSpent && limit > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Budget: ₹${limit.toStringAsFixed(0)}',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                      ),
+                      Text(
+                        '${spentPctOfLimit.toInt()}% used',
+                        style: TextStyle(
+                          color: spentPctOfLimit > 100 ? Colors.red : Colors.grey.shade600,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -772,55 +1137,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Budget Breakdown
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Monthly Budget', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                          Text('₹${totalBudget.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Text('Spent ', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text('₹${provider.totalSpent.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
-                            ],
-                          ),
-                          Text('${(overallPct * 100).toInt()}%', style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      LinearPercentIndicator(
-                        lineHeight: 12.0,
-                        percent: overallPct.clamp(0.0, 1.0),
-                        linearGradient: const LinearGradient(colors: [Color(0xFFE88A1A), Color(0xFFDC2626)]),
-                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                        barRadius: const Radius.circular(8),
-                        padding: EdgeInsets.zero,
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Divider(),
-                      ),
-                      _buildBudgetBar('Needs', '${provider.needsBudget > 0 ? (provider.needsSpent / provider.needsBudget * 100).toInt() : 0}%', '₹${provider.needsSpent.toStringAsFixed(0)}', provider.needsBudget > 0 ? provider.needsSpent / provider.needsBudget : 0, const Color(0xFFE88A1A)),
-                      _buildBudgetBar('Wants', '${provider.wantsBudget > 0 ? (provider.wantsSpent / provider.wantsBudget * 100).toInt() : 0}%', '₹${provider.wantsSpent.toStringAsFixed(0)}', provider.wantsBudget > 0 ? provider.wantsSpent / provider.wantsBudget : 0, const Color(0xFF6B46C1)),
-                      _buildBudgetBar('Savings', '${provider.savingsBudget > 0 ? (provider.savingsSpent / provider.savingsBudget * 100).toInt() : 0}%', '₹${provider.savingsSpent.toStringAsFixed(0)}', provider.savingsBudget > 0 ? provider.savingsSpent / provider.savingsBudget : 0, const Color(0xFF059669)),
-                    ],
-                  ),
-                ),
+                _buildPieChartCard(provider),
                 const SizedBox(height: 20),
 
                 // Committed Bills
@@ -894,8 +1211,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('${provider.recentExpenses.length} transactions', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                    Text('${_filteredExpenses(provider).length} transactions',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                   ],
+                ),
+                const SizedBox(height: 12),
+
+                // Bucket Filter
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      _filterChip('All', null, const Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      _filterChip('Needs', 'Needs', const Color(0xFFE88A1A)),
+                      const SizedBox(width: 4),
+                      _filterChip('Wants', 'Wants', const Color(0xFF6B46C1)),
+                      const SizedBox(width: 4),
+                      _filterChip('Savings', 'Savings', const Color(0xFF059669)),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -960,16 +1299,71 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   ),
                 ),
 
-                // Expense List
-                ...provider.recentExpenses.take(_visibleCount).map((exp) => _buildExpenseItem(exp)),
+                // Analyze Now Card
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () async {
+                        final fp = Provider.of<FinancialProvider>(context, listen: false);
+                        UiUtils.showSnack(context, 'Analyzing your finances...');
+                        await fp.runFullAnalysis();
+                        if (context.mounted) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const StatementInsightsScreen()),
+                          );
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.analytics_outlined, color: Color(0xFF1E3A8A), size: 26),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Analyze Existing Data',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                                  SizedBox(height: 4),
+                                  Text('Detect recurring, patterns & subscriptions',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
-                if (provider.recentExpenses.length > _visibleCount) ...[
+                // Expense List
+                ..._filteredExpenses(provider).take(_visibleCount).map((exp) => _buildExpenseItem(exp)),
+
+                if (_filteredExpenses(provider).length > _visibleCount) ...[
                   const SizedBox(height: 12),
                   Center(
                     child: OutlinedButton.icon(
                       onPressed: () {
                         setState(() {
-                          _visibleCount += 3;
+                          _visibleCount += 10;
                         });
                       },
                       style: OutlinedButton.styleFrom(
@@ -979,9 +1373,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.expand_more_rounded, size: 20),
-                      label: const Text(
-                        'Load More',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      label: Text(
+                        'Show ${(_filteredExpenses(provider).length - _visibleCount).clamp(0, 10)} More',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                   ),

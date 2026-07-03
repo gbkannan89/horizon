@@ -13,10 +13,10 @@ import '../screens/login_screen.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 class _Config {
   // ① Android Emulator (local dev — emulator talks to host via 10.0.2.2)
-  static const String emulator = 'http://10.0.2.2:8000';
+  static const String emulator = 'http://10.0.2.2:8081';
 
   // ② NUC Server on local Wi-Fi (real device / after deploying to NUC)
-  static const String nucLocal = 'http://192.168.0.100:8000';
+  static const String nucLocal = 'http://192.168.0.100:8081';
 
   // ③ Cloudflare tunnel / public domain (after Cloudflare setup)
   static const String production = 'https://horizon.thaari.in';
@@ -24,7 +24,7 @@ class _Config {
 
 class ApiService {
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:8000';
+    if (kIsWeb) return 'http://localhost:8081';
     if (kReleaseMode) {
       return _Config.production;
     } else {

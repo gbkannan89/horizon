@@ -27,7 +27,7 @@ services:
       JWT_SECRET_KEY: local_secret_key_123
       JWT_REFRESH_SECRET_KEY: local_refresh_secret_key_123
     ports:
-      - "8000:8000"
+      - "8081:8000"
 
 volumes:
   horizon-pgdata-local:

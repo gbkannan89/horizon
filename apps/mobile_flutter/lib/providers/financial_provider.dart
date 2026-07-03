@@ -42,6 +42,9 @@ class FinancialProvider extends ChangeNotifier {
   List<dynamic> spendingTrend = [];
   Map<String, dynamic>? budgetBreakdown;
   Map<String, dynamic>? portfolioSummary;
+  Map<String, dynamic>? spendingPatterns;
+  List<dynamic> subscriptionCandidates = [];
+  List<dynamic> lapsedSubscriptionDetections = [];
 
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -386,11 +389,82 @@ class FinancialProvider extends ChangeNotifier {
     }
   }
 
-  // ── TRANSACTIONS ───────────────────────────────────────────────────────────
-  Future<int> uploadStatement(String path) async {
-    final res = await _apiService.uploadFile('/api/transactions/upload', 'file', path);
+  // ── INSIGHTS / ANALYSIS ────────────────────────────────────────────────────
+  Map<String, dynamic>? lastAnalysisResult;
+  List<dynamic> pendingRecurringSuggestions = [];
+
+  Future<int> uploadStatement(String path, {bool runAnalysis = false}) async {
+    String endpoint = '/api/transactions/upload';
+    if (runAnalysis) {
+      endpoint += '?run_analysis=true';
+    }
+    final res = await _apiService.uploadFile(endpoint, 'file', path);
     await loadAllData();
+
+    if (runAnalysis && res['analysis'] != null) {
+      lastAnalysisResult = res['analysis'];
+      pendingRecurringSuggestions = List<dynamic>.from(res['analysis']['recurring_detections'] ?? []);
+    }
+    notifyListeners();
     return res['inserted'] ?? 0;
+  }
+
+  Future<void> confirmRecurringSuggestion(Map<String, dynamic> suggestion, {int dueDay = 1}) async {
+    try {
+      await _apiService.post('/api/analytics/recurring-detection/confirm', {
+        'name': suggestion['name'],
+        'amount': suggestion['amount'],
+        'frequency': suggestion['frequency'],
+        'category': suggestion['category'],
+        'bucket': suggestion['bucket'],
+        'due_day': dueDay,
+        'is_subscription': suggestion['is_subscription'] ?? false,
+      });
+      pendingRecurringSuggestions.removeWhere((s) => s['name'] == suggestion['name']);
+      notifyListeners();
+      await _reloadDashboard();
+    } catch (e) {
+      print('Confirm recurring error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> loadSpendingPatterns() async {
+    try {
+      spendingPatterns = await _apiService.get('/api/analytics/spending-patterns');
+    } catch (e) {
+      print('Load spending patterns error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> detectSubscriptions() async {
+    try {
+      subscriptionCandidates = await _apiService.get('/api/analytics/subscriptions/detect');
+    } catch (e) {
+      print('Detect subscriptions error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> detectLapsedSubscriptions() async {
+    try {
+      lapsedSubscriptionDetections = await _apiService.get('/api/analytics/subscriptions/lapsed');
+    } catch (e) {
+      print('Detect lapsed subscriptions error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> runFullAnalysis() async {
+    try {
+      lastAnalysisResult = await _apiService.post('/api/analytics/run-analysis', {});
+      pendingRecurringSuggestions = List<dynamic>.from(lastAnalysisResult?['recurring_detections'] ?? []);
+      await loadAllAdvisorData();
+    } catch (e) {
+      print('Run full analysis error: $e');
+    }
+    notifyListeners();
   }
 
   // ── ASSETS ─────────────────────────────────────────────────────────────────
@@ -615,6 +689,98 @@ class FinancialProvider extends ChangeNotifier {
       ]);
     } catch (e) {
       print('Advisor data load error: $e');
+    }
+  }
+
+  // ── COLLECTIONS ─────────────────────────────────────────────────────────────
+  List<dynamic> collections = [];
+  bool isLoadingCollections = false;
+  String? collectionFilter;
+
+  List<dynamic> get filteredCollections {
+    if (collectionFilter == null) return collections;
+    return collections.where((c) => c['status'] == collectionFilter).toList();
+  }
+
+  void setCollectionFilter(String? filter) {
+    collectionFilter = filter;
+    notifyListeners();
+  }
+
+  Future<void> loadCollections() async {
+    isLoadingCollections = true;
+    notifyListeners();
+    try {
+      final data = await _apiService.get('/api/collections');
+      if (data is List) collections = data;
+    } catch (e) {
+      print('Load collections error: $e');
+    }
+    isLoadingCollections = false;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>?> getCollectionDetail(int id) async {
+    try {
+      final data = await _apiService.get('/api/collections/$id');
+      final index = collections.indexWhere((c) => c['id'] == id);
+      if (index >= 0) collections[index] = data;
+      notifyListeners();
+      return data;
+    } catch (e) {
+      print('Get collection detail error: $e');
+      return null;
+    }
+  }
+
+  Future<void> createCollection(Map<String, dynamic> data) async {
+    try {
+      final created = await _apiService.post('/api/collections', data);
+      collections.insert(0, created);
+      notifyListeners();
+    } catch (e) {
+      print('Create collection error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateCollection(int id, {String? label, String? description, String? status}) async {
+    try {
+      final body = <String, dynamic>{};
+      if (label != null) body['label'] = label;
+      if (description != null) body['description'] = description;
+      if (status != null) body['status'] = status;
+      final updated = await _apiService.put('/api/collections/$id', body);
+      final index = collections.indexWhere((c) => c['id'] == id);
+      if (index >= 0) collections[index] = updated;
+      notifyListeners();
+    } catch (e) {
+      print('Update collection error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteCollection(int id) async {
+    try {
+      await _apiService.delete('/api/collections/$id');
+      collections.removeWhere((c) => c['id'] == id);
+      notifyListeners();
+    } catch (e) {
+      print('Delete collection error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> recordPayment(int memberId, double amount) async {
+    try {
+      final today = DateTime.now().toIso8601String().split('T').first;
+      await _apiService.put('/api/collections/members/$memberId', {
+        'paid_amount': amount,
+        'paid_date': today,
+      });
+    } catch (e) {
+      print('Record payment error: $e');
+      rethrow;
     }
   }
 }

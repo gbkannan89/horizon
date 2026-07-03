@@ -21,9 +21,25 @@ def get_dashboard_overview(
             user_id = current_user.id
 
             # Fetch Incomes
-            cur.execute("SELECT amount, frequency FROM incomes WHERE user_id = %s", (user_id,))
+            cur.execute("SELECT amount, frequency, pf_employee, pf_employer, shares_deduction FROM incomes WHERE user_id = %s", (user_id,))
             incomes = cur.fetchall()
-            total_income = sum(float(i[0]) if i[1] == 'monthly' else float(i[0]) / 12 for i in incomes)
+            
+            total_income = 0.0
+            total_pre_deductions = 0.0
+            for i in incomes:
+                amt = float(i[0])
+                freq = i[1]
+                pf_emp = float(i[2])
+                pf_empr = float(i[3])
+                shares_ded = float(i[4])
+                
+                # Monthly equivalent of the take-home baseline
+                monthly_base = amt if freq == 'monthly' else amt / 12
+                # Monthly equivalent of the pre-deductions
+                monthly_deductions = (pf_emp + pf_empr + shares_ded) if freq == 'monthly' else (pf_emp + pf_empr + shares_ded) / 12
+                
+                total_income += (monthly_base + monthly_deductions)
+                total_pre_deductions += monthly_deductions
 
             # Fetch Household Income (Contributing Members)
             cur.execute("SELECT household_id FROM users WHERE id = %s", (user_id,))
@@ -80,7 +96,8 @@ def get_dashboard_overview(
             )
             expense_rows = cur.fetchall()
             expenses = []
-            needs_spent = wants_spent = savings_spent = 0.0
+            needs_spent = wants_spent = 0.0
+            savings_spent = total_pre_deductions
 
             for row in expense_rows:
                 bucket = row[5]

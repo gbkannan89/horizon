@@ -83,20 +83,20 @@ def seed_data():
 
             # ── INCOMES ────────────────────────────────────────────────────
             logger.info("Seeding incomes...")
-            salary_amount = 75000.00
+            salary_amount = 116313.23
             cur.execute(
                 """
-                INSERT INTO incomes (user_id, label, type, amount, frequency)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO incomes (user_id, label, type, amount, frequency, pf_employee, pf_employer, shares_deduction)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, "Monthly Salary", "salary", salary_amount, "monthly")
+                (user_id, "Monthly Salary", "salary", salary_amount, "monthly", 9884.98, 9884.98, 13889.00)
             )
             cur.execute(
                 """
-                INSERT INTO incomes (user_id, label, type, amount, frequency)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO incomes (user_id, label, type, amount, frequency, pf_employee, pf_employer, shares_deduction)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, "Rental Income", "passive", 12000.00, "monthly")
+                (user_id, "Rental Income", "passive", 12000.00, "monthly", 0.00, 0.00, 0.00)
             )
 
             # ── ASSETS ─────────────────────────────────────────────────────

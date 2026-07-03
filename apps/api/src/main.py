@@ -18,6 +18,7 @@ from .routes.insurance import router as insurance_router
 from .routes.advisor import router as advisor_router
 from .routes.analytics import router as analytics_router
 from .routes.report import router as report_router
+from .routes.collections import router as collections_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +39,7 @@ app.include_router(insurance_router)
 app.include_router(advisor_router)
 app.include_router(analytics_router)
 app.include_router(report_router)
+app.include_router(collections_router)
 
 # Add CORS Middleware
 app.add_middleware(
