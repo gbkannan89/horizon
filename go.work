@@ -21,5 +21,6 @@ use (
 	./services/engines/recommendation
 	./services/engines/optimization
 	./services/engines/tax-planning
+	./services/engines/currency
 	./packages/errors
 )

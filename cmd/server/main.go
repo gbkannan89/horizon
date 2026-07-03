@@ -32,6 +32,7 @@ import (
 	smartAlertReg "github.com/horizon/core/services/engines/smart-alert/register"
 	schedReportsReg "github.com/horizon/core/services/engines/scheduled-reports/register"
 	taxReg "github.com/horizon/core/services/engines/tax-planning/register"
+	currencyReg "github.com/horizon/core/services/engines/currency/register"
 	rulesReg "github.com/horizon/core/services/domains/rules/register"
 	streamReg "github.com/horizon/core/services/infra/events/register"
 )
@@ -107,6 +108,9 @@ func main() {
 
 	// Tax planning engine
 	taxReg.RegisterRoutes(mux)
+
+	// Currency / multi-currency engine
+	currencyReg.RegisterRoutes(mux)
 
 	// Account domain — household account listings
 	acctDomainReg.RegisterRoutes(mux, pool)
