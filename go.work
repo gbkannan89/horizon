@@ -20,5 +20,6 @@ use (
 	./services/engines/simulation
 	./services/engines/recommendation
 	./services/engines/optimization
+	./services/engines/tax-planning
 	./packages/errors
 )
