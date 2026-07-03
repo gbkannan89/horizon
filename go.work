@@ -13,4 +13,11 @@ use (
 	./services/engines/rules
 	./services/engines/smart-alert
 	./services/engines/scheduled-reports
+	./services/engines/health-score
+	./services/engines/projection
+	./services/engines/risk
+	./services/engines/simulation
+	./services/engines/recommendation
+	./services/engines/optimization
+	./packages/errors
 )
