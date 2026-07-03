@@ -82,7 +82,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                   if (q.isNotEmpty) ref.read(timelineStateProvider.notifier).search(query: q);
                 },
               )
-            : Text('Timeline', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            : null,
         actions: [
           IconButton(
             icon: Icon(_searching ? Icons.search_rounded : Icons.search_rounded),
@@ -93,13 +93,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark 
-                ? [AppColors.darkBackground, AppColors.navy900]
-                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
-          ),
+          gradient: AppColors.backgroundGradient(isDark),
         ),
         child: _buildBody(context, theme, state),
       ),

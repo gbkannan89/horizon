@@ -71,7 +71,7 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
                   }),
                 ),
               )
-            : Text('Goals', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            : null,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -80,13 +80,7 @@ class _GoalsPageState extends ConsumerState<GoalsPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark 
-                ? [AppColors.darkBackground, AppColors.navy900]
-                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
-          ),
+          gradient: AppColors.backgroundGradient(isDark),
         ),
         child: _buildBody(theme, state),
       ),

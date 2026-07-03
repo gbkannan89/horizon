@@ -57,13 +57,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark 
-                ? [AppColors.darkBackground, AppColors.navy900]
-                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
-          ),
+          gradient: AppColors.backgroundGradient(isDark),
         ),
         child: _buildBody(theme, state),
       ),

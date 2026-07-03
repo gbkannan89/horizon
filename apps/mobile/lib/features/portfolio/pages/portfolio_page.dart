@@ -74,19 +74,12 @@ class _PortfolioPageState extends ConsumerState<PortfolioPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Portfolio', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark 
-                ? [AppColors.darkBackground, AppColors.navy900]
-                : [AppColors.lightBackground, AppColors.teal50.withOpacity(0.5)],
-          ),
+          gradient: AppColors.backgroundGradient(isDark),
         ),
         child: _buildBody(theme, state),
       ),

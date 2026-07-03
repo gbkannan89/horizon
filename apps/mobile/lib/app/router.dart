@@ -23,6 +23,7 @@ import 'package:horizon_mobile/features/planning/pages/investment_page.dart';
 import 'package:horizon_mobile/features/accounts/pages/accounts_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_page.dart';
 import 'package:horizon_mobile/features/timeline/pages/timeline_detail_page.dart';
+import 'package:horizon_mobile/core/theme/design_tokens.dart';
 import 'package:horizon_mobile/features/goals/pages/goal_detail_page.dart';
 import 'package:horizon_mobile/features/accounts/pages/account_detail_page.dart';
 import 'package:horizon_mobile/features/settings/pages/settings_page.dart';
@@ -161,27 +162,41 @@ final routerProvider = Provider<GoRouter>((ref) {
 class _MorePage extends ConsumerWidget {
   const _MorePage();
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(title: const Text('More')),
-    body: ListView(
-      children: [
-        ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
-        ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Transactions'), onTap: () => context.push('/transactions')),
-        ListTile(leading: const Icon(Icons.repeat), title: const Text('Recurring'), onTap: () => context.push('/recurring')),
-        ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Automation'), onTap: () => context.push('/automation')),
-        ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
-        ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
-        ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),
-        ListTile(leading: const Icon(Icons.home_work_outlined), title: const Text('Households'), onTap: () => context.push('/households')),
-        ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('Settings'), onTap: () => context.push('/settings')),
-        const Divider(),
-        ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Sign Out', style: TextStyle(color: Colors.red)), onTap: () async {
-          final repo = ref.read(authRepositoryProvider);
-          await repo.logout();
-          ref.read(authStateProvider.notifier).unauthenticated();
-          context.go('/login');
-        }),
-      ],
-    ),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.backgroundGradient(isDark),
+        ),
+        child: ListView(
+          children: [
+            ListTile(leading: const Icon(Icons.schema_outlined), title: const Text('Planning'), onTap: () => context.push('/planning')),
+            ListTile(leading: const Icon(Icons.receipt_long_outlined), title: const Text('Transactions'), onTap: () => context.push('/transactions')),
+            ListTile(leading: const Icon(Icons.repeat), title: const Text('Recurring'), onTap: () => context.push('/recurring')),
+            ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Automation'), onTap: () => context.push('/automation')),
+            ListTile(leading: const Icon(Icons.account_balance), title: const Text('Accounts'), onTap: () => context.push('/accounts')),
+            ListTile(leading: const Icon(Icons.lightbulb_outline), title: const Text('Insights'), onTap: () => context.push('/insights')),
+            ListTile(leading: const Icon(Icons.auto_awesome), title: const Text('Advisor'), onTap: () => context.push('/advisor')),
+            ListTile(leading: const Icon(Icons.home_work_outlined), title: const Text('Households'), onTap: () => context.push('/households')),
+            ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('Settings'), onTap: () => context.push('/settings')),
+            const Divider(),
+            ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('Sign Out', style: TextStyle(color: Colors.red)), onTap: () async {
+              final repo = ref.read(authRepositoryProvider);
+              await repo.logout();
+              ref.read(authStateProvider.notifier).unauthenticated();
+              context.go('/login');
+            }),
+          ],
+        ),
+      ),
+    );
+  }
 }

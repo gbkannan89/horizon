@@ -60,6 +60,16 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static LinearGradient backgroundGradient(bool isDark) {
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: isDark 
+          ? [navy900, Color(0xFF072E2B)] // Ink Deep Navy to deep Teal
+          : [teal100.withOpacity(0.5), lightBackground], // Soft Teal to Slate
+    );
+  }
 }
 
 class AppShadows {

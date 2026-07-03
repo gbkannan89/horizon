@@ -21,6 +21,7 @@ dependencies:
   flutter_animate: ^4.5.0
 
   http: any
+  file_picker: 10.3.10
 dev_dependencies:
   flutter_lints: ^4.0.0
 
