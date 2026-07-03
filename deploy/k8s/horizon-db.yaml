@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horizon-db
+  labels:
+    app: horizon-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: horizon-db
+  template:
+    metadata:
+      labels:
+        app: horizon-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:17-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: horizon
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: horizon-db
+              key: password
+        - name: POSTGRES_DB
+          value: horizon
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: horizon-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: horizon-db-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: horizon-db
+spec:
+  selector:
+    app: horizon-db
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

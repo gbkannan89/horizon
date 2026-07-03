@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/horizon/core/internal/app/metrics"
 	"github.com/horizon/core/internal/app/middleware"
 	"github.com/horizon/core/internal/bootstrap"
 
@@ -50,6 +51,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health/live", bootstrap.HealthHandler("live"))
 	mux.HandleFunc("GET /health/ready", bootstrap.HealthHandler("ready"))
+	mux.Handle("GET /debug/vars", metrics.Handler())
 
 	// Auth routes with shared JWT service
 	authReg.RegisterRoutesWithSvc(mux, authSvc)
@@ -108,8 +110,10 @@ func main() {
 	// API Gateway bridge — registers domain CRUD endpoints
 	apiGatewayReg.RegisterGatewayRoutes(mux, pool)
 
-	// Wrap with auth, then CORS, then recovery
-	handler := middleware.Authenticate(authSvc)(mux)
+	// Wrap with security headers, audit, auth, CORS, then recovery
+	handler := middleware.SecurityHeaders(mux)
+	handler = middleware.AuditLog(handler)
+	handler = middleware.Authenticate(authSvc)(handler)
 	handler = authReg.CORS(handler)
 	handler = bootstrap.RecoveryMiddleware(handler)
 

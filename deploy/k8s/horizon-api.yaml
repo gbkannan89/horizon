@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horizon-api
+  labels:
+    app: horizon-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: horizon-api
+  template:
+    metadata:
+      labels:
+        app: horizon-api
+    spec:
+      containers:
+      - name: api
+        image: horizon-api:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: horizon-db
+              key: url
+        - name: PORT
+          value: "8081"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: horizon-jwt
+              key: secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: horizon-api
+spec:
+  selector:
+    app: horizon-api
+  ports:
+  - port: 8081
+    targetPort: 8081
+  type: ClusterIP
