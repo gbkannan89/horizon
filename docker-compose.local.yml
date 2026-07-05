@@ -16,7 +16,7 @@ services:
 
   horizon-api-local:
     build:
-      context: ./apps/api
+      context: ./api
       dockerfile: Dockerfile
     container_name: horizon-api-local
     restart: unless-stopped

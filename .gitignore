@@ -4,29 +4,29 @@
 *.key
 
 # ── Python ────────────────────────────────────────────────────────────────────
-apps/api/.venv/
-apps/api/__pycache__/
-apps/api/**/__pycache__/
-apps/api/**/*.pyc
-apps/api/**/*.pyo
-apps/api/*.egg-info/
-apps/api/dist/
-apps/api/build/
+api/.venv/
+api/__pycache__/
+api/**/__pycache__/
+api/**/*.pyc
+api/**/*.pyo
+api/*.egg-info/
+api/dist/
+api/build/
 
 # ── Flutter / Dart ────────────────────────────────────────────────────────────
-apps/mobile_flutter/.dart_tool/
-apps/mobile_flutter/.flutter-plugins
-apps/mobile_flutter/.flutter-plugins-dependencies
-apps/mobile_flutter/build/
-apps/mobile_flutter/.packages
-apps/mobile_flutter/pubspec.lock
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.packages
+mobile/pubspec.lock
 
 # ── Android ───────────────────────────────────────────────────────────────────
-apps/mobile_flutter/android/.gradle/
-apps/mobile_flutter/android/local.properties
-apps/mobile_flutter/android/key.properties
-apps/mobile_flutter/android/app/debug/
-apps/mobile_flutter/android/app/release/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/android/app/debug/
+mobile/android/app/release/
 *.jks
 *.keystore
 

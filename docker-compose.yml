@@ -3,7 +3,7 @@ services:
   # ── FastAPI Application ───────────────────────────────────────────────────
   horizon-api:
     build:
-      context: ./apps/api
+      context: ./api
       dockerfile: Dockerfile
     container_name: horizon-api
     restart: unless-stopped
