@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, date as date_type
 
 class UploadSummary(BaseModel):
@@ -32,11 +32,3 @@ class TrendPoint(BaseModel):
     needs: float = 0
     wants: float = 0
     savings: float = 0
-
-class SmsTransactionIn(BaseModel):
-    name: str
-    amount: float
-    date: date_type
-
-class SmsImportIn(BaseModel):
-    transactions: List[SmsTransactionIn]

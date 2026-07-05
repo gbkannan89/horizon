@@ -10,7 +10,6 @@ import 'statement_insights_screen.dart';
 import 'create_collection_screen.dart';
 import 'collections_list_screen.dart';
 import 'collection_detail_screen.dart';
-import 'sms_import_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -1519,55 +1518,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   ),
                 ),
 
-                // Import from SMS Card
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SmsImportScreen()),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0891B2).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.sms_outlined, color: Color(0xFF0891B2), size: 26),
-                            ),
-                            const SizedBox(width: 16),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Import from SMS',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
-                                  SizedBox(height: 4),
-                                  Text('Read bank SMS and auto-add transactions',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+
 
                 // Expense List
                 ..._filteredExpenses(provider).take(_visibleCount).map((exp) => _buildExpenseItem(exp)),

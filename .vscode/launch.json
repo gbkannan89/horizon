@@ -5,24 +5,43 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "mobile_flutter",
-            "cwd": "apps\\mobile_flutter",
+            "name": "mobile",
+            "cwd": "mobile",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "mobile_flutter (profile mode)",
-            "cwd": "apps\\mobile_flutter",
+            "name": "mobile (profile mode)",
+            "cwd": "mobile",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "mobile_flutter (release mode)",
-            "cwd": "apps\\mobile_flutter",
+            "name": "mobile (release mode)",
+            "cwd": "mobile",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "FastAPI Debug",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "src.main:app",
+                "--reload",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000"
+            ],
+            "cwd": "${workspaceFolder}\\api",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": true
         }
     ]
 }

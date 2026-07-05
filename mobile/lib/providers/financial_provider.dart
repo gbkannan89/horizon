@@ -393,19 +393,6 @@ class FinancialProvider extends ChangeNotifier {
   Map<String, dynamic>? lastAnalysisResult;
   List<dynamic> pendingRecurringSuggestions = [];
 
-  Future<Map<String, dynamic>> importSmsTransactions(List<Map<String, dynamic>> transactions) async {
-    try {
-      final res = await _apiService.post('/api/transactions/sms-import', {
-        'transactions': transactions,
-      });
-      await loadAllData();
-      return res;
-    } catch (e) {
-      print('SMS import error: $e');
-      rethrow;
-    }
-  }
-
   Future<int> uploadStatement(String path, {bool runAnalysis = false}) async {
     String endpoint = '/api/transactions/upload';
     if (runAnalysis) {

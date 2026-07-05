@@ -8,7 +8,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from ..core.database import get_db
 from ..schemas.auth import UserOut
-from ..schemas.transactions import UploadSummary, SmsImportIn
+from ..schemas.transactions import UploadSummary
 from ..schemas.analytics import UploadAnalysisOut
 from ..services.analytics_engine import run_full_analysis
 from ..services.dedup import is_duplicate, batch_check_duplicates
@@ -242,42 +242,4 @@ def upload_statement(
         file.file.close()
 
 
-@router.post("/sms-import", response_model=UploadSummary)
-def import_sms_transactions(
-    data: SmsImportIn,
-    current_user: UserOut = Depends(get_current_user),
-    conn = Depends(get_db)
-):
-    try:
-        unique_txns, dup_count, fuzzy_count = batch_check_duplicates(
-            current_user.id,
-            [{"description": t.name, "amount": t.amount, "date": t.date} for t in data.transactions],
-            conn
-        )
 
-        inserted = 0
-        with conn.cursor() as cur:
-            for txn in unique_txns:
-                category, bucket, icon = categorize_transaction(txn["description"], txn["amount"])
-                cur.execute(
-                    """INSERT INTO expenses (user_id, name, amount, category, bucket, icon, date)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                    (current_user.id, txn["description"], txn["amount"], category, bucket, icon, txn["date"])
-                )
-                inserted += 1
-            conn.commit()
-
-        if fuzzy_count > 0:
-            logger.info(f"SMS import: {fuzzy_count} fuzzy matches treated as duplicates for user {current_user.id}")
-
-        return UploadSummary(
-            inserted=inserted,
-            skipped=0,
-            duplicates=dup_count,
-            total_parsed=len(data.transactions)
-        )
-
-    except Exception as e:
-        conn.rollback()
-        logger.error(f"Error importing SMS transactions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
