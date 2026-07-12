@@ -9,6 +9,7 @@ class UserRegister(BaseModel):
     phone: Optional[str] = None
     user_type: str = Field(default="salaried")
     risk_profile: str = Field(default="moderate")
+    invite_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _inviteCtrl = TextEditingController();
   bool _obscurePassword = true;
   String _userType = 'salaried';
   String _riskProfile = 'moderate';
@@ -30,6 +31,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
   final _focusEmail = FocusNode();
   final _focusPhone = FocusNode();
   final _focusPassword = FocusNode();
+  final _focusInvite = FocusNode();
 
   @override
   void initState() {
@@ -62,10 +64,12 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
+    _inviteCtrl.dispose();
     _focusName.dispose();
     _focusEmail.dispose();
     _focusPhone.dispose();
     _focusPassword.dispose();
+    _focusInvite.dispose();
     super.dispose();
   }
 
@@ -76,21 +80,104 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     }
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final ok = await auth.register(
+      final inviteCode = _inviteCtrl.text.trim();
+      final result = await auth.register(
         _nameCtrl.text.trim(), _emailCtrl.text.trim(), _passwordCtrl.text,
         userType: _userType, riskProfile: _riskProfile, phone: _phoneCtrl.text.trim(),
+        inviteCode: inviteCode.isNotEmpty ? inviteCode : null,
       );
       if (!mounted) return;
-      if (ok) {
+      if (result['success'] == true) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainShell()),
         );
+      } else if (result['detail'] is Map) {
+        // Pending family invite detected
+        final detail = result['detail'] as Map;
+        final confirmed = await _showPendingInviteDialog(
+          invitedBy: detail['invitedBy'] ?? detail['householdName'] ?? '',
+          householdName: detail['householdName'] ?? '',
+          inviteCode: detail['inviteCode'] ?? '',
+        );
+        if (confirmed && mounted) {
+          // Retry registration with the invite code
+          final retryResult = await auth.register(
+            _nameCtrl.text.trim(), _emailCtrl.text.trim(), _passwordCtrl.text,
+            userType: _userType, riskProfile: _riskProfile, phone: _phoneCtrl.text.trim(),
+            inviteCode: detail['inviteCode'] ?? '',
+          );
+          if (mounted && retryResult['success'] == true) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const MainShell()),
+            );
+          } else {
+            UiUtils.showSnack(context, 'Registration failed. Please try again.', isError: true);
+          }
+        }
       } else {
-        UiUtils.showSnack(context, 'Registration failed or email already exists', isError: true);
+        final msg = result['detail'] is String ? result['detail'] : 'Registration failed or email already exists';
+        UiUtils.showSnack(context, msg as String, isError: true);
       }
     } catch (e) {
       if (mounted) UiUtils.showSnack(context, 'Registration failed: ${e.toString()}', isError: true);
     }
+  }
+
+  Future<bool> _showPendingInviteDialog({required String invitedBy, required String householdName, required String inviteCode}) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF042F2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.family_restroom_rounded, color: Color(0xFF14B8A6)),
+            const SizedBox(width: 8),
+            const Text('Invitation Found', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$invitedBy has invited you to join their household "$householdName".',
+                style: const TextStyle(color: Colors.white70, height: 1.5)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.vpn_key_rounded, color: Color(0xFF14B8A6), size: 20),
+                const SizedBox(width: 8),
+                Text('Code: $inviteCode',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            Text('By joining, you will be able to see shared finances and collaborate.',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, height: 1.4)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Create New Household', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0D9488),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Join Household'),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   @override
@@ -236,7 +323,19 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 _passwordStrengthBar(),
                               ],
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 14),
+
+                              // ── Family Invite Code (optional) ────────────────
+                              _glassField(
+                                controller: _inviteCtrl,
+                                focusNode: _focusInvite,
+                                icon: Icons.family_restroom_rounded,
+                                hint: 'Family invite code (optional)',
+                                textCapitalization: TextCapitalization.characters,
+                              ),
+                              const SizedBox(height: 14),
+
+                              const SizedBox(height: 6),
 
                               // ── Risk Profile ────────────────────────────────
                               Text("Investment style", style: TextStyle(
@@ -383,12 +482,14 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     bool obscure = false,
     VoidCallback? onToggleObscure,
     VoidCallback? onSubmit,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return TextField(
       controller: controller,
       focusNode: focusNode,
       obscureText: obscure,
       keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
       textInputAction: nextFocus != null ? TextInputAction.next : TextInputAction.done,
       onSubmitted: (_) {
         if (nextFocus != null) {

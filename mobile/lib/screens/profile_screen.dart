@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -316,134 +317,182 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ─── Add Household Member Modal ────────────────────────────────────────────
+  // ─── Add Household Member Modal (Glassmorphism) ─────────────────────────
   void _showAddMemberModal(BuildContext context) {
     final nameCtrl = TextEditingController();
-    final incomeCtrl = TextEditingController();
-    final contribCtrl = TextEditingController();
-    final relationCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    String selectedRelation = 'Partner';
+    bool isEmailInvite = false;
+
+    const relationships = ['Partner', 'Father', 'Mother', 'Brother', 'Sister', 'Son', 'Daughter', 'Friend'];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-          left: 24, right: 24, top: 8,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+              ),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+                left: 24, right: 24, top: 8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40, height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Add Family Member',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: nameCtrl,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      decoration: InputDecoration(
+                        hintText: 'Enter full name',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Email (enter to send invite)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      decoration: InputDecoration(
+                        hintText: 'Optional — leave blank for manual entry',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      onChanged: (_) => setDialogState(() => isEmailInvite = emailCtrl.text.trim().isNotEmpty),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Relationship', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedRelation,
+                          isExpanded: true,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF1E293B)),
+                          items: relationships.map((r) => DropdownMenuItem(
+                            value: r,
+                            child: Row(children: [
+                              Icon(_relationIcon(r), size: 18, color: const Color(0xFF0D9488)),
+                              const SizedBox(width: 10),
+                              Text(r),
+                            ]),
+                          )).toList(),
+                          onChanged: (v) {
+                            if (v != null) setDialogState(() => selectedRelation = v);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (nameCtrl.text.isEmpty) return;
+                          try {
+                            final provider = Provider.of<FinancialProvider>(context, listen: false);
+                            if (isEmailInvite) {
+                              final result = await provider.inviteFamilyMember(
+                                nameCtrl.text, emailCtrl.text.trim(), selectedRelation);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                UiUtils.showSnack(context, 'Invite sent! Code: ${result['inviteCode']}');
+                              }
+                            } else {
+                              await provider.addContributingMember(nameCtrl.text, 0, 0, selectedRelation);
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                UiUtils.showSnack(context, 'Member added successfully');
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: Text(isEmailInvite ? 'Send Invite' : 'Add Member',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Add Contributing Member',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text('Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  filled: true, fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Relationship (e.g. Partner, Father)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: relationCtrl,
-                decoration: InputDecoration(
-                  filled: true, fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Total Monthly Income', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: incomeCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
-                  filled: true, fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Contribution to Household', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: contribCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  prefixStyle: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
-                  filled: true, fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (nameCtrl.text.isEmpty || incomeCtrl.text.isEmpty || contribCtrl.text.isEmpty) return;
-                    final income = double.tryParse(incomeCtrl.text) ?? 0.0;
-                    final contrib = double.tryParse(contribCtrl.text) ?? 0.0;
-                    try {
-                      final provider = Provider.of<FinancialProvider>(context, listen: false);
-                      await provider.addContributingMember(nameCtrl.text, income, contrib, relationCtrl.text);
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        UiUtils.showSnack(context, 'Member added successfully');
-                      }
-                    } catch (e) {
-                      if (context.mounted) UiUtils.showSnack(context, 'Failed to add member: $e', isError: true);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: const Text('Add Member',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  IconData _relationIcon(String relation) {
+    switch (relation) {
+      case 'Partner': return Icons.favorite_rounded;
+      case 'Father': return Icons.man_3_rounded;
+      case 'Mother': return Icons.woman_rounded;
+      case 'Brother': return Icons.face_6_rounded;
+      case 'Sister': return Icons.face_5_rounded;
+      case 'Son': return Icons.child_care_rounded;
+      case 'Daughter': return Icons.child_friendly_rounded;
+      case 'Friend': return Icons.people_rounded;
+      default: return Icons.person_rounded;
+    }
   }
 
   // ─── Income type helpers ───────────────────────────────────────────────────
@@ -809,7 +858,56 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            Consumer<FinancialProvider>(
+              builder: (context, fp, child) {
+                return FutureBuilder<Map<String, dynamic>>(
+                  future: fp.loadHouseholdSummary(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data?['inviteCode'] == null) {
+                      return const SizedBox.shrink();
+                    }
+                    final code = snapshot.data!['inviteCode'];
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.vpn_key_rounded, color: Color(0xFF0D9488), size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Family Invite Code', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 2),
+                              Text(code, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0D9488), letterSpacing: 1.5)),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            UiUtils.showSnack(context, 'Code copied!');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.copy_rounded, color: Color(0xFF0D9488), size: 18),
+                          ),
+                        ),
+                      ]),
+                    );
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 12),
             Consumer<FinancialProvider>(
               builder: (context, provider, child) {
                 if (provider.householdMembers.isEmpty) {

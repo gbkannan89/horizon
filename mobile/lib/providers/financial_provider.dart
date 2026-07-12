@@ -184,9 +184,12 @@ class FinancialProvider extends ChangeNotifier {
     } catch (e) { print('Incomes load error: $e'); }
   }
 
+  Map<String, dynamic>? _householdSummary;
+
   Future<void> _reloadHousehold() async {
     try {
       final hhData = await _apiService.get('/api/household/summary');
+      _householdSummary = hhData;
       if (hhData['contributingMembers'] != null) {
         final members = hhData['contributingMembers'] as List;
         householdMembers = members.map((m) => LocalHouseholdMember(
@@ -202,6 +205,16 @@ class FinancialProvider extends ChangeNotifier {
     } catch (e) {
       print('Household load error: $e');
       householdMembers = [];
+    }
+  }
+
+  Future<Map<String, dynamic>> loadHouseholdSummary() async {
+    try {
+      final data = await _apiService.get('/api/household/summary');
+      _householdSummary = data;
+      return data;
+    } catch (e) {
+      return {};
     }
   }
 
@@ -591,6 +604,14 @@ class FinancialProvider extends ChangeNotifier {
     ));
     notifyListeners();
     _reloadDashboard();
+  }
+
+  Future<Map<String, dynamic>> inviteFamilyMember(String name, String email, String relationship) async {
+    final result = await _apiService.post('/api/household/invite-by-email', {
+      'name': name, 'email': email, 'relationship': relationship,
+    });
+    await _reloadHousehold();
+    return result;
   }
 
   // ── REPORT ────────────────────────────────────────────────────────────────

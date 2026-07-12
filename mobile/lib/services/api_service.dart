@@ -69,19 +69,23 @@ class ApiService {
       return false;
     }
   }
-  Future<bool> register(String name, String email, String password, {String userType = 'salaried', String riskProfile = 'moderate', String phone = ''}) async {
+  Future<Map<String, dynamic>> register(String name, String email, String password, {String userType = 'salaried', String riskProfile = 'moderate', String phone = '', String? inviteCode}) async {
     try {
+      final body = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'password': password,
+        'user_type': userType,
+        'risk_profile': riskProfile,
+        'phone': phone.isEmpty ? null : phone,
+      };
+      if (inviteCode != null && inviteCode.isNotEmpty) {
+        body['invite_code'] = inviteCode;
+      }
       final response = await http.post(
         Uri.parse('$baseUrl/api/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': name,
-          'email': email,
-          'password': password,
-          'user_type': userType,
-          'risk_profile': riskProfile,
-          'phone': phone.isEmpty ? null : phone,
-        }),
+        body: json.encode(body),
       );
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
@@ -90,13 +94,17 @@ class ApiService {
         if (data['refresh_token'] != null) {
           await prefs.setString('refresh_token', data['refresh_token']);
         }
-        return true;
+        return {'success': true};
+      }
+      if (response.statusCode == 409) {
+        final data = json.decode(response.body);
+        return {'success': false, 'detail': data['detail'] is String ? data['detail'] : data['detail']};
       }
       print('Register failed: ${response.statusCode} ${response.body}');
-      return false;
+      return {'success': false, 'detail': 'Registration failed'};
     } catch (e) {
       print('Register error: $e');
-      return false;
+      return {'success': false, 'detail': 'Network error'};
     }
   }
 

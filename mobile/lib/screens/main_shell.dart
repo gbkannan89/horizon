@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dashboard_screen.dart';
@@ -50,23 +51,22 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D9488).withValues(alpha: 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF042F2E).withValues(alpha: 0.8),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
           ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_navItems.length, (i) => _buildNavTile(i)),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(_navItems.length, (i) => _buildNavTile(i)),
+              ),
+            ),
           ),
         ),
       ),
@@ -85,15 +85,16 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF0D9488) : Colors.transparent,
+          color: selected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
+          border: selected ? Border.all(color: Colors.white.withValues(alpha: 0.1)) : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               selected ? item.activeIcon : item.icon,
-              color: selected ? Colors.white : const Color(0xFF94A3B8),
+              color: selected ? Colors.white : Colors.white.withValues(alpha: 0.5),
               size: 22,
             ),
             if (selected) ...[

@@ -89,15 +89,63 @@ def register(user_in: UserRegister, db = Depends(get_db)):
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User with this email already exists"
             )
+
+        # Determine household
+        household_id = None
+        if user_in.invite_code:
+            # User provided an invite code — join existing household
+            code = user_in.invite_code.strip().upper()
+            cur.execute(
+                "SELECT id, name FROM households WHERE UPPER(invite_code) = %s",
+                (code,)
+            )
+            household_row = cur.fetchone()
+            if not household_row:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Invalid invite code. Please check and try again."
+                )
+            household_id = household_row[0]
+        else:
+            # No invite code — check if email has a pending family invite
+            cur.execute(
+                """
+                SELECT fi.household_id, fi.invite_code, h.name, fi.name
+                FROM family_invites fi
+                JOIN households h ON h.id = fi.household_id
+                WHERE fi.email = %s
+                """,
+                (user_in.email,)
+            )
+            pending = cur.fetchone()
+            if pending:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "message": f"This email has been invited to join {pending[3] or pending[2]}'s household. Enter the invite code to join or sign up without a code to create a new household.",
+                        "householdName": pending[2],
+                        "invitedBy": pending[3],
+                        "inviteCode": pending[1]
+                    }
+                )
         
         try:
-            # Create a household first
-            household_name = f"{user_in.name or user_in.email}'s Household"
-            cur.execute(
-                "INSERT INTO households (name) VALUES (%s) RETURNING id",
-                (household_name,)
-            )
-            household_id = cur.fetchone()[0]
+            if household_id:
+                # Join existing household
+                cur.execute(
+                    "SELECT name FROM households WHERE id = %s",
+                    (household_id,)
+                )
+                h_row = cur.fetchone()
+                household_name = h_row[0] if h_row else "Household"
+            else:
+                # Create a new household
+                household_name = f"{user_in.name or user_in.email}'s Household"
+                cur.execute(
+                    "INSERT INTO households (name) VALUES (%s) RETURNING id",
+                    (household_name,)
+                )
+                household_id = cur.fetchone()[0]
             
             # Hash password
             password_hash = get_password_hash(user_in.password)
@@ -112,6 +160,14 @@ def register(user_in: UserRegister, db = Depends(get_db)):
                 (user_in.email, password_hash, user_in.name, user_in.phone, user_in.user_type, user_in.risk_profile, household_id)
             )
             user_row = cur.fetchone()
+
+            # If they joined via invite code, remove the pending invite
+            if user_in.invite_code:
+                cur.execute(
+                    "DELETE FROM family_invites WHERE email = %s",
+                    (user_in.email,)
+                )
+
             db.commit()
         except Exception as e:
             db.rollback()

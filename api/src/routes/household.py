@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..core.database import get_db
 from ..schemas.auth import UserOut
-from ..schemas.household import JoinHousehold, ContributingMemberCreate, ContributingMemberUpdate
+from ..schemas.household import JoinHousehold, ContributingMemberCreate, ContributingMemberUpdate, FamilyInviteRequest
 from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -169,6 +169,75 @@ def join_household(join_in: JoinHousehold, current_user: UserOut = Depends(get_c
             "householdId": target_id,
             "householdName": target_name
         }
+
+# POST Invite Family Member by Email (Protected)
+@router.post("/invite-by-email", status_code=status.HTTP_201_CREATED)
+def invite_family_member(invite: FamilyInviteRequest, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    if not current_user.household_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have a household"
+        )
+
+    with db.cursor() as cur:
+        # Check if email already has a pending invite in this household
+        cur.execute(
+            "SELECT id FROM family_invites WHERE household_id = %s AND email = %s",
+            (current_user.household_id, invite.email)
+        )
+        if cur.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This email already has a pending invitation to your household"
+            )
+
+        # Check if email is already a registered user
+        cur.execute("SELECT id FROM users WHERE email = %s", (invite.email,))
+        existing_user = cur.fetchone()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists. Ask them to sign in and use your invite code."
+            )
+
+        # Get or generate invite code for the household
+        cur.execute("SELECT invite_code FROM households WHERE id = %s", (current_user.household_id,))
+        row = cur.fetchone()
+        invite_code = row[0] if row and row[0] else generate_unique_invite_code(db)
+
+        if not row or not row[0]:
+            cur.execute(
+                "UPDATE households SET invite_code = %s WHERE id = %s",
+                (invite_code, current_user.household_id)
+            )
+
+        # Store the pending invite
+        cur.execute(
+            """
+            INSERT INTO family_invites (household_id, email, name, relationship, invite_code)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (current_user.household_id, invite.email, invite.name, invite.relationship, invite_code)
+        )
+        db.commit()
+
+        # Also add as a contributing member so their contribution is tracked
+        cur.execute(
+            """
+            INSERT INTO contributing_members (household_id, name, monthly_income, contribution_to_household, relationship)
+            VALUES (%s, %s, 0, 0, %s)
+            RETURNING id
+            """,
+            (current_user.household_id, invite.name, invite.relationship or "family")
+        )
+        db.commit()
+
+    return {
+        "message": f"Invitation sent to {invite.email}",
+        "inviteCode": invite_code,
+        "householdName": current_user.name or current_user.email
+    }
+
 
 # POST Add Contributing Member (Protected)
 @router.post("/contributing-members", status_code=status.HTTP_201_CREATED)

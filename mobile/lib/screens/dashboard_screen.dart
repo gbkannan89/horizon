@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
@@ -46,42 +47,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final loaded = !provider.isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: RefreshIndicator(
-        onRefresh: provider.loadAllData,
-        color: const Color(0xFF0D9488),
-        child: CustomScrollView(
-          slivers: [
-            // ── Hero gradient header ──────────────────────────────────────────
-            SliverToBoxAdapter(child: _buildHeroHeader(provider, userName, userInitial, loaded)),
-
-            // ── Body cards ───────────────────────────────────────────────────
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildIncomeSpentRow(provider, loaded), 100),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildBudgetCard(provider, loaded), 200),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildSpendingTrend(provider, loaded), 250),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildFinancialInsights(provider, loaded), 300),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildColdPurchaseCountdown(provider, loaded), 400),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildGoalsCard(provider, loaded), 500),
-                  const SizedBox(height: 20),
-                  _buildAnimatedSection(_buildUpcomingBills(provider, loaded), 600),
-                ]),
+      body: Stack(
+        children: [
+          // ── Deep gradient background for glass effect ─────────────────────
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0A0F2C), Color(0xFF042F2E), Color(0xFF0D9488)],
               ),
             ),
-          ],
-        ),
+          ),
+          // ── Blurred decorative blobs for depth ───────────────────────────
+          Positioned(
+            top: -100,
+            right: -60,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF14B8A6).withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            left: -80,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF0891B2).withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 300,
+            left: -40,
+            child: Container(
+              width: 180, height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF2DD4BF).withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          // ── Content ──────────────────────────────────────────────────────
+          RefreshIndicator(
+            onRefresh: provider.loadAllData,
+            color: const Color(0xFF0D9488),
+            child: CustomScrollView(
+              slivers: [
+                // ── Glass hero header ─────────────────────────────────────────
+                SliverToBoxAdapter(child: _buildHeroHeader(provider, userName, userInitial, loaded)),
+
+                // ── Body cards ───────────────────────────────────────────────────
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildIncomeSpentRow(provider, loaded), 100),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildBudgetCard(provider, loaded), 200),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildSpendingTrend(provider, loaded), 250),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildFinancialInsights(provider, loaded), 300),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildColdPurchaseCountdown(provider, loaded), 400),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildGoalsCard(provider, loaded), 500),
+                      const SizedBox(height: 20),
+                      _buildAnimatedSection(_buildUpcomingBills(provider, loaded), 600),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
-  }
+}
 
   Widget _buildAnimatedSection(Widget child, int delay) {
     return TweenAnimationBuilder<double>(
@@ -106,15 +157,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         offset: Offset(0, -20 * (1 - value)),
         child: Opacity(
           opacity: value,
+          child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF042F2E), Color(0xFF0D9488), Color(0xFF14B8A6)],
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [const Color(0xFF042F2E).withValues(alpha: 0.85), const Color(0xFF0D9488).withValues(alpha: 0.75), const Color(0xFF14B8A6).withValues(alpha: 0.7)],
+          ),
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(36)),
-      ),
       padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Top row
@@ -217,7 +273,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ),
         ),
       ),
-    );
+    ),
+  ),
+  );
   }
 
   // ── INCOME / SPENT / LEFT CARDS ────────────────────────────────────────────
@@ -232,24 +290,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _miniCard(String label, String value, Color color, IconData icon) {
-    return Expanded(child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 6))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: color, size: 16),
+    return Expanded(child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const SizedBox(height: 10),
+            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
+          ]),
         ),
-        const SizedBox(height: 10),
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
-      ]),
+      ),
     ));
   }
 
@@ -279,11 +343,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
       ),
       const SizedBox(height: 10),
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF1E293B))),
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white)),
       const SizedBox(height: 2),
       Text(
         loaded ? '₹${_formatNum(spent)} / ₹${_formatNum(budget)}' : '--',
-        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+        style: const TextStyle(color: Colors.white54, fontSize: 10),
       ),
     ]);
   }
@@ -306,7 +370,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: LineChart(
           LineChartData(
             gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
-              getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+              getDrawingHorizontalLine: (v) => FlLine(color: Colors.white24, strokeWidth: 1),
             ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -315,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 getTitlesWidget: (v, _) {
                   final i = v.toInt();
                   if (i < 0 || i >= trend.length) return const SizedBox();
-                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(trend[i]['month'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)));
+                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(trend[i]['month'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.w600)));
                 },
               )),
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -360,7 +424,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+      Text(label, style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w600)),
     ]);
   }
 
@@ -370,29 +434,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     double savingsRate = p.totalIncomeAgg > 0 ? (p.savingsSpent / p.totalIncomeAgg * 100) : 0;
     
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.06), blurRadius: 24, offset: const Offset(0, 10))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.insights_rounded, color: Color(0xFF2DD4BF), size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Text('Financial Insights', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-        ]),
-        const SizedBox(height: 20),
-        _insightRow('Savings Rate', '${savingsRate.toStringAsFixed(1)}%', 'of your income goes to savings.', Icons.savings_outlined, const Color(0xFF059669)),
-        const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
-        _insightRow('Needs Consumption', '${p.totalIncomeAgg > 0 ? (p.needsSpent / p.totalIncomeAgg * 100).toStringAsFixed(1) : 0}%', 'of your income is spent on needs.', Icons.home_outlined, const Color(0xFFE88A1A)),
+    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+          child: const Icon(Icons.insights_rounded, color: Color(0xFF2DD4BF), size: 20),
+        ),
+        const SizedBox(width: 12),
+        const Text('Financial Insights', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
       ]),
-    );
+      const SizedBox(height: 20),
+      _insightRow('Savings Rate', '${savingsRate.toStringAsFixed(1)}%', 'of your income goes to savings.', Icons.savings_outlined, const Color(0xFF059669)),
+      Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Colors.white12)),
+      _insightRow('Needs Consumption', '${p.totalIncomeAgg > 0 ? (p.needsSpent / p.totalIncomeAgg * 100).toStringAsFixed(1) : 0}%', 'of your income is spent on needs.', Icons.home_outlined, const Color(0xFFE88A1A)),
+    ]));
   }
 
   Widget _insightRow(String title, String value, String subtitle, IconData icon, Color color) {
@@ -404,11 +460,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF475569))),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white70)),
         Row(children: [
           Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
           const SizedBox(width: 6),
-          Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey), overflow: TextOverflow.ellipsis)),
+          Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
         ]),
       ])),
     ]);
@@ -434,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: const Icon(Icons.ac_unit_rounded, color: Color(0xFF0891B2), size: 18),
               ),
               const SizedBox(width: 10),
-              const Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E293B))),
+              const Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white)),
             ],
           ),
         ),
@@ -661,7 +717,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _cardHeader('Financial Goals', Icons.flag_rounded, const Color(0xFF059669)),
       const SizedBox(height: 16),
       if (loaded && p.goals.isEmpty)
-        const Text('No goals set yet.', style: TextStyle(color: Colors.grey, fontSize: 13))
+        const Text('No goals set yet.', style: TextStyle(color: Colors.white54, fontSize: 13))
       else if (loaded)
         ...p.goals.map((g) => _buildGoalRow(g))
       else
@@ -694,9 +750,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          Text('₹${_formatNum(current)} / ₹${_formatNum(target)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
+          Text('₹${_formatNum(current)} / ₹${_formatNum(target)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
         ]),
         const SizedBox(height: 8),
         LinearPercentIndicator(
@@ -761,7 +817,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final bucketColor = _billBucketColor(bucket);
           final billIcon = _billCategoryIcon(category, bucket);
           final dueText = daysLeft == 0 ? 'Due Today' : daysLeft == 1 ? 'Due Tomorrow' : '$daysLeft days';
-          final urgencyColor = daysLeft == 0 ? const Color(0xFFEF4444) : daysLeft <= 3 ? const Color(0xFFF59E0B) : const Color(0xFF94A3B8);
+          final urgencyColor = daysLeft == 0 ? const Color(0xFFEF4444) : daysLeft <= 3 ? const Color(0xFFF59E0B) : Colors.white54;
           final progress = daysLeft <= 30 ? (30 - daysLeft) / 30.0 : 0.0;
 
           return Container(
@@ -785,11 +841,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Expanded(
                             child: Text(name,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
                                 overflow: TextOverflow.ellipsis),
                           ),
                           Text('₹${_formatNum(amount)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B))),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -807,7 +863,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 6),
                           if (category.isNotEmpty)
                             Text(category,
-                                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                style: const TextStyle(fontSize: 10, color: Colors.white54)),
                           const Spacer(),
                           Icon(Icons.schedule, size: 11, color: urgencyColor),
                           const SizedBox(width: 3),
@@ -872,14 +928,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── Shared helpers ─────────────────────────────────────────────────────────
-  Widget _card({required Widget child}) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 8))],
+  Widget _card({required Widget child}) => ClipRRect(
+    borderRadius: BorderRadius.circular(24),
+    child: BackdropFilter(
+      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: child,
+      ),
     ),
-    child: child,
   );
 
   Widget _cardHeader(String title, IconData icon, Color color) => Row(children: [
@@ -889,7 +951,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Icon(icon, color: color, size: 18),
     ),
     const SizedBox(width: 10),
-    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
   ]);
 
   String _formatNum(double v) {

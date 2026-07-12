@@ -167,150 +167,135 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
                         const SizedBox(height: 36),
 
-                        // ── Login Card ───────────────────────────────────────
-                        Container(
-                          padding: const EdgeInsets.all(28),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(32),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
+                        // ── Login Card (Glassmorphism) ─────────────────────────
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.all(28),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Welcome back', style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF1E293B),
-                                letterSpacing: -0.5,
-                              )),
-                              const SizedBox(height: 4),
-                              const Text('Sign in to continue', style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF94A3B8),
-                                fontWeight: FontWeight.w500,
-                              )),
-                              const SizedBox(height: 28),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Welcome back', style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  )),
+                                  const SizedBox(height: 4),
+                                  Text('Sign in to continue', style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontWeight: FontWeight.w500,
+                                  )),
+                                  const SizedBox(height: 28),
 
-                              // Email Address Field
-                              TextField(
-                                controller: _emailCtrl,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                                decoration: InputDecoration(
-                                  labelText: 'Email address',
-                                  labelStyle: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                  prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF64748B)),
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-
-                              // Password Field
-                              TextField(
-                                controller: _passwordCtrl,
-                                obscureText: _obscurePassword,
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => isLoading ? null : _handleLogin(),
-                                style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  labelStyle: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                  prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B)),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                      color: const Color(0xFF94A3B8),
+                                  // Email Address Field
+                                  TextField(
+                                    controller: _emailCtrl,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                                    decoration: InputDecoration(
+                                      hintText: 'Email address',
+                                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w400),
+                                      prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF94A3B8)),
+                                      filled: true,
+                                      fillColor: Colors.white.withValues(alpha: 0.08),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: const BorderSide(color: Color(0xFF14B8A6), width: 1.5),
+                                      ),
                                     ),
-                                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                   ),
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
-                                  ),
-                                ),
-                              ),
+                                  const SizedBox(height: 18),
 
-                              // Forgot Password Link
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {},
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFF0D9488),
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                                  ),
-                                  child: const Text('Forgot password?',
-                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Sign In Action Button
-                              Container(
-                                width: double.infinity,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF042F2E), Color(0xFF0D9488)],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF0D9488).withValues(alpha: 0.35),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
+                                  // Password Field
+                                  TextField(
+                                    controller: _passwordCtrl,
+                                    obscureText: _obscurePassword,
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => isLoading ? null : _handleLogin(),
+                                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+                                    decoration: InputDecoration(
+                                      hintText: 'Password',
+                                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w400),
+                                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF94A3B8)),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                          color: const Color(0xFF94A3B8),
+                                        ),
+                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white.withValues(alpha: 0.08),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: const BorderSide(color: Color(0xFF14B8A6), width: 1.5),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: isLoading ? null : _handleLogin,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    foregroundColor: Colors.white,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
-                                  child: isLoading
-                                      ? const SizedBox(
-                                          width: 22, height: 22,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white, strokeWidth: 2.5),
-                                        )
-                                      : const Text('Sign In', style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        )),
-                                ),
+
+                                  // Forgot Password Link
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {},
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.white.withValues(alpha: 0.7),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                                      ),
+                                      child: const Text('Forgot password?',
+                                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  // Sign In Action Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 54,
+                                    child: ElevatedButton(
+                                      onPressed: isLoading ? null : _handleLogin,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF0D9488),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      ),
+                                      child: isLoading
+                                          ? const SizedBox(
+                                              width: 22, height: 22,
+                                              child: CircularProgressIndicator(
+                                                color: Color(0xFF0D9488), strokeWidth: 2.5),
+                                            )
+                                          : const Text('Sign In', style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            )),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
 
