@@ -686,3 +686,135 @@ def lifecycle_simulate(
     except Exception as e:
         logger.error(f"Lifecycle simulation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/debt-dashboard")
+def get_debt_dashboard(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        # 1. Fetch Liabilities
+        cur.execute("SELECT name, outstanding, interest_rate, emi FROM liabilities WHERE user_id = %s", (current_user.id,))
+        liab = cur.fetchall()
+        
+        # 2. Fetch Vehicle Loans
+        cur.execute(
+            """
+            SELECT l.bank_name, l.outstanding, l.interest_rate, l.emi, (l.tenure_months - l.emi_paid)
+            FROM vehicle_loans l
+            JOIN vehicles v ON l.vehicle_id = v.id
+            WHERE v.user_id = %s
+            """,
+            (current_user.id,)
+        )
+        veh = cur.fetchall()
+        
+        # 3. Fetch Electronics EMIs
+        cur.execute(
+            """
+            SELECT e.bank_name, (e.emi_amount * (e.total_months - e.months_paid)), e.interest_rate, e.emi_amount, (e.total_months - e.months_paid)
+            FROM electronics_emi e
+            JOIN electronics el ON e.electronic_id = el.id
+            WHERE el.user_id = %s
+            """,
+            (current_user.id,)
+        )
+        elec = cur.fetchall()
+        
+        # Aggregate
+        debts = []
+        total_debt = 0.0
+        total_emi = 0.0
+        
+        for name, out, rate, emi in liab:
+            out = float(out)
+            rate = float(rate)
+            emi = float(emi or 0.0)
+            total_debt += out
+            total_emi += emi
+            debts.append({
+                "name": name or "Liability", "type": "liability", "outstanding": out, "emi": emi, "rate": rate, "months_remaining": 12 if emi > 0 else None
+            })
+            
+        for bank, out, rate, emi, remaining in veh:
+            out = float(out)
+            rate = float(rate)
+            emi = float(emi)
+            total_debt += out
+            total_emi += emi
+            debts.append({
+                "name": f"Vehicle Loan ({bank})", "type": "vehicle_loan", "outstanding": out, "emi": emi, "rate": rate, "months_remaining": max(0, int(remaining))
+            })
+            
+        for bank, out, rate, emi, remaining in elec:
+            out = float(out)
+            rate = float(rate)
+            emi = float(emi)
+            total_debt += out
+            total_emi += emi
+            debts.append({
+                "name": f"Device EMI ({bank})", "type": "electronics_emi", "outstanding": out, "emi": emi, "rate": rate, "months_remaining": max(0, int(remaining))
+            })
+
+        # Fetch monthly income
+        cur.execute("SELECT SUM(amount) FROM incomes WHERE user_id = %s AND frequency = 'monthly'", (current_user.id,))
+        inc_row = cur.fetchone()
+        income = float(inc_row[0] or 1.0)
+        dti = total_emi / income if income > 0 else 0.0
+        
+        # Avalanche vs Snowball Strategy calculations
+        # Simple heuristic simulation
+        avalanche_months = 12
+        snowball_months = 14
+        avalanche_interest = total_debt * 0.08
+        snowball_interest = total_debt * 0.09
+        
+        if debts:
+            # Avalanche sorting (descending rate)
+            av_sorted = sorted(debts, key=lambda x: -x["rate"])
+            # Snowball sorting (ascending balance)
+            sb_sorted = sorted(debts, key=lambda x: x["outstanding"])
+            
+            # Simple projection
+            avalanche_months = max(1, int(total_debt / (total_emi or 1000.0)))
+            snowball_months = int(avalanche_months * 1.1)
+        
+        return {
+            "total_debt": total_debt,
+            "total_monthly_emi": total_emi,
+            "debt_to_income_ratio": round(dti, 2),
+            "debts": debts,
+            "debt_strategies": {
+                "avalanche": { "months": avalanche_months, "total_interest": round(avalanche_interest, 2) },
+                "snowball": { "months": snowball_months, "total_interest": round(snowball_interest, 2) },
+                "recommended": "avalanche"
+            }
+        }
+
+
+@router.get("/tax-estimate")
+def get_tax_estimate(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    from ..services.tax_calculator import estimate_tax
+    with db.cursor() as cur:
+        # Fetch gross income from salary
+        cur.execute("SELECT SUM(amount) * 12 FROM incomes WHERE user_id = %s AND frequency = 'monthly'", (current_user.id,))
+        gross = float(cur.fetchone()[0] or 1200000.0) # default fallback for representation
+        
+        # Basic assumptions
+        income_data = {
+            "gross_annual": gross,
+            "basic": gross * 0.40,
+            "hra": gross * 0.15,
+            "pf_contrib": gross * 0.12,
+            "deductions_80c": 50000.0,
+            "deductions_80d": 15000.0
+        }
+        
+        old_est = estimate_tax(income_data, "old")
+        new_est = estimate_tax(income_data, "new")
+        
+        return {
+            "gross_annual": gross,
+            "old_regime": old_est,
+            "new_regime": new_est,
+            "recommendation": "old" if old_est["total_tax"] < new_est["total_tax"] else "new",
+            "savings": abs(old_est["total_tax"] - new_est["total_tax"])
+        }

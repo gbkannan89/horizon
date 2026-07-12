@@ -27,6 +27,29 @@ class FinancialProvider extends ChangeNotifier {
   List<LocalLendingRecord> lendingRecords = [];
   Map<String, dynamic>? lendingOverview;
 
+  // Phase 5: Family & Profile Tracking
+  List<LocalFamilyMember> familyMembers = [];
+  double recurringFamilyCosts = 0.0;
+  Map<String, dynamic>? recurringCostsBreakdown;
+
+  // Phase 6: Budget Revamp
+  LocalBudgetPlan? budgetPlan;
+  LocalBudgetComparison? budgetComparison;
+
+  // Phase 2: Income & Salary Deep Dive
+  List<LocalSalaryDetail> salaryDetails = [];
+  LocalSalaryGrowth? salaryGrowth;
+
+  // Phase 3: Vehicle Enhanced Tracking
+  List<LocalVehicleService> vehicleServices = [];
+  List<LocalVehicleFuel> vehicleFuels = [];
+  LocalVehicleLoan? vehicleLoan;
+
+  // Phase 4: Electronics / Device Tracking
+  List<LocalElectronic> electronics = [];
+  List<LocalElectronicService> electronicServices = [];
+  LocalElectronicEmi? electronicEmi;
+
   // Dashboard Fields
   double netWorth = 0;
   double netWorthChange = 0;
@@ -50,6 +73,9 @@ class FinancialProvider extends ChangeNotifier {
 
   // Analytics
   List<dynamic> spendingTrend = [];
+  List<dynamic> investmentReturns = [];
+  Map<String, dynamic>? taxEstimate;
+  Map<String, dynamic>? debtDashboard;
   Map<String, dynamic>? budgetBreakdown;
   Map<String, dynamic>? portfolioSummary;
   Map<String, dynamic>? spendingPatterns;
@@ -138,14 +164,78 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/assets/vehicles');
       if (data is List) {
-        vehicles = data.map((v) => LocalVehicle(
-          id: v['id'].toString(),
-          makeModel: v['make_model'],
-          purchaseCost: (v['purchase_cost'] ?? 0).toDouble(),
-          insuranceRenewalDate: v['insurance_renewal_date'] != null ? DateTime.parse(v['insurance_renewal_date']) : null,
-        )).toList();
+        vehicles = data.map((v) => LocalVehicle.fromJson(v as Map<String, dynamic>)).toList();
       }
     } catch (e) { print('Vehicles load error: $e'); }
+  }
+
+  Future<void> reloadVehicleServiceRecords(String vehicleId) async {
+    try {
+      final intId = int.parse(vehicleId);
+      final data = await _apiService.get('/api/assets/vehicles/$intId/service');
+      if (data is List) {
+        vehicleServices = data.map((x) => LocalVehicleService.fromJson(x as Map<String, dynamic>)).toList();
+      }
+      notifyListeners();
+    } catch (e) { print('Service records load error: $e'); }
+  }
+
+  Future<void> reloadVehicleFuelRecords(String vehicleId) async {
+    try {
+      final intId = int.parse(vehicleId);
+      final data = await _apiService.get('/api/assets/vehicles/$intId/fuel');
+      if (data is List) {
+        vehicleFuels = data.map((x) => LocalVehicleFuel.fromJson(x as Map<String, dynamic>)).toList();
+      }
+      notifyListeners();
+    } catch (e) { print('Fuel records load error: $e'); }
+  }
+
+  Future<void> reloadVehicleLoan(String vehicleId) async {
+    try {
+      final intId = int.parse(vehicleId);
+      final data = await _apiService.get('/api/assets/vehicles/$intId/loan');
+      if (data != null) {
+        vehicleLoan = LocalVehicleLoan.fromJson(data);
+      } else {
+        vehicleLoan = null;
+      }
+      notifyListeners();
+    } catch (e) { print('Vehicle loan load error: $e'); }
+  }
+
+  Future<void> reloadElectronics() async {
+    try {
+      final data = await _apiService.get('/api/electronics');
+      if (data is List) {
+        electronics = data.map((e) => LocalElectronic.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      notifyListeners();
+    } catch (e) { print('Electronics load error: $e'); }
+  }
+
+  Future<void> reloadElectronicServices(String deviceId) async {
+    try {
+      final intId = int.parse(deviceId);
+      final data = await _apiService.get('/api/electronics/$intId/service');
+      if (data is List) {
+        electronicServices = data.map((x) => LocalElectronicService.fromJson(x as Map<String, dynamic>)).toList();
+      }
+      notifyListeners();
+    } catch (e) { print('Electronic service load error: $e'); }
+  }
+
+  Future<void> reloadElectronicEmi(String deviceId) async {
+    try {
+      final intId = int.parse(deviceId);
+      final data = await _apiService.get('/api/electronics/$intId/emi');
+      if (data != null) {
+        electronicEmi = LocalElectronicEmi.fromJson(data);
+      } else {
+        electronicEmi = null;
+      }
+      notifyListeners();
+    } catch (e) { print('Electronic EMI load error: $e'); }
   }
 
   Future<void> _reloadBills() async {
@@ -189,6 +279,8 @@ class FinancialProvider extends ChangeNotifier {
           type: i['type'] ?? 'salary',
           amount: (i['amount'] ?? 0).toDouble(),
           frequency: i['frequency'] ?? 'monthly',
+          companyName: i['company_name'],
+          notes: i['notes'],
         )).toList();
       }
     } catch (e) { print('Incomes load error: $e'); }
@@ -261,6 +353,32 @@ class FinancialProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> reloadInvestmentReturns() async {
+    try {
+      final data = await _apiService.get('/api/analytics/returns');
+      if (data is List) {
+        investmentReturns = data;
+        notifyListeners();
+      }
+    } catch (e) { print('Investment returns load error: $e'); }
+  }
+
+  Future<void> reloadTaxEstimate() async {
+    try {
+      final data = await _apiService.get('/api/advisor/tax-estimate');
+      taxEstimate = data;
+      notifyListeners();
+    } catch (e) { print('Tax estimate load error: $e'); }
+  }
+
+  Future<void> reloadDebtDashboard() async {
+    try {
+      final data = await _apiService.get('/api/advisor/debt-dashboard');
+      debtDashboard = data;
+      notifyListeners();
+    } catch (e) { print('Debt dashboard load error: $e'); }
+  }
+
   // ── PHASE 1: GOLD ASSETS ──────────────────────────────────────────────────
   Future<void> _reloadGoldAssets() async {
     try {
@@ -307,6 +425,56 @@ class FinancialProvider extends ChangeNotifier {
     } catch (e) { print('Lending overview load error: $e'); }
   }
 
+  Future<void> _reloadFamilyMembers() async {
+    try {
+      final data = await _apiService.get('/api/profile/family');
+      if (data is List) {
+        familyMembers = data.map((f) => LocalFamilyMember.fromJson(f as Map<String, dynamic>)).toList();
+      }
+    } catch (e) { print('Family members load error: $e'); }
+  }
+
+  Future<void> _reloadRecurringFamilyCosts() async {
+    try {
+      final data = await _apiService.get('/api/profile/family/recurring-costs');
+      recurringFamilyCosts = (data['total_monthly'] ?? 0).toDouble();
+      recurringCostsBreakdown = data;
+    } catch (e) { print('Recurring costs load error: $e'); }
+  }
+
+  Future<void> _reloadBudgetPlan() async {
+    try {
+      final data = await _apiService.get('/api/budget/plan?month=$selectedMonth&year=$selectedYear');
+      budgetPlan = LocalBudgetPlan.fromJson(data);
+    } catch (e) { print('Budget plan load error: $e'); }
+  }
+
+  Future<void> _reloadBudgetComparison() async {
+    try {
+      final data = await _apiService.get('/api/budget/compare?month=$selectedMonth&year=$selectedYear');
+      budgetComparison = LocalBudgetComparison.fromJson(data);
+    } catch (e) { print('Budget comparison load error: $e'); }
+  }
+
+  Future<void> reloadSalaryDetails(String incomeId) async {
+    try {
+      final intId = int.parse(incomeId);
+      final data = await _apiService.get('/api/incomes/$intId/salary');
+      if (data is List) {
+        salaryDetails = data.map((x) => LocalSalaryDetail.fromJson(x as Map<String, dynamic>)).toList();
+      }
+      notifyListeners();
+    } catch (e) { print('Salary details load error: $e'); }
+  }
+
+  Future<void> loadSalaryGrowth() async {
+    try {
+      final data = await _apiService.get('/api/incomes/salary-growth');
+      salaryGrowth = LocalSalaryGrowth.fromJson(data);
+      notifyListeners();
+    } catch (e) { print('Salary growth load error: $e'); }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // FULL DATA LOAD — for initial load, month navigation, and pull-to-refresh
   // ═══════════════════════════════════════════════════════════════════════════
@@ -330,12 +498,21 @@ class FinancialProvider extends ChangeNotifier {
       _reloadGoldAssets(),
       _reloadStockHoldings(),
       _reloadPFAssets(),
+      _reloadFamilyMembers(),
+      _reloadRecurringFamilyCosts(),
+      _reloadBudgetPlan(),
+      _reloadBudgetComparison(),
+      loadSalaryGrowth(),
+      reloadElectronics(),
     ]);
     _reloadLendingRecords();
     _reloadLendingOverview();
 
     loadBudgetBreakdown();
     loadNudges();
+    reloadInvestmentReturns();
+    reloadTaxEstimate();
+    reloadDebtDashboard();
 
     _isLoading = false;
     notifyListeners();
@@ -364,9 +541,10 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── INCOME ─────────────────────────────────────────────────────────────────
-  Future<void> addIncome(String label, String type, double amount, String frequency) async {
+  Future<void> addIncome(String label, String type, double amount, String frequency, {String? companyName, String? notes}) async {
     final created = await _apiService.post('/api/incomes', {
       'label': label, 'type': type, 'amount': amount, 'frequency': frequency,
+      'company_name': companyName, 'notes': notes,
     });
     incomes.add(LocalIncome(
       id: created['id'].toString(),
@@ -374,6 +552,8 @@ class FinancialProvider extends ChangeNotifier {
       type: created['type'] ?? type,
       amount: (created['amount'] ?? amount).toDouble(),
       frequency: created['frequency'] ?? frequency,
+      companyName: created['company_name'] ?? companyName,
+      notes: created['notes'] ?? notes,
     ));
     notifyListeners();
     _reloadDashboard();
@@ -573,18 +753,31 @@ class FinancialProvider extends ChangeNotifier {
     _reloadDashboard();
   }
 
-  Future<void> addVehicle(String makeModel, double purchaseCost, {DateTime? insuranceRenewalDate}) async {
+  Future<void> addVehicle(
+    String makeModel,
+    double purchaseCost, {
+    DateTime? insuranceRenewalDate,
+    int? modelYear,
+    int? purchaseYear,
+    String? fuelType,
+    double? mileageKmpl,
+    double? insuranceIdv,
+    double? insuranceRenewalAmount,
+    String? registrationNumber,
+  }) async {
     final created = await _apiService.post('/api/assets/vehicles', {
       'make_model': makeModel,
       'purchase_cost': purchaseCost,
       'insurance_renewal_date': insuranceRenewalDate?.toIso8601String().split('T').first,
+      'model_year': modelYear,
+      'purchase_year': purchaseYear,
+      'fuel_type': fuelType,
+      'mileage_kmpl': mileageKmpl,
+      'insurance_idv': insuranceIdv,
+      'insurance_renewal_amount': insuranceRenewalAmount,
+      'registration_number': registrationNumber,
     });
-    vehicles.add(LocalVehicle(
-      id: created['id'].toString(),
-      makeModel: created['make_model'] ?? makeModel,
-      purchaseCost: (created['purchase_cost'] ?? purchaseCost).toDouble(),
-      insuranceRenewalDate: created['insurance_renewal_date'] != null ? DateTime.parse(created['insurance_renewal_date']) : null,
-    ));
+    vehicles.add(LocalVehicle.fromJson(created as Map<String, dynamic>));
     notifyListeners();
     _reloadDashboard();
   }
@@ -1030,4 +1223,336 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   Map<String, dynamic>? get lendingSummary => lendingOverview;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 5: FAMILY CRUD OPERATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addFamilyMember(Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> updateFamilyMember(int id, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$id', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> deleteFamilyMember(int id) async {
+    await _apiService.delete('/api/profile/family/$id');
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  // Schooling
+  Future<void> addSchooling(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/schooling', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> updateSchooling(int memberId, int schoolingId, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$memberId/schooling/$schoolingId', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> deleteSchooling(int memberId, int schoolingId) async {
+    await _apiService.delete('/api/profile/family/$memberId/schooling/$schoolingId');
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> recordSchoolingPayment(int memberId, int schoolingId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/schooling/$schoolingId/payments', body);
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  // Checkups
+  Future<void> addCheckup(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/checkups', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> updateCheckup(int memberId, int checkupId, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$memberId/checkups/$checkupId', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> deleteCheckup(int memberId, int checkupId) async {
+    await _apiService.delete('/api/profile/family/$memberId/checkups/$checkupId');
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  // Medicines
+  Future<void> addMedicine(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/medicines', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> updateMedicine(int memberId, int medicineId, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$memberId/medicines/$medicineId', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> deleteMedicine(int memberId, int medicineId) async {
+    await _apiService.delete('/api/profile/family/$memberId/medicines/$medicineId');
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  // Vaccinations
+  Future<void> addVaccination(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/vaccinations', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> updateVaccination(int memberId, int vaccinationId, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$memberId/vaccinations/$vaccinationId', body);
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<void> deleteVaccination(int memberId, int vaccinationId) async {
+    await _apiService.delete('/api/profile/family/$memberId/vaccinations/$vaccinationId');
+    await _reloadFamilyMembers();
+    await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  // Earnings
+  Future<void> addEarnings(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/earnings', body);
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  Future<void> updateEarnings(int memberId, int earningsId, Map<String, dynamic> body) async {
+    await _apiService.put('/api/profile/family/$memberId/earnings/$earningsId', body);
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  Future<void> deleteEarnings(int memberId, int earningsId) async {
+    await _apiService.delete('/api/profile/family/$memberId/earnings/$earningsId');
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  // Insurance Link
+  Future<void> linkInsurance(int memberId, Map<String, dynamic> body) async {
+    await _apiService.post('/api/profile/family/$memberId/insurance', body);
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  Future<void> unlinkInsurance(int memberId, int insuranceId) async {
+    await _apiService.delete('/api/profile/family/$memberId/insurance/$insuranceId');
+    await _reloadFamilyMembers();
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 6: BUDGET PLAN ACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> autoPopulateBudget() async {
+    await _apiService.post('/api/budget/plan/auto-populate?month=$selectedMonth&year=$selectedYear', {});
+    await _reloadBudgetPlan();
+    await _reloadBudgetComparison();
+    notifyListeners();
+  }
+
+  Future<void> addBudgetItem(Map<String, dynamic> body) async {
+    await _apiService.post('/api/budget/items?month=$selectedMonth&year=$selectedYear', body);
+    await _reloadBudgetPlan();
+    await _reloadBudgetComparison();
+    notifyListeners();
+  }
+
+  Future<void> updateBudgetItem(int id, Map<String, dynamic> body) async {
+    await _apiService.put('/api/budget/items/$id', body);
+    await _reloadBudgetPlan();
+    await _reloadBudgetComparison();
+    notifyListeners();
+  }
+
+  Future<void> deleteBudgetItem(int id) async {
+    await _apiService.delete('/api/budget/items/$id');
+    await _reloadBudgetPlan();
+    await _reloadBudgetComparison();
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: SALARY DETAIL ACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addSalaryDetail(String incomeId, Map<String, dynamic> body) async {
+    final intId = int.parse(incomeId);
+    await _apiService.post('/api/incomes/$intId/salary', body);
+    await reloadSalaryDetails(incomeId);
+    await loadSalaryGrowth();
+    await _reloadIncomes(); // reload income list as amount might have synced
+    notifyListeners();
+  }
+
+  Future<void> updateSalaryDetail(String incomeId, int salaryId, Map<String, dynamic> body) async {
+    final intId = int.parse(incomeId);
+    await _apiService.put('/api/incomes/$intId/salary/$salaryId', body);
+    await reloadSalaryDetails(incomeId);
+    await loadSalaryGrowth();
+    await _reloadIncomes();
+    notifyListeners();
+  }
+
+  Future<void> deleteSalaryDetail(String incomeId, int salaryId) async {
+    final intId = int.parse(incomeId);
+    await _apiService.delete('/api/incomes/$intId/salary/$salaryId');
+    await reloadSalaryDetails(incomeId);
+    await loadSalaryGrowth();
+    await _reloadIncomes();
+    notifyListeners();
+  }
+
+  Future<void> setCurrentSalaryDetail(String incomeId, int salaryId) async {
+    final intId = int.parse(incomeId);
+    await _apiService.post('/api/incomes/$intId/salary/$salaryId/current', {});
+    await reloadSalaryDetails(incomeId);
+    await loadSalaryGrowth();
+    await _reloadIncomes();
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 3: VEHICLE LOGGING ACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addServiceRecord(String vehicleId, Map<String, dynamic> body) async {
+    final intId = int.parse(vehicleId);
+    await _apiService.post('/api/assets/vehicles/$intId/service', body);
+    await reloadVehicleServiceRecords(vehicleId);
+    await _reloadVehicles();
+    notifyListeners();
+  }
+
+  Future<void> deleteServiceRecord(String vehicleId, int serviceId) async {
+    final intId = int.parse(vehicleId);
+    await _apiService.delete('/api/assets/vehicles/$intId/service/$serviceId');
+    await reloadVehicleServiceRecords(vehicleId);
+    await _reloadVehicles();
+    notifyListeners();
+  }
+
+  Future<void> addFuelRecord(String vehicleId, Map<String, dynamic> body) async {
+    final intId = int.parse(vehicleId);
+    await _apiService.post('/api/assets/vehicles/$intId/fuel', body);
+    await reloadVehicleFuelRecords(vehicleId);
+    await _reloadVehicles();
+    notifyListeners();
+  }
+
+  Future<void> deleteFuelRecord(String vehicleId, int fuelId) async {
+    final intId = int.parse(vehicleId);
+    await _apiService.delete('/api/assets/vehicles/$intId/fuel/$fuelId');
+    await reloadVehicleFuelRecords(vehicleId);
+    await _reloadVehicles();
+    notifyListeners();
+  }
+
+  Future<void> addOrUpdateVehicleLoan(String vehicleId, Map<String, dynamic> body, {bool isUpdate = false}) async {
+    final intId = int.parse(vehicleId);
+    if (isUpdate) {
+      await _apiService.put('/api/assets/vehicles/$intId/loan', body);
+    } else {
+      await _apiService.post('/api/assets/vehicles/$intId/loan', body);
+    }
+    await reloadVehicleLoan(vehicleId);
+    notifyListeners();
+  }
+
+  Future<void> deleteVehicleLoan(String vehicleId) async {
+    final intId = int.parse(vehicleId);
+    await _apiService.delete('/api/assets/vehicles/$intId/loan');
+    await reloadVehicleLoan(vehicleId);
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 4: ELECTRONICS ACTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> addElectronic(Map<String, dynamic> body) async {
+    await _apiService.post('/api/electronics', body);
+    await reloadElectronics();
+    _reloadDashboard();
+  }
+
+  Future<void> updateElectronic(String id, Map<String, dynamic> body) async {
+    final intId = int.parse(id);
+    await _apiService.put('/api/electronics/$intId', body);
+    await reloadElectronics();
+    _reloadDashboard();
+  }
+
+  Future<void> deleteElectronic(String id) async {
+    final intId = int.parse(id);
+    await _apiService.delete('/api/electronics/$intId');
+    await reloadElectronics();
+    _reloadDashboard();
+  }
+
+  Future<void> addElectronicService(String deviceId, Map<String, dynamic> body) async {
+    final intId = int.parse(deviceId);
+    await _apiService.post('/api/electronics/$intId/service', body);
+    await reloadElectronicServices(deviceId);
+    await reloadElectronics();
+    notifyListeners();
+  }
+
+  Future<void> deleteElectronicService(String deviceId, int serviceId) async {
+    final intId = int.parse(deviceId);
+    await _apiService.delete('/api/electronics/$intId/service/$serviceId');
+    await reloadElectronicServices(deviceId);
+    await reloadElectronics();
+    notifyListeners();
+  }
+
+  Future<void> addOrUpdateElectronicEmi(String deviceId, Map<String, dynamic> body, {bool isUpdate = false}) async {
+    final intId = int.parse(deviceId);
+    if (isUpdate) {
+      await _apiService.put('/api/electronics/$intId/emi', body);
+    } else {
+      await _apiService.post('/api/electronics/$intId/emi', body);
+    }
+    await reloadElectronicEmi(deviceId);
+    await reloadElectronics();
+    notifyListeners();
+  }
+
+  Future<void> deleteElectronicEmi(String deviceId) async {
+    final intId = int.parse(deviceId);
+    await _apiService.delete('/api/electronics/$intId/emi');
+    await reloadElectronicEmi(deviceId);
+    await reloadElectronics();
+    notifyListeners();
+  }
 }

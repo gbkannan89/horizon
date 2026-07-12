@@ -24,6 +24,11 @@ from .routes.gold_assets import router as gold_assets_router
 from .routes.stock_holdings import router as stock_holdings_router
 from .routes.pf_assets import router as pf_assets_router
 from .routes.lending import router as lending_router
+from .routes.profile_family import router as profile_family_router
+from .routes.budget import router as budget_router
+from .routes.salary import router as salary_router
+from .routes.vehicles import router as vehicles_router
+from .routes.electronics import router as electronics_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +55,11 @@ app.include_router(gold_assets_router)
 app.include_router(stock_holdings_router)
 app.include_router(pf_assets_router)
 app.include_router(lending_router)
+app.include_router(profile_family_router)
+app.include_router(budget_router)
+app.include_router(salary_router)
+app.include_router(vehicles_router)
+app.include_router(electronics_router)
 
 # Add CORS Middleware
 app.add_middleware(

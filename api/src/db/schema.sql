@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS incomes (
     pf_employee NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
     pf_employer NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
     shares_deduction NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    company_name VARCHAR(255),
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -163,6 +165,15 @@ CREATE TABLE IF NOT EXISTS vehicles (
     make_model VARCHAR(255) NOT NULL,
     purchase_cost NUMERIC(20, 2) NOT NULL,
     insurance_renewal_date DATE,
+    model_year INTEGER,
+    purchase_year INTEGER,
+    fuel_type VARCHAR(50),
+    mileage_kmpl NUMERIC(10, 2),
+    fuel_cost_total NUMERIC(20, 2) DEFAULT 0.00,
+    km_driven NUMERIC(10, 2) DEFAULT 0.00,
+    insurance_idv NUMERIC(20, 2),
+    insurance_renewal_amount NUMERIC(20, 2),
+    registration_number VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -342,4 +353,249 @@ CREATE TABLE IF NOT EXISTS lending_records (
     status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'partial', 'closed', 'overdue')),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 2: Income & Salary Deep Dive
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS salary_details (
+    id SERIAL PRIMARY KEY,
+    income_id INTEGER REFERENCES incomes(id) ON DELETE CASCADE NOT NULL,
+    company_name VARCHAR(255),
+    from_year INTEGER NOT NULL,
+    to_year INTEGER,
+    is_current BOOLEAN DEFAULT FALSE,
+    fixed_pay NUMERIC(20, 2),
+    basic_pay NUMERIC(20, 2),
+    hra NUMERIC(20, 2),
+    lta NUMERIC(20, 2),
+    pf_employee NUMERIC(20, 2),
+    pf_employer NUMERIC(20, 2),
+    special_allowance NUMERIC(20, 2),
+    meal_card NUMERIC(20, 2),
+    variable_pay_percentage NUMERIC(5, 2),
+    variable_pay_amount NUMERIC(20, 2),
+    gross_annual NUMERIC(20, 2),
+    monthly_in_hand NUMERIC(20, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(income_id, from_year)
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 3: Vehicle Enhanced Tracking
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS vehicle_service_log (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    service_date DATE NOT NULL,
+    service_type VARCHAR(100),
+    description TEXT,
+    cost NUMERIC(20, 2) NOT NULL,
+    km_at_service NUMERIC(10, 2),
+    service_center VARCHAR(255),
+    next_service_km NUMERIC(10, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vehicle_fuel_log (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    fill_date DATE NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    liters NUMERIC(10, 2) NOT NULL,
+    km_at_fill NUMERIC(10, 2),
+    price_per_liter NUMERIC(10, 2),
+    is_full_tank BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vehicle_loans (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    bank_name VARCHAR(255),
+    loan_amount NUMERIC(20, 2) NOT NULL,
+    interest_rate NUMERIC(5, 2) NOT NULL,
+    tenure_months INTEGER NOT NULL,
+    emi NUMERIC(20, 2) NOT NULL,
+    start_date DATE NOT NULL,
+    emi_paid INTEGER DEFAULT 0,
+    outstanding NUMERIC(20, 2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 4: Electronics / Device Tracking
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS electronics (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    brand VARCHAR(100),
+    model VARCHAR(255),
+    purchase_date DATE NOT NULL,
+    purchase_amount NUMERIC(20, 2) NOT NULL,
+    warranty_years INTEGER DEFAULT 1,
+    warranty_expiry_date DATE,
+    expected_life_years INTEGER DEFAULT 3,
+    current_value NUMERIC(20, 2),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS electronics_service_log (
+    id SERIAL PRIMARY KEY,
+    electronic_id INTEGER REFERENCES electronics(id) ON DELETE CASCADE NOT NULL,
+    service_date DATE NOT NULL,
+    service_type VARCHAR(100),
+    description TEXT,
+    cost NUMERIC(20, 2) NOT NULL,
+    service_center VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS electronics_emi (
+    id SERIAL PRIMARY KEY,
+    electronic_id INTEGER REFERENCES electronics(id) ON DELETE CASCADE NOT NULL,
+    bank_name VARCHAR(255) NOT NULL,
+    emi_amount NUMERIC(20, 2) NOT NULL,
+    interest_rate NUMERIC(5, 2) DEFAULT 0.00,
+    total_months INTEGER NOT NULL,
+    months_paid INTEGER DEFAULT 0,
+    start_date DATE NOT NULL,
+    start_immediately BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 5: Profile & Family Deep Tracking
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS family_members (
+    id SERIAL PRIMARY KEY,
+    household_id INTEGER REFERENCES households(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    dob DATE,
+    blood_group VARCHAR(10),
+    relationship VARCHAR(100),
+    avatar_color VARCHAR(20),
+    is_self BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_schooling (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    institution_name VARCHAR(255) NOT NULL,
+    fee_amount NUMERIC(20, 2) NOT NULL,
+    fee_frequency VARCHAR(50) NOT NULL,
+    last_paid_date DATE,
+    next_due_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_schooling_payments (
+    id SERIAL PRIMARY KEY,
+    schooling_id INTEGER REFERENCES member_schooling(id) ON DELETE CASCADE NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    paid_date DATE NOT NULL,
+    receipt_ref VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_checkups (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    checkup_type VARCHAR(100),
+    frequency VARCHAR(50) NOT NULL,
+    recurring_cost NUMERIC(20, 2) DEFAULT 0.00,
+    last_checkup_date DATE,
+    next_due_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_medicines (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    medicine_name VARCHAR(255) NOT NULL,
+    monthly_cost NUMERIC(20, 2) NOT NULL,
+    purpose TEXT,
+    is_regular BOOLEAN DEFAULT TRUE,
+    prescribed_by VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_vaccinations (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    vaccine_name VARCHAR(255) NOT NULL,
+    frequency VARCHAR(50) NOT NULL,
+    recurring_cost NUMERIC(20, 2) DEFAULT 0.00,
+    last_vaccination_date DATE,
+    next_due_date DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_earnings (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    monthly_income NUMERIC(20, 2) NOT NULL,
+    contribution_to_household NUMERIC(20, 2) DEFAULT 0.00,
+    occupation VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS member_insurance_links (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    insurance_id INTEGER REFERENCES insurances(id) ON DELETE CASCADE NOT NULL,
+    relationship VARCHAR(50) DEFAULT 'self',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(member_id, insurance_id)
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 6: Budget System Revamp & Auto-Feed
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS budget_plans (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
+    year INTEGER NOT NULL,
+    total_budgeted NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, month, year)
+);
+
+CREATE TABLE IF NOT EXISTS budget_items (
+    id SERIAL PRIMARY KEY,
+    budget_plan_id INTEGER REFERENCES budget_plans(id) ON DELETE CASCADE NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    label VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    frequency VARCHAR(50) DEFAULT 'monthly' NOT NULL,
+    bucket VARCHAR(50) NOT NULL,
+    source VARCHAR(50) DEFAULT 'manual',
+    source_id INTEGER,
+    source_label VARCHAR(255),
+    is_committed BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS budget_auto_feed_config (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    auto_include_bills BOOLEAN DEFAULT TRUE,
+    auto_include_emis BOOLEAN DEFAULT TRUE,
+    auto_include_family_costs BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
 );

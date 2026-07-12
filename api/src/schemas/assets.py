@@ -39,11 +39,34 @@ class VehicleCreate(BaseModel):
     make_model: str
     purchase_cost: float = Field(..., ge=0)
     insurance_renewal_date: Optional[date_type] = None
+    model_year: Optional[int] = None
+    purchase_year: Optional[int] = None
+    fuel_type: Optional[str] = None
+    mileage_kmpl: Optional[float] = None
+    fuel_cost_total: Optional[float] = 0.0
+    km_driven: Optional[float] = 0.0
+    insurance_idv: Optional[float] = None
+    insurance_renewal_amount: Optional[float] = None
+    registration_number: Optional[str] = None
 
 class VehicleOut(BaseModel):
     id: int
     user_id: int
     make_model: str
     purchase_cost: float
-    insurance_renewal_date: Optional[date_type]
+    insurance_renewal_date: Optional[date_type] = None
+    model_year: Optional[int] = None
+    purchase_year: Optional[int] = None
+    fuel_type: Optional[str] = None
+    mileage_kmpl: Optional[float] = None
+    fuel_cost_total: float
+    km_driven: float
+    insurance_idv: Optional[float] = None
+    insurance_renewal_amount: Optional[float] = None
+    registration_number: Optional[str] = None
     created_at: datetime
+    # Computes
+    cost_per_km: float = 0.0
+    suggested_idv: float = 0.0
+    total_service_cost: float = 0.0
+    next_service: Optional[dict] = None

@@ -9,6 +9,8 @@ import '../utils/ui_utils.dart';
 import '../screens/login_screen.dart';
 import '../screens/insurance_hub_screen.dart';
 import '../screens/edit_profile_screen.dart';
+import '../screens/family_member_detail_screen.dart';
+import '../screens/salary_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -495,6 +497,151 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
+  IconData _familyRelationIcon(String relation) {
+    switch (relation.toLowerCase()) {
+      case 'spouse': return Icons.favorite_rounded;
+      case 'parent': return Icons.man_3_rounded;
+      case 'child': return Icons.child_care_rounded;
+      case 'sibling': return Icons.people_rounded;
+      default: return Icons.person_rounded;
+    }
+  }
+
+  void _showAddFamilyMemberDetailsModal(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    String selectedRelation = 'child';
+    String? selectedBloodGroup;
+    DateTime? selectedDob;
+    final dobCtrl = TextEditingController();
+    
+    final relationships = ['spouse', 'child', 'parent', 'sibling', 'other'];
+    final bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    final colors = ['#0D9488', '#059669', '#7C3AED', '#DB2777', '#EA580C', '#2563EB'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+            left: 24, right: 24, top: 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Add Family Member Profile',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                const SizedBox(height: 16),
+                const Text('Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Enter name',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Relationship', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedRelation,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  items: relationships.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                  onChanged: (v) {
+                    if (v != null) setDialogState(() => selectedRelation = v);
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('Blood Group (Optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedBloodGroup,
+                  hint: const Text('Select Blood Group'),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  items: bloodGroups.map((bg) => DropdownMenuItem(value: bg, child: Text(bg))).toList(),
+                  onChanged: (v) {
+                    setDialogState(() => selectedBloodGroup = v);
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('Date of Birth (Optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: dobCtrl,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    hintText: 'Select Date',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 3650)),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        selectedDob = picked;
+                        dobCtrl.text = picked.toIso8601String().split('T').first;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (nameCtrl.text.isEmpty) return;
+                      final avatarCol = (colors..shuffle()).first;
+                      try {
+                        await Provider.of<FinancialProvider>(context, listen: false)
+                            .addFamilyMember({
+                          'name': nameCtrl.text.trim(),
+                          'relationship': selectedRelation,
+                          'blood_group': selectedBloodGroup,
+                          'dob': selectedDob?.toIso8601String().split('T').first,
+                          'avatar_color': avatarCol,
+                        });
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          UiUtils.showSnack(context, 'Family member profile added');
+                        }
+                      } catch (e) {
+                        if (context.mounted) UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0D9488),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Add Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ─── Income type helpers ───────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
@@ -591,6 +738,134 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Recurring Family Costs ──────────────────────────────────────────
+                  Consumer<FinancialProvider>(
+                    builder: (context, provider, child) {
+                      final costs = provider.recurringCostsBreakdown;
+                      if (costs == null || provider.recurringFamilyCosts == 0) {
+                        return const SizedBox.shrink();
+                      }
+                      final schooling = (costs['schooling'] ?? 0).toDouble();
+                      final medicines = (costs['medicines'] ?? 0).toDouble();
+                      final checkups = (costs['checkups'] ?? 0).toDouble();
+                      final vaccinations = (costs['vaccinations'] ?? 0).toDouble();
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Recurring Family Costs: ₹${provider.recurringFamilyCosts.toStringAsFixed(0)}/mo',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0D9488)),
+                            ),
+                            const SizedBox(height: 8),
+                            if (schooling > 0)
+                              Text('  ├ Schooling:      ₹${schooling.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            if (medicines > 0)
+                              Text('  ├ Medicines:      ₹${medicines.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            if (checkups > 0)
+                              Text('  ├ Checkups:       ₹${checkups.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            if (vaccinations > 0)
+                              Text('  └ Vaccinations:   ₹${vaccinations.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            const SizedBox(height: 8),
+                            const Text('→ Auto-feed to Budget page', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.grey)),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  // ── Family Members Profile List ─────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Family Profiles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      TextButton.icon(
+                        onPressed: () => _showAddFamilyMemberDetailsModal(context),
+                        icon: const Icon(Icons.add_rounded, color: Color(0xFF0D9488), size: 20),
+                        label: const Text('Add Profile', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Consumer<FinancialProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.familyMembers.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text('No family member profiles found.', style: TextStyle(color: Colors.grey)),
+                        );
+                      }
+                      return Container(
+                        height: 120,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: provider.familyMembers.length,
+                          itemBuilder: (context, idx) {
+                            final m = provider.familyMembers[idx];
+                            Color avatarColor;
+                            try {
+                              avatarColor = Color(int.parse(m.avatarColor!.replaceFirst('#', '0xFF')));
+                            } catch (_) {
+                              avatarColor = const Color(0xFF0D9488);
+                            }
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => FamilyMemberDetailScreen(member: m)),
+                                );
+                              },
+                              child: Container(
+                                width: 110,
+                                margin: const EdgeInsets.only(right: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: avatarColor,
+                                      child: Text(
+                                        m.name.isNotEmpty ? m.name.substring(0, 1).toUpperCase() : 'F',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      m.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                    ),
+                                    Text(
+                                      m.relationship,
+                                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+
                   // ── Personal Information Navigation ────────────────────────────────
                   Container(
                     decoration: BoxDecoration(
@@ -736,6 +1011,7 @@ class ProfileScreen extends StatelessWidget {
                     // Income cards
                     ...incomes.map((income) {
                       final color = _typeColor(income.type);
+                      final isSalary = income.type.toLowerCase() == 'salary';
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
@@ -749,83 +1025,116 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: Container(
-                            width: 44, height: 44,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: isSalary
+                                ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SalaryHistoryScreen(income: income),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44, height: 44,
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(_typeIcon(income.type), color: color, size: 22),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(income.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: color.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                income.type[0].toUpperCase() + income.type.substring(1),
+                                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade100,
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                _frequencyLabel(income.frequency),
+                                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (isSalary) ...[
+                                          const SizedBox(height: 6),
+                                          const Row(
+                                            children: [
+                                              Icon(Icons.trending_up_rounded, size: 14, color: Colors.grey),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                'Tap to view salary history & growth',
+                                                style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '₹${income.amount.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 16,
+                                          color: color,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          UiUtils.showDeleteBottomSheet(context, income.label, () async {
+                                            await Provider.of<FinancialProvider>(context, listen: false)
+                                                .deleteIncome(income.id);
+                                            if (context.mounted) UiUtils.showSnack(context, 'Income removed');
+                                          });
+                                        },
+                                        child: Container(
+                                          width: 32, height: 32,
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.withValues(alpha: 0.08),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Icon(_typeIcon(income.type), color: color, size: 22),
-                          ),
-                          title: Text(income.label,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          subtitle: Row(
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  income.type[0].toUpperCase() + income.type.substring(1),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: color,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  _frequencyLabel(income.frequency),
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '₹${income.amount.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 16,
-                                  color: color,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              GestureDetector(
-                                onTap: () async {
-                                  UiUtils.showDeleteBottomSheet(context, income.label, () async {
-                                    await Provider.of<FinancialProvider>(context, listen: false)
-                                        .deleteIncome(income.id);
-                                    if (context.mounted) UiUtils.showSnack(context, 'Income removed');
-                                  });
-                                },
-                                child: Container(
-                                  width: 32, height: 32,
-                                  margin: const EdgeInsets.only(left: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(Icons.delete_outline_rounded,
-                                      color: Colors.redAccent, size: 18),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       );

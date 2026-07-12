@@ -265,3 +265,42 @@ def run_analysis(
     except Exception as e:
         logger.error(f"Full analysis error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/returns")
+def get_investment_returns(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    from ..services.returns import calculate_cagr
+    with db.cursor() as cur:
+        # Fetch gold, stock, PF, and FD assets
+        cur.execute(
+            """
+            SELECT name, type, amount, purchase_price, purchase_date
+            FROM assets WHERE user_id = %s
+            """,
+            (current_user.id,)
+        )
+        rows = cur.fetchall()
+        
+        results = []
+        for name, atype, amt, pp, pdate in rows:
+            amt = float(amt)
+            pp = float(pp) if pp is not None else amt
+            
+            # Estimate years elapsed
+            years = 1.0
+            if pdate:
+                days = (date.today() - pdate).days
+                if days > 0:
+                    years = days / 365.25
+            
+            cagr_val = calculate_cagr(pp, amt, years)
+            results.append({
+                "name": name,
+                "type": atype,
+                "invested": pp,
+                "current": amt,
+                "cagr": round(cagr_val * 100, 2),
+                "return_type": "CAGR"
+            })
+            
+        return results

@@ -83,69 +83,7 @@ def list_assets(type: Optional[str] = None, current_user: UserOut = Depends(get_
             cur.execute(f"SELECT {ASSET_SELECT} FROM assets WHERE user_id = %s", (current_user.id,))
         return [_row_to_asset(r) for r in cur.fetchall()]
 
-# --- VEHICLES ---
-
-@router.post("/vehicles", response_model=VehicleOut, status_code=status.HTTP_201_CREATED)
-def add_vehicle(vehicle_in: VehicleCreate, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
-    with db.cursor() as cur:
-        try:
-            cur.execute(
-                """
-                INSERT INTO vehicles (user_id, make_model, purchase_cost, insurance_renewal_date)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, user_id, make_model, purchase_cost, insurance_renewal_date, created_at
-                """,
-                (
-                    current_user.id,
-                    vehicle_in.make_model,
-                    vehicle_in.purchase_cost,
-                    vehicle_in.insurance_renewal_date
-                )
-            )
-            row = cur.fetchone()
-            db.commit()
-            return VehicleOut(
-                id=row[0],
-                user_id=row[1],
-                make_model=row[2],
-                purchase_cost=float(row[3]),
-                insurance_renewal_date=row[4],
-                created_at=row[5]
-            )
-        except Exception as e:
-            db.rollback()
-            logger.error(f"Failed to add vehicle: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Could not add vehicle"
-            )
-
-@router.get("/vehicles", response_model=List[VehicleOut])
-def list_vehicles(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
-    with db.cursor() as cur:
-        cur.execute(
-            "SELECT id, user_id, make_model, purchase_cost, insurance_renewal_date, created_at FROM vehicles WHERE user_id = %s",
-            (current_user.id,)
-        )
-        rows = cur.fetchall()
-        return [
-            VehicleOut(
-                id=r[0],
-                user_id=r[1],
-                make_model=r[2],
-                purchase_cost=float(r[3]),
-                insurance_renewal_date=r[4],
-                created_at=r[5]
-            )
-            for r in rows
-        ]
-
-@router.delete("/vehicles/{vehicle_id}", status_code=status.HTTP_200_OK)
-def delete_vehicle(vehicle_id: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
-    with db.cursor() as cur:
-        cur.execute("DELETE FROM vehicles WHERE id = %s AND user_id = %s", (vehicle_id, current_user.id))
-        db.commit()
-        return {"message": "Vehicle deleted successfully"}
+# Vehicles router has been extracted to a separate router in routes/vehicles.py
 
 # PUT Update Asset (Protected)
 @router.put("/{asset_id}", response_model=AssetOut)

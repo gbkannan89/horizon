@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/financial_provider.dart';
+import '../models/financial_models.dart';
 import '../utils/ui_utils.dart';
 import '../main.dart';
 import 'statement_insights_screen.dart';
@@ -1207,17 +1208,745 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Color _getBucketColor(String bucket) => _getColorForBucket(bucket);
 
   @override
+  int _selectedTab = 0; // 0 = Budget Plan, 1 = Expenses/Transactions
+
+  void _showAddBudgetItemModal(BuildContext context) {
+    final labelCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String category = 'food';
+    String bucket = 'Needs';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+            left: 24, right: 24, top: 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Add Budget Item', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: labelCtrl,
+                  decoration: const InputDecoration(labelText: 'Label (e.g. Groceries)'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Monthly Budget Amount (₹)'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: category,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: const [
+                    DropdownMenuItem(value: 'food', child: Text('Food')),
+                    DropdownMenuItem(value: 'housing', child: Text('Housing')),
+                    DropdownMenuItem(value: 'transport', child: Text('Transport')),
+                    DropdownMenuItem(value: 'health', child: Text('Health')),
+                    DropdownMenuItem(value: 'education', child: Text('Education')),
+                    DropdownMenuItem(value: 'entertainment', child: Text('Entertainment')),
+                    DropdownMenuItem(value: 'savings', child: Text('Savings')),
+                    DropdownMenuItem(value: 'debt', child: Text('Debt')),
+                    DropdownMenuItem(value: 'other', child: Text('Other')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => category = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: bucket,
+                  decoration: const InputDecoration(labelText: 'Bucket (50/30/20)'),
+                  items: const [
+                    DropdownMenuItem(value: 'Needs', child: Text('Needs (50%)')),
+                    DropdownMenuItem(value: 'Wants', child: Text('Wants (30%)')),
+                    DropdownMenuItem(value: 'Savings', child: Text('Savings (20%)')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => bucket = v);
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (labelCtrl.text.isEmpty || amountCtrl.text.isEmpty) return;
+                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                      try {
+                        await Provider.of<FinancialProvider>(context, listen: false)
+                            .addBudgetItem({
+                          'label': labelCtrl.text.trim(),
+                          'amount': amt,
+                          'category': category,
+                          'bucket': bucket,
+                        });
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        UiUtils.showSnack(context, 'Budget item added');
+                      } catch (e) {
+                        UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+                    child: const Text('Save', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditBudgetItemModal(BuildContext context, LocalBudgetItem item) {
+    final amountCtrl = TextEditingController(text: item.amount.toStringAsFixed(0));
+    final labelCtrl = TextEditingController(text: item.label);
+    String category = item.category;
+    String bucket = item.bucket;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+            left: 24, right: 24, top: 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Edit Budget Item', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: labelCtrl,
+                  decoration: const InputDecoration(labelText: 'Label'),
+                  readOnly: item.isAuto,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Monthly Budget Amount (₹)'),
+                ),
+                if (!item.isAuto) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: category,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: const [
+                      DropdownMenuItem(value: 'food', child: Text('Food')),
+                      DropdownMenuItem(value: 'housing', child: Text('Housing')),
+                      DropdownMenuItem(value: 'transport', child: Text('Transport')),
+                      DropdownMenuItem(value: 'health', child: Text('Health')),
+                      DropdownMenuItem(value: 'education', child: Text('Education')),
+                      DropdownMenuItem(value: 'entertainment', child: Text('Entertainment')),
+                      DropdownMenuItem(value: 'savings', child: Text('Savings')),
+                      DropdownMenuItem(value: 'debt', child: Text('Debt')),
+                      DropdownMenuItem(value: 'other', child: Text('Other')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => category = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: bucket,
+                    decoration: const InputDecoration(labelText: 'Bucket (50/30/20)'),
+                    items: const [
+                      DropdownMenuItem(value: 'Needs', child: Text('Needs (50%)')),
+                      DropdownMenuItem(value: 'Wants', child: Text('Wants (30%)')),
+                      DropdownMenuItem(value: 'Savings', child: Text('Savings (20%)')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => bucket = v);
+                    },
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (amountCtrl.text.isEmpty) return;
+                      final amt = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                      try {
+                        await Provider.of<FinancialProvider>(context, listen: false)
+                            .updateBudgetItem(item.id, {
+                          if (!item.isAuto) 'label': labelCtrl.text.trim(),
+                          'amount': amt,
+                          if (!item.isAuto) 'category': category,
+                          if (!item.isAuto) 'bucket': bucket,
+                        });
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        UiUtils.showSnack(context, 'Budget item updated');
+                      } catch (e) {
+                        UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+                    child: const Text('Update', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanTab(FinancialProvider provider) {
+    final plan = provider.budgetPlan;
+    final comparison = provider.budgetComparison;
+
+    if (plan == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final autoItems = plan.items.where((i) => i.isAuto).toList();
+    final manualItems = plan.items.where((i) => !i.isAuto).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Budget Vs Spent summary card
+        if (comparison != null) ...[
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF042F2E), Color(0xFF0D9488)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total Budgeted', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      '₹${comparison.budgeted.total.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Actual Spent', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      '₹${comparison.actual.total.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: comparison.budgeted.total > 0 ? (comparison.actual.total / comparison.budgeted.total).clamp(0.0, 1.0) : 0.0,
+                    backgroundColor: Colors.white24,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF14B8A6)),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Remaining: ₹${comparison.remaining.total.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      comparison.budgeted.total > 0
+                          ? '${(comparison.actual.total / comparison.budgeted.total * 100).toStringAsFixed(0)}% spent'
+                          : '0% spent',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    )
+                  ],
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 50/30/20 Breakdown Display
+          const Text('50/30/20 Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _buildBucketBar('Needs (50%)', comparison.budgeted.needs, comparison.budgeted.total, const Color(0xFFE88A1A)),
+                  const SizedBox(height: 12),
+                  _buildBucketBar('Wants (30%)', comparison.budgeted.wants, comparison.budgeted.total, const Color(0xFF6B46C1)),
+                  const SizedBox(height: 12),
+                  _buildBucketBar('Savings (20%)', comparison.budgeted.savings, comparison.budgeted.total, const Color(0xFF059669)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        // Empty state & auto populate trigger
+        if (plan.items.isEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('No budget items set for this month.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 8),
+                const Text('Auto-populate from active bills, EMIs, and family recurring costs.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    UiUtils.showSnack(context, 'Auto-populating budget items...');
+                    await provider.autoPopulateBudget();
+                  },
+                  icon: const Icon(Icons.autorenew, color: Colors.white),
+                  label: const Text('Auto-Populate Plan', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D9488),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          // Group 1: Auto-populated Commitments
+          if (autoItems.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Profile & Bill Commitments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                IconButton(
+                  icon: const Icon(Icons.autorenew, color: Color(0xFF0D9488)),
+                  onPressed: () async {
+                    UiUtils.showSnack(context, 'Syncing recurring profile items...');
+                    await provider.autoPopulateBudget();
+                  },
+                )
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...autoItems.map((item) => _buildBudgetItemTile(item)),
+            const SizedBox(height: 20),
+          ],
+
+          // Group 2: Manual items
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Manual Budget Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              TextButton.icon(
+                onPressed: () => _showAddBudgetItemModal(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add Item'),
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF0D9488)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (manualItems.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: Text('No manual budget items added yet.', style: TextStyle(color: Colors.grey))),
+            )
+          else
+            ...manualItems.map((item) => _buildBudgetItemTile(item)),
+        ],
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  Widget _buildBucketBar(String label, double value, double total, Color color) {
+    final pct = total > 0 ? value / total : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            Text('₹${value.toStringAsFixed(0)} (${(pct * 100).toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: pct,
+            backgroundColor: Colors.grey.shade100,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBudgetItemTile(LocalBudgetItem item) {
+    final color = _getColorForBucket(item.bucket);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            item.isAuto ? Icons.sync_lock_rounded : Icons.edit_note_rounded,
+            color: color,
+            size: 20,
+          ),
+        ),
+        title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(
+          '${item.category.toUpperCase()} • ${item.bucket}',
+          style: const TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '₹${item.amount.toStringAsFixed(0)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showEditBudgetItemModal(context, item),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.edit_outlined, size: 16, color: Colors.grey),
+              ),
+            ),
+            if (!item.isAuto) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () async {
+                  UiUtils.showDeleteBottomSheet(context, item.label, () async {
+                    await Provider.of<FinancialProvider>(context, listen: false)
+                        .deleteBudgetItem(item.id);
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                ),
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpensesTab(FinancialProvider provider) {
+    double totalBills = provider.bills.fold(0.0, (s, b) => s + b.amount);
+    int billPct = provider.totalIncomeAgg > 0 ? (totalBills / provider.totalIncomeAgg * 100).toInt() : 0;
+
+    return Column(
+      children: [
+        _buildPieChartCard(provider),
+        const SizedBox(height: 20),
+
+        // Committed Bills
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Committed Bills', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('₹${totalBills.toStringAsFixed(0)}/month ($billPct% of income)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Left to spend
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Needs Left', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('₹${(provider.needsBudget - provider.needsSpent).clamp(0, double.infinity).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFE88A1A), fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Wants Left', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('₹${(provider.wantsBudget - provider.wantsSpent).clamp(0, double.infinity).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF6B46C1), fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+        const SizedBox(height: 32),
+
+        // Recent Expenses Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('${_filteredExpenses(provider).length} transactions',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Bucket Filter
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              _filterChip('All', null, const Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              _filterChip('Needs', 'Needs', const Color(0xFFE88A1A)),
+              const SizedBox(width: 4),
+              _filterChip('Wants', 'Wants', const Color(0xFF6B46C1)),
+              const SizedBox(width: 4),
+              _filterChip('Savings', 'Savings', const Color(0xFF059669)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Upload Statement Card
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)]),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () async {
+                try {
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['csv', 'xlsx'],
+                  );
+                  if (result != null && result.files.single.path != null) {
+                    _showUploadProgressDialog(context, result.files.single.path!);
+                  }
+                } catch (e) {
+                  UiUtils.showSnack(context, 'Upload failed: $e', isError: true);
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 26),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Upload Bank Statement', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              _formatBadge('CSV'),
+                              const SizedBox(width: 6),
+                              _formatBadge('XLSX'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Analyze Now Card
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () async {
+                UiUtils.showSnack(context, 'Analyzing your finances...');
+                await provider.runFullAnalysis();
+                if (context.mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const StatementInsightsScreen()),
+                  );
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.analytics_outlined, color: Color(0xFF0D9488), size: 26),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Analyze Existing Data',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                          SizedBox(height: 4),
+                          Text('Detect recurring, patterns & subscriptions',
+                              style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Expense List
+        ..._filteredExpenses(provider).take(_visibleCount).map((exp) => _buildExpenseItem(exp)),
+
+        if (_filteredExpenses(provider).length > _visibleCount) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _visibleCount += 10;
+                });
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0D9488),
+                side: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.expand_more_rounded, size: 20),
+              label: Text(
+                'Show ${(_filteredExpenses(provider).length - _visibleCount).clamp(0, 10)} More',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 24),
+        _buildCategoryBreakdown(provider.budgetBreakdown),
+        _buildBucketComparison(provider.budgetBreakdown),
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<FinancialProvider>(
       builder: (context, provider, child) {
-
-
-        double totalBudget = provider.needsBudget + provider.wantsBudget + provider.savingsBudget;
-        double overallPct = totalBudget > 0 ? provider.totalSpent / totalBudget : 0.0;
-        
-        double totalBills = provider.bills.fold(0, (s, b) => s + b.amount);
-        int billPct = provider.totalIncomeAgg > 0 ? (totalBills / provider.totalIncomeAgg * 100).toInt() : 0;
-        
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
           body: SafeArea(
@@ -1226,7 +1955,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 if (provider.isLoading)
                   LinearProgressIndicator(
                     backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                    valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF0D9488)),
                     minHeight: 4,
                   ),
                 Expanded(
@@ -1236,334 +1965,146 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     },
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                // Month Selector
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.chevron_left, color: Colors.blue.shade700),
-                      onPressed: () => provider.previousMonth(),
-                    ),
-                    DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: '${provider.selectedMonth}-${provider.selectedYear}',
-                        icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                        items: (() {
-                          List<DropdownMenuItem<String>> items = [];
-                          bool foundSelected = false;
-                          String selectedVal = '${provider.selectedMonth}-${provider.selectedYear}';
-
-                          for (int index = -6; index < 24; index++) {
-                            int y = DateTime.now().year - (index ~/ 12);
-                            int m = DateTime.now().month - (index % 12);
-                            
-                            // Handling negative modulo edge cases safely
-                            while (m <= 0) { m += 12; y -= 1; }
-                            while (m > 12) { m -= 12; y += 1; }
-
-                            String val = '$m-$y';
-                            if (val == selectedVal) foundSelected = true;
-                            
-                            // Prevent duplicates
-                            if (!items.any((item) => item.value == val)) {
-                              items.add(DropdownMenuItem(value: val, child: Text(_getMonthName(m, y))));
-                            }
-                          }
-                          
-                          if (!foundSelected) {
-                            items.insert(0, DropdownMenuItem(
-                              value: selectedVal,
-                              child: Text(_getMonthName(provider.selectedMonth, provider.selectedYear)),
-                            ));
-                          }
-                          
-                          return items;
-                        })(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            final parts = val.split('-');
-                            provider.selectedMonth = int.parse(parts[0]);
-                            provider.selectedYear = int.parse(parts[1]);
-                            provider.loadAllData();
-                          }
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.chevron_right, color: Colors.blue.shade700),
-                      onPressed: () => provider.nextMonth(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                _buildPieChartCard(provider),
-                const SizedBox(height: 20),
-
-                // Committed Bills
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
                         children: [
-                          const Text('Committed Bills', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                          const SizedBox(height: 4),
-                          Text('₹${totalBills.toStringAsFixed(0)}/month ($billPct% of income)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ],
-            ),
-            ],
-            ),
-            ),
-            const SizedBox(height: 20),
+                          // Month Selector
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.chevron_left, color: Color(0xFF0D9488)),
+                                onPressed: () => provider.previousMonth(),
+                              ),
+                              DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: '${provider.selectedMonth}-${provider.selectedYear}',
+                                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0D9488)),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                                  items: (() {
+                                    List<DropdownMenuItem<String>> items = [];
+                                    bool foundSelected = false;
+                                    String selectedVal = '${provider.selectedMonth}-${provider.selectedYear}';
 
-                // Left to spend
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Needs Left', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            Text('₹${(provider.needsBudget - provider.needsSpent).clamp(0, double.infinity).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFE88A1A), fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5F3FF),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Wants Left', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            Text('₹${(provider.wantsBudget - provider.wantsSpent).clamp(0, double.infinity).toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF6B46C1), fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-                const SizedBox(height: 32),
+                                    for (int index = -6; index < 24; index++) {
+                                      int y = DateTime.now().year - (index ~/ 12);
+                                      int m = DateTime.now().month - (index % 12);
+                                      
+                                      while (m <= 0) { m += 12; y -= 1; }
+                                      while (m > 12) { m -= 12; y += 1; }
 
-                // Recent Expenses Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('${_filteredExpenses(provider).length} transactions',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                                      String val = '$m-$y';
+                                      if (val == selectedVal) foundSelected = true;
+                                      
+                                      if (!items.any((item) => item.value == val)) {
+                                        items.add(DropdownMenuItem(value: val, child: Text(_getMonthName(m, y))));
+                                      }
+                                    }
+                                    
+                                    if (!foundSelected) {
+                                      items.insert(0, DropdownMenuItem(
+                                        value: selectedVal,
+                                        child: Text(_getMonthName(provider.selectedMonth, provider.selectedYear)),
+                                      ));
+                                    }
+                                    
+                                    return items;
+                                  })(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      final parts = val.split('-');
+                                      provider.selectedMonth = int.parse(parts[0]);
+                                      provider.selectedYear = int.parse(parts[1]);
+                                      provider.loadAllData();
+                                    }
+                                  },
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.chevron_right, color: Color(0xFF0D9488)),
+                                onPressed: () => provider.nextMonth(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
 
-                // Bucket Filter
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      _filterChip('All', null, const Color(0xFF64748B)),
-                      const SizedBox(width: 4),
-                      _filterChip('Needs', 'Needs', const Color(0xFFE88A1A)),
-                      const SizedBox(width: 4),
-                      _filterChip('Wants', 'Wants', const Color(0xFF6B46C1)),
-                      const SizedBox(width: 4),
-                      _filterChip('Savings', 'Savings', const Color(0xFF059669)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Upload Statement Card
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)]),
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () async {
-                        try {
-                          FilePickerResult? result = await FilePicker.platform.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: ['csv', 'xlsx'],
-                          );
-                          if (result != null && result.files.single.path != null) {
-                            if (context.mounted) _showUploadProgressDialog(context, result.files.single.path!);
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            UiUtils.showSnack(context, 'Upload failed: $e', isError: true);
-                          }
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-                              child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 26),
+                          // Tab bar selectors
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Upload Bank Statement', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      _formatBadge('CSV'),
-                                      const SizedBox(width: 6),
-                                      _formatBadge('XLSX'),
-                                    ],
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedTab = 0),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _selectedTab == 0 ? Colors.white : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: _selectedTab == 0
+                                            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                            : null,
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'Budget Plan',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedTab = 1),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _selectedTab == 1 ? Colors.white : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: _selectedTab == 1
+                                            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                            : null,
+                                      ),
+                                      child: const Center(
+                                        child: Text(
+                                          'Expenses',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          if (_selectedTab == 0)
+                            _buildPlanTab(provider)
+                          else
+                            _buildExpensesTab(provider),
+                        ],
                       ),
                     ),
                   ),
                 ),
-
-                // Analyze Now Card
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () async {
-                        final fp = Provider.of<FinancialProvider>(context, listen: false);
-                        UiUtils.showSnack(context, 'Analyzing your finances...');
-                        await fp.runFullAnalysis();
-                        if (context.mounted) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const StatementInsightsScreen()),
-                          );
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0D9488).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.analytics_outlined, color: Color(0xFF0D9488), size: 26),
-                            ),
-                            const SizedBox(width: 16),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Analyze Existing Data',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
-                                  SizedBox(height: 4),
-                                  Text('Detect recurring, patterns & subscriptions',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-
-
-                // Expense List
-                ..._filteredExpenses(provider).take(_visibleCount).map((exp) => _buildExpenseItem(exp)),
-
-                if (_filteredExpenses(provider).length > _visibleCount) ...[
-                  const SizedBox(height: 12),
-                  Center(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _visibleCount += 10;
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0D9488),
-                        side: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      icon: const Icon(Icons.expand_more_rounded, size: 20),
-                      label: Text(
-                        'Show ${(_filteredExpenses(provider).length - _visibleCount).clamp(0, 10)} More',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Analytics
-                _buildCategoryBreakdown(provider.budgetBreakdown),
-                _buildBucketComparison(provider.budgetBreakdown),
-
-                const SizedBox(height: 80),
               ],
             ),
           ),
-          ),
-          ),
-        ],
-      ),
-    ),
-    floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddExpenseModal(context),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              if (_selectedTab == 0) {
+                _showAddBudgetItemModal(context);
+              } else {
+                _showAddExpenseModal(context);
+              }
+            },
             backgroundColor: const Color(0xFF0D9488),
             child: const Icon(Icons.add, color: Colors.white),
           ),
