@@ -5,9 +5,6 @@ import 'dashboard_screen.dart';
 import 'budget_screen.dart';
 import 'profile_screen.dart';
 import 'portfolio_screen.dart';
-import 'discipline_dashboard_screen.dart';
-import 'advisor_hub_screen.dart';
-import '../services/discipline_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -16,32 +13,28 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> with SingleTickerProviderStateMixin {
+class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const DashboardScreen(),
-    const PortfolioScreen(),
-    const BudgetScreen(),
-    const AdvisorHubScreen(),
-    DisciplineDashboardScreen(disciplineService: DisciplineService()),
-    const ProfileScreen(),
+  final List<Widget> _pages = const [
+    DashboardScreen(),
+    PortfolioScreen(),
+    BudgetScreen(),
+    ProfileScreen(),
   ];
 
   final List<_NavItem> _navItems = const [
-    _NavItem(icon: Icons.home_outlined,               activeIcon: Icons.home_rounded,             label: 'Home'),
-    _NavItem(icon: Icons.account_balance_outlined,    activeIcon: Icons.account_balance_rounded,  label: 'Portfolio'),
-    _NavItem(icon: Icons.pie_chart_outline_rounded,   activeIcon: Icons.pie_chart_rounded,        label: 'Budget'),
-    _NavItem(icon: Icons.auto_awesome_outlined,       activeIcon: Icons.auto_awesome_rounded,     label: 'Advisor'),
-    _NavItem(icon: Icons.shield_outlined,             activeIcon: Icons.shield_rounded,           label: 'Discipline'),
-    _NavItem(icon: Icons.person_outline_rounded,      activeIcon: Icons.person_rounded,           label: 'Profile'),
+    _NavItem(icon: Icons.home_outlined,             activeIcon: Icons.home_rounded,          label: 'Home'),
+    _NavItem(icon: Icons.account_balance_outlined,  activeIcon: Icons.account_balance_rounded, label: 'Portfolio'),
+    _NavItem(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded,      label: 'Budget'),
+    _NavItem(icon: Icons.person_outline_rounded,     activeIcon: Icons.person_rounded,         label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
     ));
 
     return Scaffold(
@@ -53,17 +46,18 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
   Widget _buildBottomNav() {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF042F2E).withValues(alpha: 0.8),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+            color: Colors.white.withValues(alpha: 0.78),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 1)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, -4))],
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.only(top: 6, bottom: 4),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(_navItems.length, (i) => _buildNavTile(i)),
               ),
             ),
@@ -81,34 +75,32 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
       onTap: () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 12, vertical: 8),
+        width: selected ? 90 : 64,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: selected ? Border.all(color: Colors.white.withValues(alpha: 0.1)) : null,
+          color: selected ? const Color(0xFF0D9488).withValues(alpha: 0.10) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               selected ? item.activeIcon : item.icon,
-              color: selected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+              color: selected ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
               size: 22,
             ),
-            if (selected) ...[
-              const SizedBox(width: 6),
-              Text(
-                item.label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  letterSpacing: 0.2,
-                ),
+            const SizedBox(height: 2),
+            Text(
+              item.label,
+              style: TextStyle(
+                fontSize: selected ? 11 : 10,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+                letterSpacing: 0.1,
               ),
-            ],
+            ),
           ],
         ),
       ),

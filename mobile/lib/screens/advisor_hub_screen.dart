@@ -27,8 +27,23 @@ class _AdvisorHubScreenState extends State<AdvisorHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Financial Advisor')),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+          ),
+        ),
+        child: SafeArea(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: const Text('Financial Advisor'),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              foregroundColor: const Color(0xFF0F172A),
+            ),
       body: Consumer<FinancialProvider>(
         builder: (context, fp, _) {
           final activeNudges = fp.nudges.where((n) => n['is_dismissed'] == false).length;
@@ -116,6 +131,9 @@ class _AdvisorHubScreenState extends State<AdvisorHubScreen> {
             ),
           );
         },
+      ),
+      ),
+      ),
       ),
     );
   }

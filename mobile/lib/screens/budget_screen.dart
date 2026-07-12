@@ -1948,8 +1948,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return Consumer<FinancialProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF8F9FA),
-          body: SafeArea(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+              ),
+            ),
+            child: SafeArea(
             child: Column(
               children: [
                 if (provider.isLoading)
@@ -2096,6 +2103,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ),
               ],
             ),
+          ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {

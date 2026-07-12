@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../providers/financial_provider.dart';
 import '../providers/auth_provider.dart';
 import 'financial_score_screen.dart';
@@ -31,67 +30,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Color(int.parse('0x$hex'));
   }
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FinancialProvider>();
     final authProvider = context.watch<AuthProvider>();
     final userName = authProvider.user?['name'] ?? 'Guest';
-    final userInitial = userName.isNotEmpty ? userName.substring(0, 1).toUpperCase() : 'G';
     final loaded = !provider.isLoading;
 
     return Scaffold(
       body: Stack(
         children: [
-          // ── Deep gradient background for glass effect ─────────────────────
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0A0F2C), Color(0xFF042F2E), Color(0xFF0D9488)],
+          // ── Light gradient background ────────────────────────────────────
+          Positioned.fill(
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+                ),
               ),
             ),
           ),
-          // ── Blurred decorative blobs for depth ───────────────────────────
+          // ── Accent blobs ──────────────────────────────────────────────────
           Positioned(
-            top: -100,
-            right: -60,
+            top: -80, right: -80,
             child: Container(
               width: 300, height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF14B8A6).withValues(alpha: 0.12),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF0D9488).withValues(alpha: 0.18),
+                  const Color(0xFF0D9488).withValues(alpha: 0.05),
+                  const Color(0xFF0D9488).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
           Positioned(
-            bottom: -80,
-            left: -80,
+            bottom: -60, left: -80,
             child: Container(
               width: 250, height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF0891B2).withValues(alpha: 0.1),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF909AC6).withValues(alpha: 0.15),
+                  const Color(0xFF909AC6).withValues(alpha: 0.04),
+                  const Color(0xFF909AC6).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
           Positioned(
-            top: 300,
-            left: -40,
+            top: 320, left: -40,
             child: Container(
               width: 180, height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF2DD4BF).withValues(alpha: 0.06),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFFFBBF24).withValues(alpha: 0.10),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.03),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.0),
+                ]),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: CustomPaint(painter: _GridPainter()),
+          ),
+          // ── Frosted glass backdrop ────────────────────────────────────────
+          Positioned.fill(
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  foregroundDecoration: BoxDecoration(
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                  ),
+                ),
               ),
             ),
           ),
@@ -102,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: CustomScrollView(
               slivers: [
                 // ── Glass hero header ─────────────────────────────────────────
-                SliverToBoxAdapter(child: _buildHeroHeader(provider, userName, userInitial, loaded)),
+                SliverToBoxAdapter(child: _buildHeroHeader(provider, userName, loaded)),
 
                 // ── Body cards ───────────────────────────────────────────────────
                 SliverPadding(
@@ -111,12 +128,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     delegate: SliverChildListDelegate([
                       const SizedBox(height: 20),
                       _buildAnimatedSection(_buildIncomeSpentRow(provider, loaded), 100),
-                      const SizedBox(height: 20),
-                      _buildAnimatedSection(_buildBudgetCard(provider, loaded), 200),
-                      const SizedBox(height: 20),
-                      _buildAnimatedSection(_buildSpendingTrend(provider, loaded), 250),
-                      const SizedBox(height: 20),
-                      _buildAnimatedSection(_buildFinancialInsights(provider, loaded), 300),
                       const SizedBox(height: 20),
                       _buildAnimatedSection(_buildColdPurchaseCountdown(provider, loaded), 400),
                       const SizedBox(height: 20),
@@ -148,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── HERO HEADER ────────────────────────────────────────────────────────────
-  Widget _buildHeroHeader(FinancialProvider p, String userName, String userInitial, bool loaded) {
+  Widget _buildHeroHeader(FinancialProvider p, String userName, bool loaded) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeOutCubic,
@@ -157,127 +168,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
         offset: Offset(0, -20 * (1 - value)),
         child: Opacity(
           opacity: value,
-          child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [const Color(0xFF042F2E).withValues(alpha: 0.85), const Color(0xFF0D9488).withValues(alpha: 0.75), const Color(0xFF14B8A6).withValues(alpha: 0.7)],
-          ),
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
-        ),
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Top row
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_greeting(), style: const TextStyle(color: Color(0xFF93C5FD), fontSize: 14, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text('$userName 👋', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
-          ]),
-          GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NudgeCenterScreen())),
-            child: Stack(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
-                ),
-                if (loaded && p.nudges.isNotEmpty)
-                  Positioned(
-                    right: 4, top: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                      child: Text(
-                        '${p.nudges.length > 9 ? '9+' : p.nudges.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, height: 1),
-                      ),
-                    ),
-                  ),
-              ],
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.55),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
             ),
-          ),
-        ]),
-
-        const SizedBox(height: 28),
-
-        // Score + Net Worth row
-        Row(children: [
-          // Financial Score ring
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancialScoreScreen()));
-            },
-            child: Stack(alignment: Alignment.center, children: [
-              CircularPercentIndicator(
-                radius: 52,
-                lineWidth: 7,
-                percent: loaded ? (p.finScoreVal / 100.0).clamp(0.0, 1.0) : 0.0,
-                progressColor: const Color(0xFF34D399),
-                backgroundColor: Colors.white.withValues(alpha: 0.15),
-                circularStrokeCap: CircularStrokeCap.round,
-                center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(loaded ? '${p.finScoreVal}' : '--',
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white)),
-                  const Text('/100', style: TextStyle(fontSize: 10, color: Color(0xFF93C5FD))),
+            margin: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Good to see you!', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 2),
+                  Text('$userName 👋', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 22, fontWeight: FontWeight.w800)),
                 ]),
-              ),
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NudgeCenterScreen())),
+                  child: Stack(children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                      child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0D9488), size: 22),
+                    ),
+                    if (loaded && p.nudges.isNotEmpty)
+                      Positioned(right: 4, top: 4, child: Container(
+                        padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                        child: Text('${p.nudges.length > 9 ? '9+' : p.nudges.length}',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, height: 1)),
+                      )),
+                  ]),
+                ),
+              ]),
+              const SizedBox(height: 28),
+              Row(children: [
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancialScoreScreen())),
+                  child: Stack(alignment: Alignment.center, children: [
+                    CircularPercentIndicator(
+                      radius: 52, lineWidth: 7,
+                      percent: loaded ? (p.finScoreVal / 100.0).clamp(0.0, 1.0) : 0.0,
+                      progressColor: const Color(0xFF34D399),
+                      backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                      circularStrokeCap: CircularStrokeCap.round,
+                      center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(loaded ? '${p.finScoreVal}' : '--',
+                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+                        const Text('/100', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ]),
+                    ),
+                  ]),
+                ),
+                const SizedBox(width: 20),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Financial Score', style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 4),
+                  Text(loaded && p.finScoreVal >= 80 ? '🌟 Excellent' : loaded && p.finScoreVal >= 60 ? '👍 Good' : '⚡ Improving',
+                    style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 16),
+                  const Text('Net Worth', style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 2),
+                  Text(loaded ? '₹${_formatNum(p.netWorth)}' : '₹--',
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                  if (loaded && p.netWorthChange != 0) ...[
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Icon(p.netWorthChange > 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        color: p.netWorthChange > 0 ? const Color(0xFF059669) : const Color(0xFFEF4444), size: 14),
+                      const SizedBox(width: 4),
+                      Text('${p.netWorthChange > 0 ? '+' : '-'}₹${_formatNum(p.netWorthChange.abs())} ${p.netWorthChangePeriod}',
+                        style: TextStyle(color: p.netWorthChange > 0 ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                          fontSize: 12, fontWeight: FontWeight.w600)),
+                    ]),
+                  ],
+                ])),
+              ]),
             ]),
           ),
-          const SizedBox(width: 20),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Financial Score', style: TextStyle(color: Color(0xFF93C5FD), fontSize: 12, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            Text(
-              loaded && p.finScoreVal >= 80 ? '🌟 Excellent' : loaded && p.finScoreVal >= 60 ? '👍 Good' : '⚡ Improving',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 16),
-            const Text('Net Worth', style: TextStyle(color: Color(0xFF93C5FD), fontSize: 12, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(
-              loaded ? '₹${_formatNum(p.netWorth)}' : '₹--',
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5),
-            ),
-            if (loaded && p.netWorthChange != 0) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    p.netWorthChange > 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                    color: p.netWorthChange > 0 ? const Color(0xFF34D399) : const Color(0xFFF87171),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${p.netWorthChange > 0 ? '+' : '-'}₹${_formatNum(p.netWorthChange.abs())} ${p.netWorthChangePeriod}',
-                    style: TextStyle(
-                      color: p.netWorthChange > 0 ? const Color(0xFF34D399) : const Color(0xFFF87171),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ])),
-        ]),
-      ]),
-    ),
         ),
       ),
-    ),
-  ),
-  );
+    );
   }
-
   // ── INCOME / SPENT / LEFT CARDS ────────────────────────────────────────────
   Widget _buildIncomeSpentRow(FinancialProvider p, bool loaded) {
     return Row(children: [
@@ -290,184 +262,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _miniCard(String label, String value, Color color, IconData icon) {
-    return Expanded(child: ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Expanded(child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 15, offset: const Offset(0, 3))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
               padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
               child: Icon(icon, color: color, size: 16),
             ),
             const SizedBox(height: 10),
-            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
             Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
           ]),
         ),
-      ),
-    ));
-  }
-
-  // ── BUDGET OVERVIEW ────────────────────────────────────────────────────────
-  Widget _buildBudgetCard(FinancialProvider p, bool loaded) {
-    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _cardHeader('Budget Overview', Icons.pie_chart_rounded, const Color(0xFF6B46C1)),
-      const SizedBox(height: 20),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _budgetCircle('Needs',    p.needsSpent,   p.needsBudget,   const Color(0xFFE88A1A), loaded),
-        _budgetCircle('Wants',    p.wantsSpent,   p.wantsBudget,   const Color(0xFF6B46C1), loaded),
-        _budgetCircle('Savings',  p.savingsSpent, p.savingsBudget, const Color(0xFF059669), loaded),
-      ]),
-    ]));
-  }
-
-  Widget _budgetCircle(String label, double spent, double budget, Color color, bool loaded) {
-    final pct = loaded && budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
-    return Column(children: [
-      CircularPercentIndicator(
-        radius: 40, lineWidth: 7,
-        percent: pct,
-        progressColor: color,
-        backgroundColor: color.withValues(alpha: 0.1),
-        circularStrokeCap: CircularStrokeCap.round,
-        center: Text('${(pct * 100).toInt()}%',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
-      ),
-      const SizedBox(height: 10),
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white)),
-      const SizedBox(height: 2),
-      Text(
-        loaded ? '₹${_formatNum(spent)} / ₹${_formatNum(budget)}' : '--',
-        style: const TextStyle(color: Colors.white54, fontSize: 10),
-      ),
-    ]);
-  }
-
-  // ── SPENDING TREND ─────────────────────────────────────────────────────────
-  Widget _buildSpendingTrend(FinancialProvider p, bool loaded) {
-    if (!loaded || p.spendingTrend.isEmpty) return const SizedBox.shrink();
-
-    final trend = p.spendingTrend;
-    double maxVal = 0;
-    for (final t in trend) {
-      maxVal = [maxVal, (t['needs'] ?? 0).toDouble(), (t['wants'] ?? 0).toDouble(), (t['savings'] ?? 0).toDouble()].reduce((a, b) => a > b ? a : b);
-    }
-
-    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _cardHeader('Spending Trend', Icons.trending_up_rounded, const Color(0xFF6B46C1)),
-      const SizedBox(height: 20),
-      SizedBox(
-        height: 180,
-        child: LineChart(
-          LineChartData(
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
-              getDrawingHorizontalLine: (v) => FlLine(color: Colors.white24, strokeWidth: 1),
-            ),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, interval: 1,
-                getTitlesWidget: (v, _) {
-                  final i = v.toInt();
-                  if (i < 0 || i >= trend.length) return const SizedBox();
-                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(trend[i]['month'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.w600)));
-                },
-              )),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              _trendLine(trend, 'needs', const Color(0xFFE88A1A)),
-              _trendLine(trend, 'wants', const Color(0xFF6B46C1)),
-              _trendLine(trend, 'savings', const Color(0xFF059669)),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        _legendDot('Needs', const Color(0xFFE88A1A)),
-        const SizedBox(width: 16),
-        _legendDot('Wants', const Color(0xFF6B46C1)),
-        const SizedBox(width: 16),
-        _legendDot('Savings', const Color(0xFF059669)),
-      ]),
-    ]));
-  }
-
-  LineChartBarData _trendLine(List<dynamic> data, String key, Color color) {
-    return LineChartBarData(
-      spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value[key] ?? 0).toDouble())).toList(),
-      isCurved: true,
-      color: color,
-      barWidth: 2.5,
-      isStrokeCapRound: true,
-      dotData: FlDotData(show: false),
-      belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-        colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.01)],
-        begin: Alignment.topCenter, end: Alignment.bottomCenter,
-      )),
     );
-  }
-
-  Widget _legendDot(String label, Color color) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.w600)),
-    ]);
-  }
-
-  // ── FINANCIAL INSIGHTS ─────────────────────────────────────────────────────
-  Widget _buildFinancialInsights(FinancialProvider p, bool loaded) {
-    if (!loaded) return const SizedBox.shrink();
-    
-    double savingsRate = p.totalIncomeAgg > 0 ? (p.savingsSpent / p.totalIncomeAgg * 100) : 0;
-    
-    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.insights_rounded, color: Color(0xFF2DD4BF), size: 20),
-        ),
-        const SizedBox(width: 12),
-        const Text('Financial Insights', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-      ]),
-      const SizedBox(height: 20),
-      _insightRow('Savings Rate', '${savingsRate.toStringAsFixed(1)}%', 'of your income goes to savings.', Icons.savings_outlined, const Color(0xFF059669)),
-      Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Colors.white12)),
-      _insightRow('Needs Consumption', '${p.totalIncomeAgg > 0 ? (p.needsSpent / p.totalIncomeAgg * 100).toStringAsFixed(1) : 0}%', 'of your income is spent on needs.', Icons.home_outlined, const Color(0xFFE88A1A)),
-    ]));
-  }
-
-  Widget _insightRow(String title, String value, String subtitle, IconData icon, Color color) {
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-        child: Icon(icon, color: color, size: 16),
-      ),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white70)),
-        Row(children: [
-          Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
-          const SizedBox(width: 6),
-          Expanded(child: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.white54), overflow: TextOverflow.ellipsis)),
-        ]),
-      ])),
-    ]);
   }
 
   // ── COLD PURCHASE COUNTDOWN ────────────────────────────────────────────────
@@ -490,7 +305,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: const Icon(Icons.ac_unit_rounded, color: Color(0xFF0891B2), size: 18),
               ),
               const SizedBox(width: 10),
-              const Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white)),
+              const Text('Cold Purchase Countdown', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF0F172A))),
             ],
           ),
         ),
@@ -717,7 +532,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _cardHeader('Financial Goals', Icons.flag_rounded, const Color(0xFF059669)),
       const SizedBox(height: 16),
       if (loaded && p.goals.isEmpty)
-        const Text('No goals set yet.', style: TextStyle(color: Colors.white54, fontSize: 13))
+        const Text('No goals set yet.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13))
       else if (loaded)
         ...p.goals.map((g) => _buildGoalRow(g))
       else
@@ -751,8 +566,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
-          Text('₹${_formatNum(current)} / ₹${_formatNum(target)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A))),
+          Text('₹${_formatNum(current)} / ₹${_formatNum(target)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
         ]),
         const SizedBox(height: 8),
         LinearPercentIndicator(
@@ -817,7 +632,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final bucketColor = _billBucketColor(bucket);
           final billIcon = _billCategoryIcon(category, bucket);
           final dueText = daysLeft == 0 ? 'Due Today' : daysLeft == 1 ? 'Due Tomorrow' : '$daysLeft days';
-          final urgencyColor = daysLeft == 0 ? const Color(0xFFEF4444) : daysLeft <= 3 ? const Color(0xFFF59E0B) : Colors.white54;
+          final urgencyColor = daysLeft == 0 ? const Color(0xFFEF4444) : daysLeft <= 3 ? const Color(0xFFF59E0B) : const Color(0xFF64748B);
           final progress = daysLeft <= 30 ? (30 - daysLeft) / 30.0 : 0.0;
 
           return Container(
@@ -841,11 +656,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Expanded(
                             child: Text(name,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF0F172A)),
                                 overflow: TextOverflow.ellipsis),
                           ),
                           Text('₹${_formatNum(amount)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -863,7 +678,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 6),
                           if (category.isNotEmpty)
                             Text(category,
-                                style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
                           const Spacer(),
                           Icon(Icons.schedule, size: 11, color: urgencyColor),
                           const SizedBox(width: 3),
@@ -928,20 +743,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── Shared helpers ─────────────────────────────────────────────────────────
-  Widget _card({required Widget child}) => ClipRRect(
-    borderRadius: BorderRadius.circular(24),
-    child: BackdropFilter(
-      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: child,
-      ),
+  Widget _card({required Widget child}) => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
     ),
+    child: child,
   );
 
   Widget _cardHeader(String title, IconData icon, Color color) => Row(children: [
@@ -951,7 +761,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Icon(icon, color: color, size: 18),
     ),
     const SizedBox(width: 10),
-    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
   ]);
 
   String _formatNum(double v) {
@@ -998,4 +808,23 @@ class _CelebrationPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CelebrationPainter old) => old.progress != progress;
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

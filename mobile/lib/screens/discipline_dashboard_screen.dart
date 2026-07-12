@@ -131,15 +131,30 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF0D9488))),
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+            ),
+          ),
+          child: const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488))),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+          ),
+        ),
+        child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadData,
           child: ListView(
@@ -158,6 +173,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
             const SizedBox(height: 60),
           ],
         ),
+      ),
       ),
       ),
     );
@@ -181,7 +197,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Saved this month', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                  const Text('Saved this month', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                   Text('₹${p.actualSavings.toStringAsFixed(0)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF059669))),
                 ],
               ),
@@ -202,7 +218,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: 8),
-          Text('Target: 20% of Income (₹${p.targetAmount.toStringAsFixed(0)})', style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text('Target: 20% of Income (₹${p.targetAmount.toStringAsFixed(0)})', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       )
     );
@@ -234,7 +250,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Unallocated', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                  const Text('Unallocated', style: TextStyle(color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
                   Text('₹${diff.toStringAsFixed(0)}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: diff == 0 ? Colors.green : Colors.orange)),
                   const SizedBox(height: 4),
                   Container(
@@ -278,7 +294,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
           children: [
             Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 4),
-            Text(value, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(value, style: const TextStyle(color: const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600)),
           ],
         ),
         Icon(isHealthy ? Icons.check_circle_rounded : Icons.warning_rounded, color: isHealthy ? Colors.green : Colors.orange, size: 28),
@@ -307,7 +323,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Recommended Plan', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
+                    const Text('Recommended Plan', style: TextStyle(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600)),
                     Text(d.recommendedStrategy, style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
@@ -341,7 +357,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
             ],
           ),
           const SizedBox(height: 8),
-          const Text('Your emergency fund is automatically calculated from your highly liquid assets (Bank Accounts and Fixed Deposits) added in your Portfolio.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const Text('Your emergency fund is automatically calculated from your highly liquid assets (Bank Accounts and Fixed Deposits) added in your Portfolio.', style: TextStyle(color: const Color(0xFF64748B), fontSize: 12)),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -384,12 +400,12 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Column(
                     children: [
-                      Icon(Icons.people_outline, size: 36, color: Colors.grey),
+                      Icon(Icons.people_outline, size: 36, color: const Color(0xFF64748B)),
                       SizedBox(height: 8),
-                      Text('No active collections', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                      Text('No active collections', style: TextStyle(color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
                       SizedBox(height: 4),
                       Text('Track group payments from friends & family.',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: const Color(0xFF64748B), fontSize: 12)),
                     ],
                   ),
                 )
@@ -425,7 +441,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text('₹${_fmt(totalCollected)} of ₹${_fmt(totalExpected)} collected',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        style: const TextStyle(fontSize: 11, color: const Color(0xFF64748B))),
                   ),
               ],
               const SizedBox(height: 16),
@@ -468,7 +484,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
           Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(label, style: const TextStyle(fontSize: 10, color: const Color(0xFF64748B))),
         ],
       ),
     );
@@ -486,10 +502,10 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: [
-                  Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.grey.withValues(alpha: 0.5)),
+                  Icon(Icons.shopping_bag_outlined, size: 40, color: const Color(0xFF64748B).withValues(alpha: 0.5)),
                   const SizedBox(height: 8),
-                  const Text('Your lockbox is empty', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 14)),
-                  const Text('Lock items here to delay impulse purchases.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Text('Your lockbox is empty', style: TextStyle(color: const Color(0xFF64748B), fontWeight: FontWeight.w500, fontSize: 14)),
+                  const Text('Lock items here to delay impulse purchases.', style: TextStyle(color: const Color(0xFF64748B), fontSize: 12)),
                 ],
               ),
             ),
@@ -792,7 +808,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                 ),
               ),
               const SizedBox(height: 20),
-              const Align(alignment: Alignment.centerLeft, child: Text('Lock Duration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey))),
+              const Align(alignment: Alignment.centerLeft, child: Text('Lock Duration', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: const Color(0xFF64748B)))),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -850,7 +866,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen> w
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold, color: const Color(0xFF64748B))),
                     ),
                   ),
                   const SizedBox(width: 12),

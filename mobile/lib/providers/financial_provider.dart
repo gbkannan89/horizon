@@ -725,19 +725,23 @@ class FinancialProvider extends ChangeNotifier {
   Future<void> addAsset(String name, String type, double amount, {
     double interestRate = 0.0,
     bool isLiability = false,
+    bool isEmergency = false,
     bool generatesIncome = false,
     String? incomeFrequency,
     double? purchasePrice,
     String? purchaseDate,
+    int? yearsOfDeposit,
   }) async {
     final created = await _apiService.post('/api/assets', {
       'name': name, 'type': type, 'amount': amount,
       'interest_rate': interestRate,
       'is_liability': isLiability,
+      'is_emergency': isEmergency,
       'generates_income': generatesIncome,
       'income_frequency': incomeFrequency,
       'purchase_price': purchasePrice,
       'purchase_date': purchaseDate,
+      'years_of_deposit': yearsOfDeposit,
     });
     assets.add(LocalAsset(
       id: created['id'].toString(),
@@ -810,6 +814,25 @@ class FinancialProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<void> updateAsset(int id, Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/assets/$id', body);
+    final idx = assets.indexWhere((a) => a.id == id.toString());
+    if (idx >= 0) {
+      assets[idx] = LocalAsset(
+        id: updated['id'].toString(),
+        name: updated['name'] ?? assets[idx].name,
+        amount: (updated['amount'] ?? assets[idx].amount).toDouble(),
+        interestRate: (updated['interest_rate'] ?? assets[idx].interestRate).toDouble(),
+        isLiability: updated['is_liability'] ?? false,
+        generatesIncome: updated['generates_income'] ?? false,
+        purchasePrice: updated['purchase_price']?.toDouble(),
+        purchaseDate: updated['purchase_date'],
+      );
+    }
+    notifyListeners();
+    _reloadDashboard();
   }
 
   // ── LIABILITIES ────────────────────────────────────────────────────────────
@@ -1267,6 +1290,20 @@ class FinancialProvider extends ChangeNotifier {
     await _apiService.delete('/api/profile/family/$memberId/schooling/$schoolingId');
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
+    notifyListeners();
+  }
+
+  Future<dynamic> getSchoolingPayments(int memberId, int schoolingId) async {
+    try {
+      return await _apiService.get('/api/profile/family/$memberId/schooling/$schoolingId/payments');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> deleteSchoolingPayment(int memberId, int schoolingId, int paymentId) async {
+    await _apiService.delete('/api/profile/family/$memberId/schooling/$schoolingId/payments/$paymentId');
+    await _reloadFamilyMembers();
     notifyListeners();
   }
 

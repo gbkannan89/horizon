@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/financial_models.dart';
@@ -6,1128 +7,788 @@ import '../utils/ui_utils.dart';
 
 class FamilyMemberDetailScreen extends StatefulWidget {
   final LocalFamilyMember member;
-
   const FamilyMemberDetailScreen({super.key, required this.member});
 
   @override
   State<FamilyMemberDetailScreen> createState() => _FamilyMemberDetailScreenState();
 }
 
-class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
+  late LocalFamilyMember _member;
+  bool _schoolingExpanded = true;
+  bool _healthExpanded = false;
+  bool _medicineExpanded = false;
+  bool _vaccinationExpanded = false;
+  bool _insuranceExpanded = false;
+  bool _earningsExpanded = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _member = widget.member;
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Color _avatarColor() {
+    try {
+      return Color(int.parse(_member.avatarColor!.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return const Color(0xFF0D9488);
+    }
   }
 
-  void _showDeleteMemberConfirmation() {
+  void _showDeleteConfirmation() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Profile'),
-        content: Text('Are you sure you want to delete ${widget.member.name}? This will remove all their records permanently.'),
+        content: Text('Remove ${_member.name} permanently? All records will be deleted.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               try {
-                await Provider.of<FinancialProvider>(context, listen: false)
-                    .deleteFamilyMember(widget.member.id);
+                await Provider.of<FinancialProvider>(context, listen: false).deleteFamilyMember(_member.id);
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  Navigator.pop(context);
-                  UiUtils.showSnack(context, 'Member removed successfully');
-                }
+                if (mounted) { Navigator.pop(context); UiUtils.showSnack(context, 'Member removed'); }
               } catch (e) {
                 if (ctx.mounted) UiUtils.showSnack(ctx, 'Failed: $e', isError: true);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          )
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showEditMemberModal() {
+    final nameCtrl = TextEditingController(text: _member.name);
+    String rel = _member.relationship;
+    String? bg = _member.bloodGroup;
+    DateTime? dob;
+    bool earningStatus = _member.earningStatus;
+    double contribution = _member.contributionAmount;
+    final dobCtrl = TextEditingController(text: _member.dob ?? '');
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Edit Profile', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: rel, decoration: const InputDecoration(labelText: 'Relationship', border: OutlineInputBorder()),
+                items: ['spouse', 'child', 'parent', 'sibling', 'other'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (v) { if (v != null) setState(() => rel = v); },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                value: bg, decoration: const InputDecoration(labelText: 'Blood Group', border: OutlineInputBorder()),
+                items: [null, 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((b) => DropdownMenuItem(value: b, child: Text(b ?? 'Select'))).toList(),
+                onChanged: (v) => setState(() => bg = v),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dobCtrl, readOnly: true,
+                decoration: const InputDecoration(labelText: 'Date of Birth', border: OutlineInputBorder()),
+                onTap: () async {
+                  final d = await showDatePicker(context: ctx, initialDate: DateTime.now().subtract(const Duration(days: 3650)), firstDate: DateTime(1900), lastDate: DateTime.now());
+                  if (d != null) { setState(() { dob = d; dobCtrl.text = d.toIso8601String().split('T').first; }); }
+                },
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                title: const Text('Earning Member'),
+                value: earningStatus, contentPadding: EdgeInsets.zero,
+                onChanged: (v) => setState(() => earningStatus = v),
+              ),
+              if (earningStatus) TextField(
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Monthly Contribution (₹)', border: OutlineInputBorder()),
+                controller: TextEditingController(text: contribution > 0 ? contribution.toStringAsFixed(0) : ''),
+                onChanged: (v) => contribution = double.tryParse(v) ?? 0,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+                onPressed: () async {
+                  if (nameCtrl.text.isEmpty) return;
+                  await Provider.of<FinancialProvider>(context, listen: false).updateFamilyMember(_member.id, {
+                    'name': nameCtrl.text.trim(), 'relationship': rel, 'blood_group': bg,
+                    'dob': dob?.toIso8601String().split('T').first ?? _member.dob,
+                    'earning_status': earningStatus, 'contribution_amount': contribution,
+                  });
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) UiUtils.showSnack(context, 'Profile updated');
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+                child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              )),
+            ]),
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<FinancialProvider>();
-    // Find the refreshed member data from the provider
-    final refreshedMember = provider.familyMembers.firstWhere(
-      (m) => m.id == widget.member.id,
-      orElse: () => widget.member,
-    );
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      appBar: AppBar(
-        title: Text(refreshedMember.name),
-        backgroundColor: const Color(0xFF042F2E),
-        foregroundColor: Colors.white,
-        actions: [
-          if (!refreshedMember.isSelf)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _showDeleteMemberConfirmation,
-            )
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          indicatorColor: const Color(0xFF14B8A6),
-          tabs: const [
-            Tab(text: 'Schooling', icon: Icon(Icons.school_outlined)),
-            Tab(text: 'Health Checkups', icon: Icon(Icons.favorite_border_rounded)),
-            Tab(text: 'Medicines', icon: Icon(Icons.medication_outlined)),
-            Tab(text: 'Vaccinations', icon: Icon(Icons.vaccines_outlined)),
-            Tab(text: 'Earnings', icon: Icon(Icons.payments_outlined)),
-            Tab(text: 'Insurance', icon: Icon(Icons.shield_outlined)),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Stack(
         children: [
-          _SchoolingTab(member: refreshedMember),
-          _CheckupTab(member: refreshedMember),
-          _MedicineTab(member: refreshedMember),
-          _VaccinationTab(member: refreshedMember),
-          _EarningsTab(member: refreshedMember),
-          _InsuranceTab(member: refreshedMember),
+          Positioned.fill(
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -size.height * 0.1, right: -size.width * 0.2,
+            child: Container(width: size.width * 0.6, height: size.width * 0.6,
+              decoration: BoxDecoration(shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [const Color(0xFF0D9488).withValues(alpha: 0.12), const Color(0xFF0D9488).withValues(alpha: 0.0)]))),
+          ),
+          Positioned.fill(child: CustomPaint(painter: _GridPainter())),
+          Positioned.fill(
+            child: ClipRRect(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(color: Colors.white.withValues(alpha: 0.45),
+                  foregroundDecoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1))),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildSections()),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
-}
 
-// ── SCHOOLING TAB ────────────────────────────────────────────────────────────
-class _SchoolingTab extends StatelessWidget {
-  final LocalFamilyMember member;
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.55),
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1)),
+      ),
+      child: Row(children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        CircleAvatar(radius: 32, backgroundColor: _avatarColor(),
+          child: Text(_member.name.isNotEmpty ? _member.name[0].toUpperCase() : '?',
+            style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold))),
+        const SizedBox(width: 16),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_member.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Row(children: [
+            if (_member.relationship.isNotEmpty) _infoChip(_member.relationship[0].toUpperCase() + _member.relationship.substring(1), const Color(0xFF0D9488)),
+            if (_member.bloodGroup != null) ...[const SizedBox(width: 6), _infoChip(_member.bloodGroup!, const Color(0xFF909AC6))],
+          ]),
+        ])),
+        IconButton(icon: const Icon(Icons.edit_outlined, color: Color(0xFF0D9488)), onPressed: _showEditMemberModal),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent), onPressed: _showDeleteConfirmation),
+      ]),
+    );
+  }
 
-  const _SchoolingTab({required this.member});
+  Widget _infoChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+      child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+    );
+  }
 
-  void _showAddSchoolingModal(BuildContext context) {
+  Widget _buildSections() {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 32), children: [
+      _buildSection(
+        title: 'Schooling', icon: Icons.school_rounded, color: const Color(0xFF0D9488),
+        expanded: _schoolingExpanded, onToggle: (v) => setState(() => _schoolingExpanded = v),
+        child: _member.schooling.isEmpty
+            ? _buildEmptySection('No schooling records', Icons.school_outlined, () => _showAddSchoolingModal())
+            : Column(children: [
+                ..._member.schooling.map((s) => _buildSchoolingCard(s)),
+                OutlinedButton.icon(
+                  onPressed: _showFeeLedgerModal,
+                  icon: const Icon(Icons.receipt_long_rounded, size: 14),
+                  label: const Text('View Fee Ledger', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF0D9488)),
+                ),
+              ]),
+      ),
+      _buildSection(
+        title: 'Health Checkups', icon: Icons.favorite_rounded, color: const Color(0xFFE88A1A),
+        expanded: _healthExpanded, onToggle: (v) => setState(() => _healthExpanded = v),
+        child: _member.checkups.isEmpty
+            ? _buildEmptySection('No checkup records', Icons.favorite_border, () => _showAddCheckupModal())
+            : Column(children: _member.checkups.map((c) => _buildCheckupCard(c)).toList()),
+      ),
+      _buildSection(
+        title: 'Regular Medicines', icon: Icons.medication_rounded, color: const Color(0xFF7C3AED),
+        expanded: _medicineExpanded, onToggle: (v) => setState(() => _medicineExpanded = v),
+        child: _member.medicines.isEmpty
+            ? _buildEmptySection('No medicine records', Icons.medication_outlined, () => _showAddMedicineModal())
+            : Column(children: _member.medicines.map((m) => _buildMedicineCard(m)).toList()),
+      ),
+      _buildSection(
+        title: 'Vaccinations', icon: Icons.vaccines_rounded, color: const Color(0xFF2563EB),
+        expanded: _vaccinationExpanded, onToggle: (v) => setState(() => _vaccinationExpanded = v),
+        child: _member.vaccinations.isEmpty
+            ? _buildEmptySection('No vaccination records', Icons.vaccines_outlined, () => _showAddVaccinationModal())
+            : Column(children: _member.vaccinations.map((v) => _buildVaccinationCard(v)).toList()),
+      ),
+      _buildSection(
+        title: 'Insurance', icon: Icons.shield_rounded, color: const Color(0xFF059669),
+        expanded: _insuranceExpanded, onToggle: (v) => setState(() => _insuranceExpanded = v),
+        child: _member.insurances.isEmpty
+            ? _buildEmptySection('No insurance records', Icons.shield_outlined, () => _showAddInsuranceModal())
+            : Column(children: _member.insurances.map((ins) => _buildInsuranceCard(ins)).toList()),
+      ),
+      _buildSection(
+        title: 'Earnings', icon: Icons.trending_up_rounded, color: const Color(0xFFDC2626),
+        expanded: _earningsExpanded, onToggle: (v) => setState(() => _earningsExpanded = v),
+        child: _member.earnings.isEmpty
+            ? _buildEmptySection('No earning records', Icons.trending_up_outlined, () => _showAddEarningsModal())
+            : _buildEarningsCard(),
+      ),
+    ]);
+  }
+
+  Widget _buildSection({
+    required String title, required IconData icon, required Color color,
+    required bool expanded, required ValueChanged<bool> onToggle,
+    Widget? child,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: expanded ? 0.55 : 0.30),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: expanded ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2), width: 1),
+      ),
+      child: Column(children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Row(children: [
+            Icon(icon, color: expanded ? color : const Color(0xFF94A3B8), size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(title, style: TextStyle(
+              fontSize: 15, fontWeight: FontWeight.w800,
+              color: expanded ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)))),
+            Switch(
+              value: expanded,
+              onChanged: onToggle,
+              activeColor: color,
+              inactiveThumbColor: const Color(0xFFCBD5E1),
+              inactiveTrackColor: const Color(0xFFE2E8F0),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ]),
+        ),
+        if (expanded && child != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: child,
+          ),
+      ]),
+    );
+  }
+
+  Widget _buildEmptySection(String text, IconData icon, VoidCallback onAdd) {
+    return Column(children: [
+      const SizedBox(height: 8),
+      Icon(icon, size: 40, color: const Color(0xFF94A3B8)),
+      const SizedBox(height: 8),
+      Text(text, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+      const SizedBox(height: 12),
+      ElevatedButton.icon(
+        onPressed: onAdd,
+        icon: const Icon(Icons.add, size: 16), label: const Text('Add', style: TextStyle(fontSize: 13)),
+        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+      ),
+    ]);
+  }
+
+  // ─── SCHOOLING ──────────────────────────────────────────────────────────────
+
+  Widget _buildSchoolingCard(dynamic s) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(s.institutionName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text('₹${s.feeAmount.toStringAsFixed(0)} / ${s.feeFrequency}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        ])),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () async {
+            await Provider.of<FinancialProvider>(context, listen: false).deleteSchooling(_member.id, s.id);
+            if (mounted) UiUtils.showSnack(context, 'Schooling removed');
+          }),
+      ]),
+    );
+  }
+
+  void _showAddSchoolingModal() {
     final instCtrl = TextEditingController();
     final feeCtrl = TextEditingController();
     String freq = 'monthly';
-    final notesCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Add Schooling Detail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: instCtrl,
-                  decoration: const InputDecoration(labelText: 'Institution Name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: feeCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Fee Amount (₹)'),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: freq,
-                  decoration: const InputDecoration(labelText: 'Frequency'),
-                  items: const [
-                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                    DropdownMenuItem(value: 'quarterly', child: Text('Quarterly')),
-                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => freq = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (instCtrl.text.isEmpty || feeCtrl.text.isEmpty) return;
-                      final fee = double.tryParse(feeCtrl.text.trim()) ?? 0.0;
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .addSchooling(member.id, {
-                          'institution_name': instCtrl.text.trim(),
-                          'fee_amount': fee,
-                          'fee_frequency': freq,
-                          'notes': notesCtrl.text.trim(),
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Schooling detail added');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to add: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Save', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Schooling', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: instCtrl, decoration: const InputDecoration(labelText: 'Institution Name', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: feeCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fee Amount (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(value: freq, decoration: const InputDecoration(labelText: 'Frequency', border: OutlineInputBorder()),
+              items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+              onChanged: (v) { if (v != null) setState(() => freq = v); }),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                if (instCtrl.text.isEmpty || feeCtrl.text.isEmpty) return;
+                await Provider.of<FinancialProvider>(context, listen: false).addSchooling(_member.id, {
+                  'institution_name': instCtrl.text.trim(), 'fee_amount': double.tryParse(feeCtrl.text.trim()) ?? 0, 'fee_frequency': freq,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (member.schooling.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.school_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No schooling details added.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showAddSchoolingModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Schooling', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
+  void _showFeeLedgerModal() async {
+    final s = _member.schooling.first;
+    final provider = Provider.of<FinancialProvider>(context, listen: false);
+    List<dynamic> payments = [];
+    try {
+      final data = await provider.getSchoolingPayments(_member.id, s.id);
+      if (data is List) payments = data;
+    } catch (_) {}
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.schooling.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.schooling.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddSchoolingModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Schooling Details', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final sch = member.schooling[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(sch.institutionName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, sch.institutionName, () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .deleteSchooling(member.id, sch.id);
-                        });
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.65),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)))),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Fee Ledger — ${s.institutionName}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.add_rounded), onPressed: () => _showAddPaymentModal(s.id, () async {
+                final data = await provider.getSchoolingPayments(_member.id, s.id);
+                if (data is List) setState(() => payments = data);
+              })),
+            ]),
+            const Divider(),
+            Expanded(
+              child: payments.isEmpty
+                  ? const Center(child: Text('No payments recorded.', style: TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                      itemCount: payments.length,
+                      itemBuilder: (ctx, i) {
+                        final p = payments[i];
+                        return ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.payment_rounded, color: Color(0xFF0D9488), size: 20),
+                          title: Text('₹${(p['amount'] ?? 0).toDouble().toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(p['paid_date'] ?? '', style: const TextStyle(fontSize: 12)),
+                          trailing: IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                            onPressed: () async {
+                              await provider.deleteSchoolingPayment(_member.id, s.id, p['id']);
+                              final data = await provider.getSchoolingPayments(_member.id, s.id);
+                              if (data is List) setState(() => payments = data);
+                            }),
+                        );
                       },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Fee: ₹${sch.feeAmount.toStringAsFixed(2)} / ${sch.feeFrequency}'),
-                Text('Monthly equivalent: ₹${sch.monthlyEquivalent.toStringAsFixed(2)}'),
-                if (sch.notes != null && sch.notes!.isNotEmpty) Text('Notes: ${sch.notes}'),
-              ],
+                    ),
             ),
-          ),
-        );
-      },
+          ]),
+        ),
+      ),
     );
   }
-}
 
-// ── HEALTH CHECKUP TAB ────────────────────────────────────────────────────────
-class _CheckupTab extends StatelessWidget {
-  final LocalFamilyMember member;
+  void _showAddPaymentModal(int schoolingId, VoidCallback onDone) {
+    final amtCtrl = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Record Payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Amount (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            Row(children: [
+              const Text('Date: ', style: TextStyle(fontWeight: FontWeight.w600)),
+              TextButton(onPressed: () async {
+                final d = await showDatePicker(context: ctx, initialDate: selectedDate, firstDate: DateTime(2000), lastDate: DateTime.now());
+                if (d != null) setState(() => selectedDate = d);
+              }, child: Text(selectedDate.toIso8601String().split('T').first)),
+            ]),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                final amt = double.tryParse(amtCtrl.text.trim());
+                if (amt == null || amt <= 0) return;
+                await Provider.of<FinancialProvider>(context, listen: false)
+                    .recordSchoolingPayment(_member.id, schoolingId, {'amount': amt, 'paid_date': selectedDate.toIso8601String().split('T').first});
+                if (ctx.mounted) Navigator.pop(ctx);
+                UiUtils.showSnack(context, 'Payment recorded');
+                onDone();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Record', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
+        ),
+      ),
+    );
+  }
 
-  const _CheckupTab({required this.member});
+  // ─── CHECKUPS ───────────────────────────────────────────────────────────────
 
-  void _showAddCheckupModal(BuildContext context) {
-    final typeCtrl = TextEditingController();
+  Widget _buildCheckupCard(dynamic c) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFE88A1A).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${c.frequency} checkup', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text('Cost: ₹${c.recurringCost.toStringAsFixed(0)} / ${c.frequency}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          if (c.lastCheckupDate != null) Text('Last: ${c.lastCheckupDate}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+        ])),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () async {
+            await Provider.of<FinancialProvider>(context, listen: false).deleteCheckup(_member.id, c.id);
+            if (mounted) UiUtils.showSnack(context, 'Checkup removed');
+          }),
+      ]),
+    );
+  }
+
+  void _showAddCheckupModal() {
+    String freq = 'yearly';
+    final costCtrl = TextEditingController();
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Checkup', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(value: freq, decoration: const InputDecoration(labelText: 'Frequency', border: OutlineInputBorder()),
+              items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+              onChanged: (v) { if (v != null) setState(() => freq = v); }),
+            const SizedBox(height: 12),
+            TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Cost (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                await Provider.of<FinancialProvider>(context, listen: false).addCheckup(_member.id, {
+                  'frequency': freq, 'recurring_cost': double.tryParse(costCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ─── MEDICINES ──────────────────────────────────────────────────────────────
+
+  Widget _buildMedicineCard(dynamic m) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF7C3AED).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(m.medicineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text('₹${m.monthlyCost.toStringAsFixed(0)} / month', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        ])),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () async {
+            await Provider.of<FinancialProvider>(context, listen: false).deleteMedicine(_member.id, m.id);
+            if (mounted) UiUtils.showSnack(context, 'Medicine removed');
+          }),
+      ]),
+    );
+  }
+
+  void _showAddMedicineModal() {
+    final nameCtrl = TextEditingController();
+    final costCtrl = TextEditingController();
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Container(
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Medicine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monthly Cost (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.isEmpty) return;
+                await Provider.of<FinancialProvider>(context, listen: false).addMedicine(_member.id, {
+                  'medicine_name': nameCtrl.text.trim(), 'monthly_cost': double.tryParse(costCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ─── VACCINATIONS ───────────────────────────────────────────────────────────
+
+  Widget _buildVaccinationCard(dynamic v) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF2563EB).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(v.vaccineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text('₹${v.recurringCost.toStringAsFixed(0)} / ${v.frequency}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          if (v.lastVaccinationDate != null) Text('Last: ${v.lastVaccinationDate}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+        ])),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () async {
+            await Provider.of<FinancialProvider>(context, listen: false).deleteVaccination(_member.id, v.id);
+            if (mounted) UiUtils.showSnack(context, 'Vaccination removed');
+          }),
+      ]),
+    );
+  }
+
+  void _showAddVaccinationModal() {
+    final nameCtrl = TextEditingController();
     final costCtrl = TextEditingController();
     String freq = 'yearly';
-    final notesCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Add Health Checkup Detail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: typeCtrl,
-                  decoration: const InputDecoration(labelText: 'Checkup Type (e.g. Eye, Dental)'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: costCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Cost (₹)'),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: freq,
-                  decoration: const InputDecoration(labelText: 'Frequency'),
-                  items: const [
-                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                    DropdownMenuItem(value: 'quarterly', child: Text('Quarterly')),
-                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => freq = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (typeCtrl.text.isEmpty || costCtrl.text.isEmpty) return;
-                      final cost = double.tryParse(costCtrl.text.trim()) ?? 0.0;
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .addCheckup(member.id, {
-                          'checkup_type': typeCtrl.text.trim(),
-                          'recurring_cost': cost,
-                          'frequency': freq,
-                          'notes': notesCtrl.text.trim(),
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Checkup detail added');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to add: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Save', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Vaccination', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Vaccine Name', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(value: freq, decoration: const InputDecoration(labelText: 'Frequency', border: OutlineInputBorder()),
+              items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+              onChanged: (v) { if (v != null) setState(() => freq = v); }),
+            const SizedBox(height: 12),
+            TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Cost (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.isEmpty) return;
+                await Provider.of<FinancialProvider>(context, listen: false).addVaccination(_member.id, {
+                  'vaccine_name': nameCtrl.text.trim(), 'frequency': freq, 'recurring_cost': double.tryParse(costCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (member.checkups.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.favorite_border_rounded, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No checkups added.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showAddCheckupModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Checkup', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
+  // ─── INSURANCE ──────────────────────────────────────────────────────────────
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.checkups.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.checkups.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddCheckupModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Checkup Details', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final check = member.checkups[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(check.checkupType ?? 'Routine Checkup', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, check.checkupType ?? 'Checkup', () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .deleteCheckup(member.id, check.id);
-                        });
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Cost: ₹${check.recurringCost.toStringAsFixed(2)} / ${check.frequency}'),
-                Text('Monthly equivalent: ₹${check.monthlyEquivalent.toStringAsFixed(2)}'),
-                if (check.notes != null && check.notes!.isNotEmpty) Text('Notes: ${check.notes}'),
-              ],
-            ),
-          ),
-        );
-      },
+  Widget _buildInsuranceCard(dynamic ins) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF059669).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(ins.providerName ?? 'Insurance', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text('Premium: ₹${ins.premiumAmount.toStringAsFixed(0)} / ${ins.premiumFrequency}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          if (ins.coverageAmount > 0) Text('Coverage: ₹${ins.coverageAmount.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+        ])),
+        IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+          onPressed: () async {
+            await Provider.of<FinancialProvider>(context, listen: false).unlinkInsurance(_member.id, ins.id);
+            if (mounted) UiUtils.showSnack(context, 'Insurance removed');
+          }),
+      ]),
     );
   }
-}
 
-// ── MEDICINES TAB ────────────────────────────────────────────────────────────
-class _MedicineTab extends StatelessWidget {
-  final LocalFamilyMember member;
-
-  const _MedicineTab({required this.member});
-
-  void _showAddMedicineModal(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final costCtrl = TextEditingController();
-    final purposeCtrl = TextEditingController();
-    final docCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+  void _showAddInsuranceModal() {
+    final providerCtrl = TextEditingController();
+    final premiumCtrl = TextEditingController();
+    final coverageCtrl = TextEditingController();
+    String freq = 'yearly';
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Add Medicine Detail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Medicine Name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: costCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Monthly Cost (₹)'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: purposeCtrl,
-                  decoration: const InputDecoration(labelText: 'Purpose'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: docCtrl,
-                  decoration: const InputDecoration(labelText: 'Prescribed By'),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (nameCtrl.text.isEmpty || costCtrl.text.isEmpty) return;
-                      final cost = double.tryParse(costCtrl.text.trim()) ?? 0.0;
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .addMedicine(member.id, {
-                          'medicine_name': nameCtrl.text.trim(),
-                          'monthly_cost': cost,
-                          'purpose': purposeCtrl.text.trim(),
-                          'prescribed_by': docCtrl.text.trim(),
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Medicine added');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to add: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Save', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Insurance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: providerCtrl, decoration: const InputDecoration(labelText: 'Provider / Policy Name', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(value: freq, decoration: const InputDecoration(labelText: 'Premium Frequency', border: OutlineInputBorder()),
+              items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+              onChanged: (v) { if (v != null) setState(() => freq = v); }),
+            const SizedBox(height: 12),
+            TextField(controller: premiumCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Premium Amount (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: coverageCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Coverage Amount (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                await Provider.of<FinancialProvider>(context, listen: false).linkInsurance(_member.id, {
+                  'provider_name': providerCtrl.text.trim(),
+                  'premium_frequency': freq,
+                  'premium_amount': double.tryParse(premiumCtrl.text.trim()) ?? 0,
+                  'coverage_amount': double.tryParse(coverageCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (member.medicines.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.medication_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No regular medicines added.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showAddMedicineModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Medicine', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
+  // ─── EARNINGS ───────────────────────────────────────────────────────────────
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.medicines.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.medicines.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddMedicineModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Medicine Details', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final med = member.medicines[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(med.medicineName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, med.medicineName, () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .deleteMedicine(member.id, med.id);
-                        });
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Monthly Cost: ₹${med.monthlyCost.toStringAsFixed(2)}'),
-                if (med.purpose != null && med.purpose!.isNotEmpty) Text('Purpose: ${med.purpose}'),
-                if (med.prescribedBy != null && med.prescribedBy!.isNotEmpty) Text('Prescribed by: ${med.prescribedBy}'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ── VACCINATIONS TAB ──────────────────────────────────────────────────────────
-class _VaccinationTab extends StatelessWidget {
-  final LocalFamilyMember member;
-
-  const _VaccinationTab({required this.member});
-
-  void _showAddVacModal(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final costCtrl = TextEditingController();
-    String freq = 'one_time';
-    final notesCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Add Vaccination Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Vaccine Name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: costCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Cost (₹)'),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: freq,
-                  decoration: const InputDecoration(labelText: 'Schedule/Frequency'),
-                  items: const [
-                    DropdownMenuItem(value: 'one_time', child: Text('One Time')),
-                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                    DropdownMenuItem(value: 'quarterly', child: Text('Quarterly')),
-                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => freq = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesCtrl,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (nameCtrl.text.isEmpty || costCtrl.text.isEmpty) return;
-                      final cost = double.tryParse(costCtrl.text.trim()) ?? 0.0;
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .addVaccination(member.id, {
-                          'vaccine_name': nameCtrl.text.trim(),
-                          'recurring_cost': cost,
-                          'frequency': freq,
-                          'notes': notesCtrl.text.trim(),
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Vaccination recorded');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to add: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Save', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  Widget _buildEarningsCard() {
+    final e = _member.earnings.isNotEmpty ? _member.earnings.first : null;
+    if (e == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFDC2626).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('₹${e.monthlyIncome.toStringAsFixed(0)} / month', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
+            const SizedBox(height: 2),
+            Text('Contribution: ₹${e.contributionToHousehold.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          ])),
+          IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+            onPressed: () async {
+              await Provider.of<FinancialProvider>(context, listen: false).deleteEarnings(_member.id, e.id);
+              if (mounted) UiUtils.showSnack(context, 'Earnings removed');
+            }),
+        ]),
+      ]),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (member.vaccinations.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.vaccines_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No vaccination records added.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showAddVacModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Vaccine', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.vaccinations.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.vaccinations.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddVacModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Vaccine Details', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final vac = member.vaccinations[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(vac.vaccineName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, vac.vaccineName, () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .deleteVaccination(member.id, vac.id);
-                        });
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Cost: ₹${vac.recurringCost.toStringAsFixed(2)} (${vac.frequency})'),
-                if (vac.frequency != 'one_time') Text('Monthly equivalent: ₹${vac.monthlyEquivalent.toStringAsFixed(2)}'),
-                if (vac.notes != null && vac.notes!.isNotEmpty) Text('Notes: ${vac.notes}'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ── EARNINGS TAB ─────────────────────────────────────────────────────────────
-class _EarningsTab extends StatelessWidget {
-  final LocalFamilyMember member;
-
-  const _EarningsTab({required this.member});
-
-  void _showAddEarningsModal(BuildContext context) {
-    final incCtrl = TextEditingController();
+  void _showAddEarningsModal() {
+    final incomeCtrl = TextEditingController();
     final contribCtrl = TextEditingController();
-    final occCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Add Earnings / Income', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: incCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Monthly Income (₹)'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contribCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Monthly Contribution to Household (₹)'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: occCtrl,
-                  decoration: const InputDecoration(labelText: 'Occupation (e.g. Engineer, Business)'),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (incCtrl.text.isEmpty) return;
-                      final inc = double.tryParse(incCtrl.text.trim()) ?? 0.0;
-                      final contrib = double.tryParse(contribCtrl.text.trim()) ?? 0.0;
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .addEarnings(member.id, {
-                          'monthly_income': inc,
-                          'contribution_to_household': contrib,
-                          'occupation': occCtrl.text.trim(),
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Earnings added');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to add: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Save', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 32, left: 24, right: 24, top: 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Add Earnings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(controller: incomeCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monthly Income (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 12),
+            TextField(controller: contribCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Contribution to Household (₹)', border: OutlineInputBorder())),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(
+              onPressed: () async {
+                await Provider.of<FinancialProvider>(context, listen: false).addEarnings(_member.id, {
+                  'monthly_income': double.tryParse(incomeCtrl.text.trim()) ?? 0,
+                  'contribution_to_household': double.tryParse(contribCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            )),
+          ]),
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (member.earnings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.payments_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No earnings details added.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showAddEarningsModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Earnings', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.earnings.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.earnings.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddEarningsModal(context),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Earnings Details', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final earn = member.earnings[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(earn.occupation ?? 'Salary/Income', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, earn.occupation ?? 'Earnings', () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .deleteEarnings(member.id, earn.id);
-                        });
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Monthly Income: ₹${earn.monthlyIncome.toStringAsFixed(2)}'),
-                Text('Contribution to Household: ₹${earn.contributionToHousehold.toStringAsFixed(2)}'),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
 
-// ── INSURANCE TAB ────────────────────────────────────────────────────────────
-class _InsuranceTab extends StatelessWidget {
-  final LocalFamilyMember member;
-
-  const _InsuranceTab({required this.member});
-
-  void _showLinkInsuranceModal(BuildContext context) {
-    final provider = Provider.of<FinancialProvider>(context, listen: false);
-    // Find insurances that are NOT already linked to this member
-    final unlinkedInsurances = provider.insurances.where((ins) {
-      return !member.insuranceLinks.any((link) => link.insuranceId == ins['id']);
-    }).toList();
-
-    if (unlinkedInsurances.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('No Unlinked Insurance'),
-          content: const Text('All existing insurance policies are already linked to this member, or you have not added policies in the Insurance Hub yet.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            )
-          ],
-        ),
-      );
-      return;
-    }
-
-    dynamic selectedIns = unlinkedInsurances.first;
-    String rel = 'self';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-            left: 24, right: 24, top: 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Link Insurance Policy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<dynamic>(
-                  value: selectedIns,
-                  decoration: const InputDecoration(labelText: 'Select Policy'),
-                  items: unlinkedInsurances.map((ins) {
-                    final label = '${ins['provider']} (${ins['type']})';
-                    return DropdownMenuItem(value: ins, child: Text(label));
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() => selectedIns = v);
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: rel,
-                  decoration: const InputDecoration(labelText: 'Relationship'),
-                  items: const [
-                    DropdownMenuItem(value: 'self', child: Text('Self Covered')),
-                    DropdownMenuItem(value: 'dependent', child: Text('Dependent')),
-                    DropdownMenuItem(value: 'nominee', child: Text('Nominee')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => rel = v);
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        await Provider.of<FinancialProvider>(context, listen: false)
-                            .linkInsurance(member.id, {
-                          'insurance_id': selectedIns['id'],
-                          'relationship': rel,
-                        });
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        UiUtils.showSnack(context, 'Policy linked successfully');
-                      } catch (e) {
-                        UiUtils.showSnack(context, 'Failed to link: $e', isError: true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                    child: const Text('Link', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
+class _GridPainter extends CustomPainter {
   @override
-  Widget build(BuildContext context) {
-    if (member.insuranceLinks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.shield_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text('No insurance policies linked.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () => _showLinkInsuranceModal(context),
-              icon: const Icon(Icons.link, color: Colors.white),
-              label: const Text('Link Policy', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: member.insuranceLinks.length + 1,
-      itemBuilder: (context, index) {
-        if (index == member.insuranceLinks.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _showLinkInsuranceModal(context),
-              icon: const Icon(Icons.link, color: Colors.white),
-              label: const Text('Link Insurance Policy', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-            ),
-          );
-        }
-
-        final link = member.insuranceLinks[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(link.provider ?? 'Linked Policy', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.link_off, color: Colors.red),
-                      onPressed: () async {
-                        UiUtils.showDeleteBottomSheet(context, 'Unlink ${link.provider ?? "policy"}?', () async {
-                          await Provider.of<FinancialProvider>(context, listen: false)
-                              .unlinkInsurance(member.id, link.insuranceId);
-                        });
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('Plan: ${link.policyName ?? "N/A"}'),
-                Text('Type: ${link.type ?? "N/A"}'),
-                Text('Role: ${link.relationship[0].toUpperCase()}${link.relationship.substring(1)}'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFF0D9488).withValues(alpha: 0.035)..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    for (double y = 0; y < size.height; y += spacing) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
   }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

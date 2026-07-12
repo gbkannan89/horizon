@@ -310,6 +310,7 @@ CREATE TABLE IF NOT EXISTS stock_holdings (
 -- Phase 1C: FD Maturity Enhancement
 -- ═══════════════════════════════════════════════════════════════════════════
 ALTER TABLE assets ADD COLUMN IF NOT EXISTS years_of_deposit INTEGER;
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS is_emergency BOOLEAN DEFAULT FALSE;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Phase 1D: PF Assets
@@ -598,4 +599,21 @@ CREATE TABLE IF NOT EXISTS budget_auto_feed_config (
     auto_include_family_costs BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id)
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Family Member enhancements: earning status, contribution, insurance
+-- ═══════════════════════════════════════════════════════════════════════════
+ALTER TABLE family_members ADD COLUMN IF NOT EXISTS earning_status BOOLEAN DEFAULT FALSE;
+ALTER TABLE family_members ADD COLUMN IF NOT EXISTS contribution_amount NUMERIC(20, 2) DEFAULT 0.00;
+
+CREATE TABLE IF NOT EXISTS member_insurances (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE NOT NULL,
+    provider_name VARCHAR(255),
+    policy_details TEXT,
+    premium_frequency VARCHAR(50) DEFAULT 'yearly',
+    premium_amount NUMERIC(20, 2) DEFAULT 0.00,
+    coverage_amount NUMERIC(20, 2) DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

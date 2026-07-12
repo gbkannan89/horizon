@@ -6,6 +6,7 @@ from ..core.database import get_db
 from ..schemas.auth import UserOut
 from ..schemas.profile_family import (
     FamilyMemberCreate, FamilyMemberOut,
+    MemberInsuranceCreate, MemberInsuranceOut,
     SchoolingCreate, SchoolingOut, SchoolingPaymentCreate, SchoolingPaymentOut,
     CheckupCreate, CheckupOut, MedicineCreate, MedicineOut,
     VaccinationCreate, VaccinationOut, EarningCreate, EarningOut
@@ -75,14 +76,22 @@ def get_recurring_costs(current_user: UserOut = Depends(get_current_user), db = 
         )
         vacc_total = sum(get_monthly_equiv(float(r[0]), r[1]) for r in cur.fetchall())
         
-        total = school_total + meds_total + check_total + vacc_total
+        # 5. Insurance
+        cur.execute(
+            f"SELECT premium_amount, premium_frequency FROM member_insurances WHERE member_id IN ({m_placeholders})",
+            member_ids
+        )
+        insurance_total = sum(get_monthly_equiv(float(r[0]), r[1]) for r in cur.fetchall())
+        
+        total = school_total + meds_total + check_total + vacc_total + insurance_total
         
         return {
             "total_monthly": total,
             "schooling": school_total,
             "medicines": meds_total,
             "checkups": check_total,
-            "vaccinations": vacc_total
+            "vaccinations": vacc_total,
+            "insurance": insurance_total
         }
 
 
@@ -93,7 +102,7 @@ def list_family_members(current_user: UserOut = Depends(get_current_user), db = 
     with db.cursor() as cur:
         cur.execute(
             """
-            SELECT id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, created_at
+            SELECT id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, created_at
             FROM family_members WHERE user_id = %s ORDER BY is_self DESC, id ASC
             """,
             (current_user.id,)
@@ -153,12 +162,23 @@ def list_family_members(current_user: UserOut = Depends(get_current_user), db = 
                     contribution_to_household=float(earn_row[3]), occupation=earn_row[4], created_at=earn_row[5]
                 )
                 
+            cur.execute("SELECT id, member_id, provider_name, policy_details, premium_frequency, premium_amount, coverage_amount, created_at FROM member_insurances WHERE member_id = %s", (mid,))
+            ins_rows = cur.fetchall()
+            insurances_list = [
+                MemberInsuranceOut(
+                    id=ir[0], member_id=ir[1], provider_name=ir[2], policy_details=ir[3],
+                    premium_frequency=ir[4], premium_amount=float(ir[5]), coverage_amount=float(ir[6]), created_at=ir[7]
+                )
+                for ir in ins_rows
+            ]
+                
             result.append(
                 FamilyMemberOut(
                     id=r[0], household_id=r[1], user_id=r[2], name=r[3], dob=r[4], blood_group=r[5],
-                    relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9], created_at=r[10],
+                    relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9],
+                    earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0, created_at=r[12],
                     schooling=schooling_list, checkups=checkups_list, medicines=medicines_list,
-                    vaccinations=vaccinations_list, earnings=earnings_out
+                    vaccinations=vaccinations_list, earnings=earnings_out, insurances=insurances_list
                 )
             )
         return result
@@ -179,20 +199,22 @@ def add_family_member(payload: FamilyMemberCreate, current_user: UserOut = Depen
                 
             cur.execute(
                 """
-                INSERT INTO family_members (household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, created_at
+                INSERT INTO family_members (household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, created_at
                 """,
                 (
                     house_id, current_user.id, payload.name, payload.dob, payload.blood_group,
-                    payload.relationship, payload.avatar_color or "#0D9488", payload.is_self, payload.is_active
+                    payload.relationship, payload.avatar_color or "#0D9488", payload.is_self, payload.is_active,
+                    payload.earning_status or False, payload.contribution_amount or 0.0
                 )
             )
             r = cur.fetchone()
             db.commit()
             return FamilyMemberOut(
                 id=r[0], household_id=r[1], user_id=r[2], name=r[3], dob=r[4], blood_group=r[5],
-                relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9], created_at=r[10]
+                relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9],
+                earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0, created_at=r[12]
             )
         except Exception as e:
             db.rollback()
@@ -289,6 +311,74 @@ def delete_schooling(member_id: int, sid: int, current_user: UserOut = Depends(g
         cur.execute("DELETE FROM member_schooling WHERE id = %s", (sid,))
         db.commit()
         return {"message": "Schooling record removed"}
+
+
+# ─── SCHOOLING PAYMENTS ────────────────────────────────────────────────────
+
+PAYMENT_SELECT = "id, schooling_id, amount, paid_date, receipt_ref, notes, created_at"
+
+
+@router.get("/{member_id}/schooling/{sid}/payments", response_model=List[SchoolingPaymentOut])
+def list_schooling_payments(member_id: int, sid: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute(
+            "SELECT s.id FROM member_schooling s JOIN family_members m ON s.member_id = m.id WHERE s.id = %s AND s.member_id = %s AND m.user_id = %s",
+            (sid, member_id, current_user.id)
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Schooling record not found")
+        cur.execute(
+            f"SELECT {PAYMENT_SELECT} FROM member_schooling_payments WHERE schooling_id = %s ORDER BY paid_date DESC",
+            (sid,)
+        )
+        return [
+            SchoolingPaymentOut(
+                id=r[0], schooling_id=r[1], amount=float(r[2]), paid_date=r[3],
+                receipt_ref=r[4], notes=r[5], created_at=r[6]
+            )
+            for r in cur.fetchall()
+        ]
+
+
+@router.post("/{member_id}/schooling/{sid}/payments", response_model=SchoolingPaymentOut, status_code=status.HTTP_201_CREATED)
+def add_schooling_payment(member_id: int, sid: int, payload: SchoolingPaymentCreate, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute(
+            "SELECT s.id FROM member_schooling s JOIN family_members m ON s.member_id = m.id WHERE s.id = %s AND s.member_id = %s AND m.user_id = %s",
+            (sid, member_id, current_user.id)
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Schooling record not found")
+        try:
+            cur.execute(
+                """INSERT INTO member_schooling_payments (schooling_id, amount, paid_date, receipt_ref, notes)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id, schooling_id, amount, paid_date, receipt_ref, notes, created_at""",
+                (sid, payload.amount, payload.paid_date, payload.receipt_ref, payload.notes)
+            )
+            r = cur.fetchone()
+            db.commit()
+            return SchoolingPaymentOut(
+                id=r[0], schooling_id=r[1], amount=float(r[2]), paid_date=r[3],
+                receipt_ref=r[4], notes=r[5], created_at=r[6]
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{member_id}/schooling/{sid}/payments/{pid}", status_code=status.HTTP_200_OK)
+def delete_schooling_payment(member_id: int, sid: int, pid: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute(
+            "SELECT sp.id FROM member_schooling_payments sp JOIN member_schooling s ON sp.schooling_id = s.id JOIN family_members m ON s.member_id = m.id WHERE sp.id = %s AND sp.schooling_id = %s AND s.member_id = %s AND m.user_id = %s",
+            (pid, sid, member_id, current_user.id)
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Payment record not found")
+        cur.execute("DELETE FROM member_schooling_payments WHERE id = %s", (pid,))
+        db.commit()
+        return {"message": "Payment record deleted"}
 
 
 @router.post("/{member_id}/checkups", response_model=CheckupOut)
@@ -482,3 +572,89 @@ def delete_earning(member_id: int, current_user: UserOut = Depends(get_current_u
         cur.execute("DELETE FROM member_earnings WHERE member_id = %s", (member_id,))
         db.commit()
         return {"message": "Earnings record deleted"}
+
+
+# ─── MEMBER INSURANCE CRUD ─────────────────────────────────────────────────────
+
+@router.get("/{member_id}/insurance", response_model=List[MemberInsuranceOut])
+def list_member_insurance(member_id: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute("SELECT id FROM family_members WHERE id = %s AND user_id = %s", (member_id, current_user.id))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Member not found")
+        cur.execute(
+            "SELECT id, member_id, provider_name, policy_details, premium_frequency, premium_amount, coverage_amount, created_at FROM member_insurances WHERE member_id = %s",
+            (member_id,)
+        )
+        return [
+            MemberInsuranceOut(
+                id=r[0], member_id=r[1], provider_name=r[2], policy_details=r[3],
+                premium_frequency=r[4], premium_amount=float(r[5]), coverage_amount=float(r[6]), created_at=r[7]
+            )
+            for r in cur.fetchall()
+        ]
+
+
+@router.post("/{member_id}/insurance", response_model=MemberInsuranceOut, status_code=status.HTTP_201_CREATED)
+def add_member_insurance(member_id: int, payload: MemberInsuranceCreate, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute("SELECT id FROM family_members WHERE id = %s AND user_id = %s", (member_id, current_user.id))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Member not found")
+        try:
+            cur.execute(
+                """INSERT INTO member_insurances (member_id, provider_name, policy_details, premium_frequency, premium_amount, coverage_amount)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id, member_id, provider_name, policy_details, premium_frequency, premium_amount, coverage_amount, created_at""",
+                (member_id, payload.provider_name, payload.policy_details, payload.premium_frequency, payload.premium_amount, payload.coverage_amount)
+            )
+            r = cur.fetchone()
+            db.commit()
+            return MemberInsuranceOut(
+                id=r[0], member_id=r[1], provider_name=r[2], policy_details=r[3],
+                premium_frequency=r[4], premium_amount=float(r[5]), coverage_amount=float(r[6]), created_at=r[7]
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{member_id}/insurance/{insurance_id}", response_model=MemberInsuranceOut)
+def update_member_insurance(member_id: int, insurance_id: int, payload: MemberInsuranceCreate, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute(
+            "SELECT mi.id FROM member_insurances mi JOIN family_members fm ON mi.member_id = fm.id WHERE mi.id = %s AND mi.member_id = %s AND fm.user_id = %s",
+            (insurance_id, member_id, current_user.id)
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Insurance record not found")
+        try:
+            cur.execute(
+                """UPDATE member_insurances SET provider_name = %s, policy_details = %s, premium_frequency = %s, premium_amount = %s, coverage_amount = %s
+                WHERE id = %s
+                RETURNING id, member_id, provider_name, policy_details, premium_frequency, premium_amount, coverage_amount, created_at""",
+                (payload.provider_name, payload.policy_details, payload.premium_frequency, payload.premium_amount, payload.coverage_amount, insurance_id)
+            )
+            r = cur.fetchone()
+            db.commit()
+            return MemberInsuranceOut(
+                id=r[0], member_id=r[1], provider_name=r[2], policy_details=r[3],
+                premium_frequency=r[4], premium_amount=float(r[5]), coverage_amount=float(r[6]), created_at=r[7]
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{member_id}/insurance/{insurance_id}", status_code=status.HTTP_200_OK)
+def delete_member_insurance(member_id: int, insurance_id: int, current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
+    with db.cursor() as cur:
+        cur.execute(
+            "SELECT mi.id FROM member_insurances mi JOIN family_members fm ON mi.member_id = fm.id WHERE mi.id = %s AND mi.member_id = %s AND fm.user_id = %s",
+            (insurance_id, member_id, current_user.id)
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Insurance record not found")
+        cur.execute("DELETE FROM member_insurances WHERE id = %s", (insurance_id,))
+        db.commit()
+        return {"message": "Insurance record deleted"}

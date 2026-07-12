@@ -12,6 +12,7 @@ class AssetCreate(BaseModel):
     maturity_date: Optional[date_type] = None
     years_of_deposit: Optional[int] = None
     is_liability: bool = False
+    is_emergency: bool = False
     generates_income: bool = False
     income_frequency: Optional[str] = None
     purchase_price: Optional[float] = None
@@ -29,6 +30,7 @@ class AssetOut(BaseModel):
     maturity_date: Optional[date_type]
     years_of_deposit: Optional[int] = None
     is_liability: bool
+    is_emergency: bool = False
     generates_income: bool
     income_frequency: Optional[str]
     purchase_price: Optional[float] = None

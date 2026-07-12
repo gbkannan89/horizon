@@ -332,6 +332,35 @@ class LocalHouseholdMember {
   });
 }
 
+class LocalMemberInsurance {
+  final int id;
+  final String? providerName;
+  final String? policyDetails;
+  final String premiumFrequency;
+  final double premiumAmount;
+  final double coverageAmount;
+
+  LocalMemberInsurance({
+    required this.id,
+    this.providerName,
+    this.policyDetails,
+    this.premiumFrequency = 'yearly',
+    this.premiumAmount = 0,
+    this.coverageAmount = 0,
+  });
+
+  factory LocalMemberInsurance.fromJson(Map<String, dynamic> json) {
+    return LocalMemberInsurance(
+      id: json['id'],
+      providerName: json['provider_name'],
+      policyDetails: json['policy_details'],
+      premiumFrequency: json['premium_frequency'] ?? 'yearly',
+      premiumAmount: (json['premium_amount'] ?? 0).toDouble(),
+      coverageAmount: (json['coverage_amount'] ?? 0).toDouble(),
+    );
+  }
+}
+
 class LocalFamilyMember {
   final int id;
   final int householdId;
@@ -342,12 +371,15 @@ class LocalFamilyMember {
   final String? avatarColor;
   final bool isSelf;
   final bool isActive;
+  final bool earningStatus;
+  final double contributionAmount;
   final List<LocalSchooling> schooling;
   final List<LocalCheckup> checkups;
   final List<LocalMedicine> medicines;
   final List<LocalVaccination> vaccinations;
   final List<LocalEarnings> earnings;
   final List<LocalInsuranceLink> insuranceLinks;
+  final List<LocalMemberInsurance> insurances;
 
   LocalFamilyMember({
     required this.id,
@@ -359,12 +391,15 @@ class LocalFamilyMember {
     this.avatarColor,
     required this.isSelf,
     required this.isActive,
+    this.earningStatus = false,
+    this.contributionAmount = 0,
     required this.schooling,
     required this.checkups,
     required this.medicines,
     required this.vaccinations,
     required this.earnings,
     required this.insuranceLinks,
+    required this.insurances,
   });
 
   factory LocalFamilyMember.fromJson(Map<String, dynamic> json) {
@@ -378,32 +413,33 @@ class LocalFamilyMember {
       avatarColor: json['avatar_color'],
       isSelf: json['is_self'] ?? false,
       isActive: json['is_active'] ?? true,
-      schooling: (json['schooling'] as List?)
-              ?.map((e) => LocalSchooling.fromJson(e))
-              .toList() ??
-          [],
-      checkups: (json['checkups'] as List?)
-              ?.map((e) => LocalCheckup.fromJson(e))
-              .toList() ??
-          [],
-      medicines: (json['medicines'] as List?)
-              ?.map((e) => LocalMedicine.fromJson(e))
-              .toList() ??
-          [],
-      vaccinations: (json['vaccinations'] as List?)
-              ?.map((e) => LocalVaccination.fromJson(e))
-              .toList() ??
-          [],
+      earningStatus: json['earning_status'] ?? false,
+      contributionAmount: (json['contribution_amount'] ?? 0).toDouble(),
+      schooling: json['schooling'] != null
+              ? (json['schooling'] as List).map((e) => LocalSchooling.fromJson(e as Map<String, dynamic>)).toList()
+              : [],
+      checkups: json['checkups'] != null
+              ? (json['checkups'] as List).map((e) => LocalCheckup.fromJson(e as Map<String, dynamic>)).toList()
+              : [],
+      medicines: json['medicines'] != null
+              ? (json['medicines'] as List).map((e) => LocalMedicine.fromJson(e as Map<String, dynamic>)).toList()
+              : [],
+      vaccinations: json['vaccinations'] != null
+              ? (json['vaccinations'] as List).map((e) => LocalVaccination.fromJson(e as Map<String, dynamic>)).toList()
+              : [],
       earnings: json['earnings'] is Map
               ? [LocalEarnings.fromJson(json['earnings'] as Map<String, dynamic>)]
-              : (json['earnings'] as List?)
-                      ?.map((e) => LocalEarnings.fromJson(e))
-                      .toList() ??
-                  [],
-      insuranceLinks: (json['insurance_links'] as List?)
-              ?.map((e) => LocalInsuranceLink.fromJson(e))
-              .toList() ??
-          [],
+              : json['earnings'] != null
+                  ? (json['earnings'] as List).map((e) => LocalEarnings.fromJson(e as Map<String, dynamic>)).toList()
+                  : [],
+      insuranceLinks: json['insurance_links'] != null
+              ? (json['insurance_links'] as List).map((e) => LocalInsuranceLink.fromJson(e as Map<String, dynamic>)).toList()
+              : [],
+      insurances: json['insurances'] != null
+              ? (json['insurances'] as List)
+                  .map((e) => LocalMemberInsurance.fromJson(e as Map<String, dynamic>))
+                  .toList()
+              : [],
     );
   }
 }

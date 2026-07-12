@@ -10,7 +10,7 @@ from .auth import get_current_user
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
-ASSET_SELECT = "id, user_id, type, subtype, name, amount, interest_rate, start_date, maturity_date, is_liability, generates_income, income_frequency, purchase_price, purchase_date, years_of_deposit, created_at"
+ASSET_SELECT = "id, user_id, type, subtype, name, amount, interest_rate, start_date, maturity_date, is_liability, is_emergency, generates_income, income_frequency, purchase_price, purchase_date, years_of_deposit, created_at"
 
 
 def _row_to_asset(r):
@@ -18,11 +18,11 @@ def _row_to_asset(r):
         id=r[0], user_id=r[1], type=r[2], subtype=r[3], name=r[4],
         amount=float(r[5]), interest_rate=float(r[6]),
         start_date=r[7], maturity_date=r[8],
-        is_liability=r[9], generates_income=r[10], income_frequency=r[11],
-        purchase_price=float(r[12]) if r[12] is not None else None,
-        purchase_date=r[13],
-        years_of_deposit=r[14],
-        created_at=r[15]
+        is_liability=r[9], is_emergency=r[10], generates_income=r[11], income_frequency=r[12],
+        purchase_price=float(r[13]) if r[13] is not None else None,
+        purchase_date=r[14],
+        years_of_deposit=r[15],
+        created_at=r[16]
     )
 
 
@@ -32,7 +32,7 @@ def add_asset(asset_in: AssetCreate, current_user: UserOut = Depends(get_current
     with db.cursor() as cur:
         try:
             maturity_date = asset_in.maturity_date
-            if asset_in.type == 'fd' and asset_in.start_date and asset_in.years_of_deposit and not maturity_date:
+            if asset_in.type in ('fd', 'bank') and asset_in.start_date and asset_in.years_of_deposit and not maturity_date:
                 maturity_date = date(
                     asset_in.start_date.year + asset_in.years_of_deposit,
                     asset_in.start_date.month,
@@ -41,13 +41,13 @@ def add_asset(asset_in: AssetCreate, current_user: UserOut = Depends(get_current
 
             cur.execute(
                 f"""INSERT INTO assets (user_id, type, subtype, name, amount, interest_rate, start_date, maturity_date,
-                is_liability, generates_income, income_frequency, purchase_price, purchase_date, years_of_deposit)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                is_liability, is_emergency, generates_income, income_frequency, purchase_price, purchase_date, years_of_deposit)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING {ASSET_SELECT}""",
                 (
                     current_user.id, asset_in.type, asset_in.subtype, asset_in.name,
                     asset_in.amount, asset_in.interest_rate, asset_in.start_date, maturity_date,
-                    asset_in.is_liability, asset_in.generates_income, asset_in.income_frequency,
+                    asset_in.is_liability, asset_in.is_emergency, asset_in.generates_income, asset_in.income_frequency,
                     asset_in.purchase_price, asset_in.purchase_date, asset_in.years_of_deposit
                 )
             )
@@ -101,7 +101,7 @@ def update_asset(asset_id: int, asset_in: AssetCreate, current_user: UserOut = D
             
         try:
             maturity_date = asset_in.maturity_date
-            if asset_in.type == 'fd' and asset_in.start_date and asset_in.years_of_deposit and not maturity_date:
+            if asset_in.type in ('fd', 'bank') and asset_in.start_date and asset_in.years_of_deposit and not maturity_date:
                 maturity_date = date(
                     asset_in.start_date.year + asset_in.years_of_deposit,
                     asset_in.start_date.month,
@@ -110,14 +110,14 @@ def update_asset(asset_id: int, asset_in: AssetCreate, current_user: UserOut = D
 
             cur.execute(
                 f"""UPDATE assets SET type = %s, subtype = %s, name = %s, amount = %s, interest_rate = %s,
-                start_date = %s, maturity_date = %s, is_liability = %s, generates_income = %s,
+                start_date = %s, maturity_date = %s, is_liability = %s, is_emergency = %s, generates_income = %s,
                 income_frequency = %s, purchase_price = %s, purchase_date = %s, years_of_deposit = %s
                 WHERE id = %s
                 RETURNING {ASSET_SELECT}""",
                 (
                     asset_in.type, asset_in.subtype, asset_in.name, asset_in.amount,
                     asset_in.interest_rate, asset_in.start_date, maturity_date,
-                    asset_in.is_liability, asset_in.generates_income, asset_in.income_frequency,
+                    asset_in.is_liability, asset_in.is_emergency, asset_in.generates_income, asset_in.income_frequency,
                     asset_in.purchase_price, asset_in.purchase_date, asset_in.years_of_deposit, asset_id
                 )
             )

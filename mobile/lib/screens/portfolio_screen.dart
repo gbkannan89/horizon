@@ -1,8 +1,7 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
-import '../models/financial_models.dart';
 import '../utils/ui_utils.dart';
 import 'vehicle_detail_screen.dart';
 import 'device_detail_screen.dart';
@@ -69,16 +68,19 @@ class PortfolioScreen extends StatelessWidget {
     final interestRateCtrl = TextEditingController();
     final purchasePriceCtrl = TextEditingController();
     String selectedType = 'bank';
-    bool isLiability = false;
     bool generatesIncome = false;
     String incomeFrequency = 'monthly';
     DateTime? purchaseDate;
     bool isLoading = false;
 
+    bool isEmergency = false;
+    int? yearsOfDeposit;
+
     final types = [
-      {'value': 'bank',     'label': 'Bank/FD',   'icon': Icons.account_balance_outlined},
-      {'value': 'physical', 'label': 'Gold/Property', 'icon': Icons.diamond_outlined},
-      {'value': 'equity',   'label': 'Stocks/MF', 'icon': Icons.trending_up_rounded},
+      {'value': 'bank',     'label': 'Bank FD/PF', 'icon': Icons.account_balance_outlined},
+      {'value': 'physical', 'label': 'Gold',       'icon': Icons.diamond_outlined},
+      {'value': 'property', 'label': 'Property',   'icon': Icons.real_estate_agent_rounded},
+      {'value': 'equity',   'label': 'Stocks/MF',  'icon': Icons.trending_up_rounded},
     ];
 
     showModalBottomSheet(
@@ -137,55 +139,61 @@ class PortfolioScreen extends StatelessWidget {
               decoration: _inputDec('e.g. 7.5', hint: 'Interest Rate (if applicable)')),
             const SizedBox(height: 16),
 
-            const Text('Purchase Price (for ROI)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-            const SizedBox(height: 8),
-            TextField(controller: purchasePriceCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: _inputDec('What you paid', prefix: '₹ ', hint: 'Optional')),
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Purchase Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                TextButton(
-                  onPressed: () async {
+            if (selectedType == 'bank' || selectedType == 'property') ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Generates Income?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                  Switch(value: generatesIncome, onChanged: (v) => setState(() => generatesIncome = v), activeThumbColor: const Color(0xFF059669)),
+                ],
+              ),
+              if (generatesIncome) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Income Frequency', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                    DropdownButton<String>(
+                      value: incomeFrequency,
+                      underline: const SizedBox(),
+                      items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f.toUpperCase(), style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) => setState(() => incomeFrequency = v!),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+            if (selectedType == 'bank') ...[
+              const Text('FD Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: TextField(
+                  readOnly: true,
+                  decoration: _inputDec('Start Date'),
+                  controller: TextEditingController(text: purchaseDate != null ? '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}' : ''),
+                  onTap: () async {
                     final d = await showDatePicker(context: ctx, initialDate: purchaseDate ?? DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime.now());
                     if (d != null) setState(() => purchaseDate = d);
                   },
-                  child: Text(purchaseDate == null ? 'Select (Optional)' : '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Is this a Liability?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                Switch(value: isLiability, onChanged: (v) => setState(() => isLiability = v), activeThumbColor: const Color(0xFF059669)),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Generates Income?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                Switch(value: generatesIncome, onChanged: (v) => setState(() => generatesIncome = v), activeThumbColor: const Color(0xFF059669)),
-              ],
-            ),
-            if (generatesIncome) ...[
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: _inputDec('Years of FD'),
+                  onChanged: (v) => yearsOfDeposit = int.tryParse(v),
+                )),
+              ]),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Income Frequency', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
-                  DropdownButton<String>(
-                    value: incomeFrequency,
-                    underline: const SizedBox(),
-                    items: ['monthly', 'quarterly', 'yearly'].map((f) => DropdownMenuItem(value: f, child: Text(f.toUpperCase(), style: const TextStyle(fontSize: 13)))).toList(),
-                    onChanged: (v) => setState(() => incomeFrequency = v!),
-                  ),
+                  const Text('Mark as Emergency Fund', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                  Switch(value: isEmergency, onChanged: (v) => setState(() => isEmergency = v), activeColor: const Color(0xFF059669)),
                 ],
               ),
+            ],
+            if (selectedType == 'physical' || selectedType == 'property') ...[
+              const SizedBox(height: 12),
             ],
             const SizedBox(height: 32),
             SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
@@ -196,9 +204,14 @@ class PortfolioScreen extends StatelessWidget {
                 final rate = double.tryParse(interestRateCtrl.text.trim()) ?? 0.0;
                 setState(() => isLoading = true);
                 try {
-                  final pp = double.tryParse(purchasePriceCtrl.text.trim());
-                  final pd = purchaseDate?.toIso8601String().split('T').first;
-                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount, interestRate: rate, isLiability: isLiability, generatesIncome: generatesIncome, incomeFrequency: generatesIncome ? incomeFrequency : null, purchasePrice: pp, purchaseDate: pd);
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addAsset(name, selectedType, amount,
+                    interestRate: rate, isLiability: false,
+                    isEmergency: selectedType == 'bank' ? isEmergency : false,
+                    generatesIncome: generatesIncome, incomeFrequency: generatesIncome ? incomeFrequency : null,
+                    purchasePrice: double.tryParse(purchasePriceCtrl.text.trim()),
+                    purchaseDate: purchaseDate?.toIso8601String().split('T').first,
+                    yearsOfDeposit: selectedType == 'bank' ? yearsOfDeposit : null,
+                  );
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     _showSnack(ctx, 'Asset added successfully!');
@@ -211,6 +224,67 @@ class PortfolioScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
               child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Text('Add Asset', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── EDIT ASSET MODAL ───────────────────────────────────────────────────────
+  void _showEditAssetModal(BuildContext context, dynamic asset) {
+    final nameCtrl = TextEditingController(text: asset.name);
+    final amountCtrl = TextEditingController(text: asset.amount.toString());
+    final rateCtrl = TextEditingController(text: asset.interestRate > 0 ? asset.interestRate.toString() : '');
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Edit Asset', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Asset Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: nameCtrl, decoration: _inputDec('e.g. SBI Savings')),
+            const SizedBox(height: 20),
+            const Text('Current Value', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: amountCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Amount', prefix: '₹ ')),
+            const SizedBox(height: 20),
+            const Text('Interest Rate (%)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: rateCtrl, keyboardType: TextInputType.number, decoration: _inputDec('e.g. 7.5')),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final name = nameCtrl.text.trim();
+                final amount = double.tryParse(amountCtrl.text.trim());
+                if (name.isEmpty || amount == null || amount <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).updateAsset(int.parse(asset.id), {
+                    'name': name, 'type': 'bank', 'amount': amount,
+                    'interest_rate': double.tryParse(rateCtrl.text.trim()) ?? 0,
+                    'is_liability': false, 'is_emergency': false,
+                  });
+                  if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Asset updated'); }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) _showSnack(ctx, 'Failed: $e', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Update Asset', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             )),
           ])),
         ),
@@ -327,6 +401,136 @@ class PortfolioScreen extends StatelessWidget {
     );
   }
 
+  // ── ADD LENDING MODAL ──────────────────────────────────────────────────────
+  void _showAddLendingModal(BuildContext context) {
+    final personCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String direction = 'lent';
+    DateTime? dateGiven;
+    DateTime? promisedReturnDate;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            const Text('Track Lending', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: GestureDetector(
+                onTap: () => setState(() => direction = 'lent'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: direction == 'lent' ? const Color(0xFF0D9488) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: direction == 'lent' ? const Color(0xFF0D9488) : Colors.grey.shade300),
+                  ),
+                  child: Text('I Lent', textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: direction == 'lent' ? Colors.white : Colors.grey.shade700)),
+                ),
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: GestureDetector(
+                onTap: () => setState(() => direction = 'borrowed'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: direction == 'borrowed' ? const Color(0xFF0D9488) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: direction == 'borrowed' ? const Color(0xFF0D9488) : Colors.grey.shade300),
+                  ),
+                  child: Text('I Borrowed', textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: direction == 'borrowed' ? Colors.white : Colors.grey.shade700)),
+                ),
+              )),
+            ]),
+            const SizedBox(height: 20),
+            Text('${direction == 'lent' ? 'Lent to' : 'Borrowed from'}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: personCtrl, decoration: _inputDec('Person Name')),
+            const SizedBox(height: 20),
+            TextField(controller: amountCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Amount', prefix: '₹ ')),
+            const SizedBox(height: 20),
+            const Text('Date Given', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(readOnly: true, decoration: _inputDec(dateGiven != null ? '${dateGiven!.day}/${dateGiven!.month}/${dateGiven!.year}' : 'Select Date'),
+              onTap: () async {
+                final d = await showDatePicker(context: ctx, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime.now());
+                if (d != null) setState(() => dateGiven = d);
+              },
+            ),
+            const SizedBox(height: 20),
+            const Text('Promised Return Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(readOnly: true, decoration: _inputDec(promisedReturnDate != null ? '${promisedReturnDate!.day}/${promisedReturnDate!.month}/${promisedReturnDate!.year}' : 'Select Date'),
+              onTap: () async {
+                final d = await showDatePicker(context: ctx, initialDate: DateTime.now().add(const Duration(days: 30)), firstDate: DateTime.now(), lastDate: DateTime(2100));
+                if (d != null) setState(() => promisedReturnDate = d);
+              },
+            ),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: () async {
+                if (personCtrl.text.isEmpty || amountCtrl.text.isEmpty || dateGiven == null) return;
+                await Provider.of<FinancialProvider>(ctx, listen: false).addLendingRecord({
+                  'direction': direction,
+                  'person_name': personCtrl.text.trim(),
+                  'amount': double.tryParse(amountCtrl.text.trim()) ?? 0,
+                  'date_given': dateGiven!.toIso8601String().split('T').first,
+                  'promised_return_date': promisedReturnDate?.toIso8601String().split('T').first,
+                });
+                if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Record added'); }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: const Text('Add Record', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  void _showEditLendingModal(BuildContext context, dynamic record) {
+    final personCtrl = TextEditingController(text: record.personName);
+    final amountCtrl = TextEditingController(text: record.amount.toString());
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            const Text('Edit Record', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            TextField(controller: personCtrl, decoration: _inputDec('Person Name')),
+            const SizedBox(height: 12),
+            TextField(controller: amountCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Amount', prefix: '₹ ')),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: () async {
+                await Provider.of<FinancialProvider>(ctx, listen: false).updateLendingRecord(record.id, {
+                  'person_name': personCtrl.text.trim(),
+                  'amount': double.tryParse(amountCtrl.text.trim()) ?? 0,
+                });
+                if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Record updated'); }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: const Text('Update', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ]),
+        ),
+      )),
+    );
+  }
+
   // ── ADD INCOME MODAL ───────────────────────────────────────────────────────
   void _showAddIncomeModal(BuildContext context) {
     final nameCtrl = TextEditingController();
@@ -378,6 +582,108 @@ class PortfolioScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
               child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Text('Add Income', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── SALARY BREAKUP MODAL ──────────────────────────────────────────────────
+  void _showSalaryBreakupModal(BuildContext context, dynamic income) {
+    final basicCtrl = TextEditingController();
+    final hraCtrl = TextEditingController();
+    final ltaCtrl = TextEditingController();
+    final pfCtrl = TextEditingController();
+    final specialCtrl = TextEditingController();
+    final mealCtrl = TextEditingController();
+    final variablePctCtrl = TextEditingController();
+    final companyCtrl = TextEditingController();
+    final fromYearCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Salary Breakup — ${income.label}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+            ]),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                const Icon(Icons.info_outline, color: Color(0xFF0D9488), size: 16),
+                const SizedBox(width: 8),
+                Text('Total monthly: ₹${income.amount.toStringAsFixed(0)} · ${income.frequency}',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              ]),
+            ),
+            const SizedBox(height: 16),
+            const Text('Company Name', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 6),
+            TextField(controller: companyCtrl, decoration: _inputDec('e.g. ABC Corp')),
+            const SizedBox(height: 12),
+            const Text('From Year', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 6),
+            TextField(controller: fromYearCtrl, keyboardType: TextInputType.number, decoration: _inputDec('e.g. 2023')),
+            const SizedBox(height: 16),
+            const Text('Monthly Breakup', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF0F172A))),
+            const SizedBox(height: 4),
+            const Text('Basic Pay is typically 50% of fixed pay', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: TextField(controller: basicCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Basic Pay', prefix: '₹'))),
+              const SizedBox(width: 10),
+              Expanded(child: TextField(controller: hraCtrl, keyboardType: TextInputType.number, decoration: _inputDec('HRA', prefix: '₹'))),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: TextField(controller: ltaCtrl, keyboardType: TextInputType.number, decoration: _inputDec('LTA', prefix: '₹'))),
+              const SizedBox(width: 10),
+              Expanded(child: TextField(controller: pfCtrl, keyboardType: TextInputType.number, decoration: _inputDec('PF', prefix: '₹'))),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: TextField(controller: specialCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Special Allowance', prefix: '₹'))),
+              const SizedBox(width: 10),
+              Expanded(child: TextField(controller: mealCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Meal Card', prefix: '₹'))),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: TextField(controller: variablePctCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Variable Pay %'))),
+              const SizedBox(width: 10),
+              Expanded(child: Container()),
+            ]),
+            const SizedBox(height: 24),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: () async {
+                await Provider.of<FinancialProvider>(ctx, listen: false).addSalaryDetail(
+                  income.id,
+                  {
+                    'company_name': companyCtrl.text.trim(),
+                    'from_year': int.tryParse(fromYearCtrl.text.trim()) ?? DateTime.now().year,
+                    'is_current': true,
+                    'fixed_pay': income.amount * 12,
+                    'basic_pay': double.tryParse(basicCtrl.text.trim()),
+                    'hra': double.tryParse(hraCtrl.text.trim()),
+                    'lta': double.tryParse(ltaCtrl.text.trim()),
+                    'pf_employee': double.tryParse(pfCtrl.text.trim()),
+                    'special_allowance': double.tryParse(specialCtrl.text.trim()),
+                    'meal_card': double.tryParse(mealCtrl.text.trim()),
+                    'variable_pay_percentage': double.tryParse(variablePctCtrl.text.trim()),
+                  }
+                );
+                if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Salary breakup saved'); }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: const Text('Save Breakup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             )),
           ])),
         ),
@@ -710,6 +1016,163 @@ class PortfolioScreen extends StatelessWidget {
     );
   }
 
+  // ── ADD GOLD MODAL ─────────────────────────────────────────────────────────
+  void _showAddGoldModal(BuildContext context) {
+    final gramsCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+    int carat = 24;
+    DateTime? purchaseDate;
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            const Text('Add Gold Holding', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Text('Purity (Carat)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Row(children: [24, 22, 18].map((c) {
+              final sel = carat == c;
+              return Expanded(child: GestureDetector(
+                onTap: () => setState(() => carat = c),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: sel ? const Color(0xFFF59E0B) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: sel ? const Color(0xFFF59E0B) : Colors.grey.shade300),
+                  ),
+                  child: Text('${c}K', textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: sel ? Colors.white : Colors.grey.shade700)),
+                ),
+              ));
+            }).toList()),
+            const SizedBox(height: 20),
+            TextField(controller: gramsCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Grams Purchased', hint: 'e.g. 10')),
+            const SizedBox(height: 20),
+            TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Purchase Price per Gram', prefix: '₹ ')),
+            const SizedBox(height: 20),
+            const Text('Purchase Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(readOnly: true, decoration: _inputDec(purchaseDate != null ? '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}' : 'Select Date'),
+              onTap: () async {
+                final d = await showDatePicker(context: ctx, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime.now());
+                if (d != null) setState(() => purchaseDate = d);
+              },
+            ),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final grams = double.tryParse(gramsCtrl.text.trim());
+                final ppg = double.tryParse(priceCtrl.text.trim());
+                if (grams == null || grams <= 0 || ppg == null || ppg <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addGoldAsset({
+                    'carat': carat, 'grams': grams,
+                    'purchase_price_per_gram': ppg,
+                    'purchase_date': purchaseDate?.toIso8601String().split('T').first ?? DateTime.now().toIso8601String().split('T').first,
+                  });
+                  if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Gold added! Live value will be shown.'); }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) _showSnack(ctx, 'Failed: $e', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Gold', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
+  // ── ADD STOCK MODAL ────────────────────────────────────────────────────────
+  void _showAddStockModal(BuildContext context) {
+    final tickerCtrl = TextEditingController();
+    final qtyCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+    DateTime? purchaseDate;
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: _sheetDec(),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _handle(),
+            const Text('Add Stock / MF', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Text('Stock Ticker (e.g. RELIANCE.NS)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(controller: tickerCtrl, decoration: _inputDec('e.g. RELIANCE.NS, TCS.NS')),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: Column(children: [
+                const Text('Quantity', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextField(controller: qtyCtrl, keyboardType: TextInputType.number, decoration: _inputDec('e.g. 10')),
+              ])),
+              const SizedBox(width: 16),
+              Expanded(child: Column(children: [
+                const Text('Avg Purchase Price', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextField(controller: priceCtrl, keyboardType: TextInputType.number, decoration: _inputDec('Price', prefix: '₹ ')),
+              ])),
+            ]),
+            const SizedBox(height: 20),
+            const Text('Purchase Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 8),
+            TextField(readOnly: true, decoration: _inputDec(purchaseDate != null ? '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}' : 'Select Date'),
+              onTap: () async {
+                final d = await showDatePicker(context: ctx, initialDate: DateTime.now().subtract(const Duration(days: 365)), firstDate: DateTime(2000), lastDate: DateTime.now());
+                if (d != null) setState(() => purchaseDate = d);
+              },
+            ),
+            const SizedBox(height: 32),
+            SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final ticker = tickerCtrl.text.trim().toUpperCase();
+                final qty = int.tryParse(qtyCtrl.text.trim());
+                final price = double.tryParse(priceCtrl.text.trim());
+                if (ticker.isEmpty || qty == null || qty <= 0) return;
+                setState(() => isLoading = true);
+                try {
+                  await Provider.of<FinancialProvider>(ctx, listen: false).addStockHolding({
+                    'ticker': ticker,
+                    'quantity': qty,
+                    'avg_purchase_price': price ?? 0,
+                    'total_invested': (price ?? 0) * qty,
+                    'purchase_date': purchaseDate?.toIso8601String().split('T').first ?? DateTime.now().toIso8601String().split('T').first,
+                  });
+                  if (ctx.mounted) { Navigator.pop(ctx); _showSnack(ctx, 'Stock added! Live price will be shown.'); }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (ctx.mounted) _showSnack(ctx, 'Failed: $e', isError: true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B46C1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+              child: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Add Stock', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            )),
+          ])),
+        ),
+      )),
+    );
+  }
+
   // ── Section Header ─────────────────────────────────────────────────────────
   Widget _buildSectionHeader(String title, List<Color> gradient, VoidCallback onAdd) {
     return Padding(
@@ -717,20 +1180,20 @@ class PortfolioScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Colors.white)),
+          Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Color(0xFF0F172A))),
           GestureDetector(
             onTap: onAdd,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: const Color(0xFF0D9488).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1.2),
+                border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.2), width: 1.2),
               ),
               child: const Row(children: [
-                Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                Icon(Icons.add_rounded, size: 16, color: Color(0xFF0D9488)),
                 SizedBox(width: 4),
-                Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+                Text('Add', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.w800, fontSize: 12)),
               ]),
             ),
           ),
@@ -748,131 +1211,137 @@ class PortfolioScreen extends StatelessWidget {
     final totalCurrent = (ps['totalCurrent'] ?? 0).toDouble();
     final totalReturn = (ps['totalReturn'] ?? 0).toDouble();
     final estimatedCagr = (ps['estimatedCagr'] ?? 0).toDouble();
-    final allocation = ps['allocation'] as List<dynamic>? ?? [];
     final returnColor = totalReturn >= 0 ? const Color(0xFF34D399) : const Color(0xFFF87171);
     final returnSign = totalReturn >= 0 ? '+' : '';
+    final returnPct = totalInvested > 0 ? (totalReturn / totalInvested * 100) : 0.0;
 
     return [
-      const SizedBox(height: 20),
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 18),
+      const SizedBox(height: 8),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.60),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 1.2),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 25, offset: const Offset(0, 6))],
             ),
-            const SizedBox(width: 12),
-            const Text('Portfolio Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
-          ]),
-          const SizedBox(height: 16),
-          Row(children: [
-            _psColumn('Invested', '₹${_fmt(totalInvested)}', Colors.white.withValues(alpha: 0.7)),
-            const SizedBox(width: 16),
-            _psColumn('Current', '₹${_fmt(totalCurrent)}', Colors.white),
-            const SizedBox(width: 16),
-            _psColumn('Return', '$returnSign₹${_fmt(totalReturn.abs())}', returnColor),
-            const SizedBox(width: 16),
-            _psColumn('Est. CAGR', '${estimatedCagr.toStringAsFixed(1)}%', const Color(0xFFA78BFA)),
-          ]),
-          if (allocation.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-            const SizedBox(height: 16),
-            ...allocation.take(5).map((a) {
-              final label = a['label'] ?? '';
-              final pct = (a['percentage'] ?? 0).toDouble();
-              final clr = _parseHex(a['color'] ?? '#6366F1');
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(children: [
-                  Container(width: 10, height: 10, decoration: BoxDecoration(color: clr, borderRadius: BorderRadius.circular(3))),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.75)))),
-                  Text('${pct.toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                ]),
-              );
-            }),
-          ],
-        ]),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.trending_up_rounded, color: Color(0xFF0D9488), size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Portfolio Summary', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: returnColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('$returnSign${returnPct.toStringAsFixed(1)}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: returnColor)),
+                ),
+              ]),
+              const SizedBox(height: 20),
+              Row(children: [
+                _psColumn('Invested', '₹${_fmt(totalInvested)}', const Color(0xFF64748B)),
+                _psColumn('Current', '₹${_fmt(totalCurrent)}', const Color(0xFF0F172A)),
+                _psColumn('Return', '$returnSign₹${_fmt(totalReturn.abs())}', returnColor),
+                _psColumn('CAGR', '${estimatedCagr.toStringAsFixed(1)}%', const Color(0xFF909AC6)),
+              ]),
+
+            ]),
+          ),
+        ),
       ),
     ];
   }
 
   Widget _psColumn(String label, String value, Color color) {
     return Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.4), fontWeight: FontWeight.w600)),
+      Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
       const SizedBox(height: 2),
       Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color)),
     ]));
   }
 
-  Color _parseHex(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse('0x$hex'));
-  }
-
   // ── Item card with delete swipe ────────────────────────────────────────────
-  Widget _buildListItem(String title, double amount, String subtitle, List<Color> gradient, IconData icon, VoidCallback onDelete, {VoidCallback? onTap}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04), // Glassmorphic background
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Expanded(
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 12),
+  Widget _buildListItem(String title, double amount, String subtitle, List<Color> gradient, IconData icon, VoidCallback onDelete, {VoidCallback? onTap, VoidCallback? onEdit}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 15, offset: const Offset(0, 4))],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white), overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 3),
-                      Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+                    child: Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: gradient[0].withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: gradient[0], size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 3),
+                          Text(subtitle, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+                        ]),
+                      ),
                     ]),
                   ),
+                  const SizedBox(width: 8),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A))),
+                    if (onEdit != null) ...[
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: onEdit,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                          child: const Icon(Icons.edit_outlined, color: Color(0xFF0D9488), size: 16),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFF87171), size: 16),
+                      ),
+                    ),
+                  ]),
                 ]),
               ),
-              const SizedBox(width: 8),
-              Row(children: [
-                Text('₹${amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.white)),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: onDelete,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFF87171), size: 16),
-                  ),
-                ),
-              ]),
-            ]),
+            ),
           ),
         ),
       ),
@@ -883,108 +1352,67 @@ class PortfolioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FinancialProvider>();
-    double totalAssets = provider.assets.fold(0.0, (s, a) => s + a.amount);
-    double totalLiabilities = provider.liabilities.fold(0.0, (s, l) => s + l.amount);
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF030712), // Premium dark theme
       body: Stack(
         children: [
-          // ── Glowing Orbs (Glassmorphism BG effects) ─────────────────────────
-          Positioned(
-            top: -150,
-            left: -150,
-            child: Container(
-              width: 350,
-              height: 350,
+          // ── Light gradient background ────────────────────────────────────
+          Positioned.fill(
+            child: const DecoratedBox(
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.25),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
-                  ],
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
                 ),
               ),
             ),
           ),
+          // ── Accent blobs ────────────────────────────────────────────────
           Positioned(
-            bottom: 50,
-            right: -150,
+            top: -size.height * 0.12, right: -size.width * 0.2,
             child: Container(
-              width: 350,
-              height: 350,
+              width: size.width * 0.7, height: size.width * 0.7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFA78BFA).withValues(alpha: 0.15),
-                    const Color(0xFFA78BFA).withValues(alpha: 0.0),
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF0D9488).withValues(alpha: 0.15),
+                  const Color(0xFF0D9488).withValues(alpha: 0.04),
+                  const Color(0xFF0D9488).withValues(alpha: 0.0),
+                ]),
               ),
             ),
+          ),
+          Positioned(
+            bottom: -size.height * 0.08, left: -size.width * 0.15,
+            child: Container(
+              width: size.width * 0.55, height: size.width * 0.55,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF909AC6).withValues(alpha: 0.12),
+                  const Color(0xFF909AC6).withValues(alpha: 0.03),
+                  const Color(0xFF909AC6).withValues(alpha: 0.0),
+                ]),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: CustomPaint(painter: _GridPainter()),
           ),
 
           // ── Content ─────────────────────────────────────────────────────────
           SafeArea(
             child: provider.isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488)))
                 : RefreshIndicator(
                     onRefresh: provider.loadAllData,
-                    color: Colors.white,
-                    backgroundColor: const Color(0xFF0F172A),
+                    color: const Color(0xFF0D9488),
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       children: [
-                        // Net Worth card
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35), // Dark Glass
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.2),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Total Net Worth', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 8),
-                                  Text('₹${provider.netWorth.toStringAsFixed(0)}',
-                                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white)),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      _pill('Assets ₹${_fmt(totalAssets)}', const Color(0xFF34D399)),
-                                      const SizedBox(width: 8),
-                                      _pill('Debt ₹${_fmt(totalLiabilities)}', const Color(0xFFF87171)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: const Color(0xFF34D399).withValues(alpha: 0.2), blurRadius: 20)],
-                                ),
-                                child: CircularPercentIndicator(
-                                  radius: 44,
-                                  lineWidth: 8,
-                                  percent: totalAssets > 0 ? (totalAssets / (totalAssets + totalLiabilities)).clamp(0.0, 1.0) : 0,
-                                  progressColor: const Color(0xFF34D399),
-                                  backgroundColor: Colors.white.withValues(alpha: 0.1),
-                                  circularStrokeCap: CircularStrokeCap.round,
-                                  center: const Text('NW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
                         // Portfolio Summary
                         ..._buildPortfolioSummary(provider),
 
@@ -1002,7 +1430,60 @@ class PortfolioScreen extends StatelessWidget {
                                 await Provider.of<FinancialProvider>(context, listen: false).deleteAsset(a.id);
                                 if (context.mounted) _showSnack(context, 'Asset deleted');
                               }),
+                              onEdit: () => _showEditAssetModal(context, a),
                             )),
+
+                        // Gold Assets
+                        _buildSectionHeader('Gold', const [Color(0xFFF59E0B), Color(0xFFFBBF24)], () => _showAddGoldModal(context)),
+                        if (provider.goldAssets.isEmpty)
+                          UiUtils.buildEmptyState('No gold holdings', 'Tap Add to track gold\nwith live value.', Icons.monetization_on_outlined, Colors.amber),
+                        ...provider.goldAssets.map((g) => _buildListItem(
+                              '${g.grams} g · ${g.caratLabel}',
+                              g.currentValue ?? g.totalPurchaseCost ?? 0,
+                              'Invested: ₹${g.totalPurchaseCost?.toStringAsFixed(0) ?? '0'} · ${g.returnPct != null ? (g.returnPct! >= 0 ? '+' : '') + g.returnPct!.toStringAsFixed(1) + '%' : '--'}',
+                              const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                              Icons.monetization_on_rounded,
+                              () => UiUtils.showDeleteBottomSheet(context, '${g.grams}g Gold', () async {
+                                await Provider.of<FinancialProvider>(context, listen: false).deleteGoldAsset(g.id);
+                                if (context.mounted) _showSnack(context, 'Gold holding removed');
+                              }),
+                            )),
+                        const SizedBox(height: 16),
+
+                        // Stock Holdings
+                        _buildSectionHeader('Stocks / MF', const [Color(0xFF6B46C1), Color(0xFF8B5CF6)], () => _showAddStockModal(context)),
+                        if (provider.stockHoldings.isEmpty)
+                          UiUtils.buildEmptyState('No stock holdings', 'Tap Add to track stocks\nwith live prices.', Icons.trending_up_outlined, Colors.purple),
+                        ...provider.stockHoldings.map((s) => _buildListItem(
+                              s.ticker,
+                              s.currentValue ?? s.totalInvested,
+                              'Qty: ${s.quantity} · Avg: ₹${s.avgPurchasePrice.toStringAsFixed(0)} · ${s.returnPct != null ? (s.returnPct! >= 0 ? '+' : '') + s.returnPct!.toStringAsFixed(1) + '%' : '--'}',
+                              const [Color(0xFF6B46C1), Color(0xFF8B5CF6)],
+                              Icons.trending_up_rounded,
+                              () => UiUtils.showDeleteBottomSheet(context, s.ticker, () async {
+                                await Provider.of<FinancialProvider>(context, listen: false).deleteStockHolding(s.id);
+                                if (context.mounted) _showSnack(context, 'Stock holding removed');
+                              }),
+                            )),
+                        const SizedBox(height: 16),
+
+                        // Lending Records
+                        _buildSectionHeader('Money Lending', const [Color(0xFFF59E0B), Color(0xFFFBBF24)], () => _showAddLendingModal(context)),
+                        if (provider.lendingRecords.isEmpty)
+                          UiUtils.buildEmptyState('No lending records', 'Tap Add to track money lent\nor borrowed.', Icons.currency_rupee_outlined, Colors.amber),
+                        ...provider.lendingRecords.map((l) => _buildListItem(
+                              l.personName,
+                              l.remaining,
+                              '${l.direction == 'lent' ? 'Lent' : 'Borrowed'} · ${l.status} · Due: ${l.promisedReturnDate ?? 'N/A'}',
+                              const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                              l.direction == 'lent' ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                              () => UiUtils.showDeleteBottomSheet(context, l.personName, () async {
+                                await Provider.of<FinancialProvider>(context, listen: false).deleteLendingRecord(l.id);
+                                if (context.mounted) _showSnack(context, 'Record deleted');
+                              }),
+                              onEdit: () => _showEditLendingModal(context, l),
+                            )),
+                        const SizedBox(height: 16),
 
                         // Liabilities
                         _buildSectionHeader('Liabilities', const [Color(0xFFDC2626), Color(0xFFF87171)], () => _showAddLiabilityModal(context)),
@@ -1024,17 +1505,21 @@ class PortfolioScreen extends StatelessWidget {
                         _buildSectionHeader('Income Sources', const [Color(0xFF0D9488), Color(0xFF2DD4BF)], () => _showAddIncomeModal(context)),
                         if (provider.incomes.isEmpty)
                           UiUtils.buildEmptyState('No income sources', 'Tap Add to record your salary\nand other income.', Icons.trending_up_outlined, Colors.blue),
-                        ...provider.incomes.map((i) => _buildListItem(
-                              i.label,
-                              i.amount,
-                              '${i.frequency} income',
-                              const [Color(0xFF0D9488), Color(0xFF2DD4BF)],
-                              Icons.trending_up_rounded,
-                              () => UiUtils.showDeleteBottomSheet(context, i.label, () async {
-                                await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id);
-                                if (context.mounted) _showSnack(context, 'Income deleted');
-                              }),
-                            )),
+                        ...provider.incomes.map((i) {
+                          final isSalary = i.type == 'salary';
+                          return _buildListItem(
+                            i.label, i.amount,
+                            isSalary ? 'Salary · Tap for breakup & growth' : '${i.frequency} income',
+                            const [Color(0xFF0D9488), Color(0xFF2DD4BF)],
+                            isSalary ? Icons.work_outline_rounded : Icons.trending_up_rounded,
+                            () => UiUtils.showDeleteBottomSheet(context, i.label, () async {
+                              await Provider.of<FinancialProvider>(context, listen: false).deleteIncome(i.id);
+                              if (context.mounted) _showSnack(context, 'Income deleted');
+                            }),
+                            onEdit: isSalary ? () => _showSalaryBreakupModal(context, i) : null,
+                            onTap: isSalary ? () => _showSalaryBreakupModal(context, i) : null,
+                          );
+                        }),
 
                         // Vehicles
                         _buildSectionHeader('Vehicles', const [Color(0xFFE88A1A), Color(0xFFFBBF24)], () => _showAddVehicleModal(context)),
@@ -1111,10 +1596,23 @@ class PortfolioScreen extends StatelessWidget {
   }
 
   String _fmt(double v) => v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}K' : v.toStringAsFixed(0);
+}
 
-  Widget _pill(String text, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-        child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-      );
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

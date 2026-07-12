@@ -117,6 +117,23 @@ class EarningOut(BaseModel):
 
 
 # ─── FAMILY MEMBER ────────────────────────────────────────────────────────────
+class MemberInsuranceCreate(BaseModel):
+    provider_name: Optional[str] = None
+    policy_details: Optional[str] = None
+    premium_frequency: str = Field("yearly", pattern="^(monthly|quarterly|yearly)$")
+    premium_amount: float = Field(default=0.0, ge=0)
+    coverage_amount: float = Field(default=0.0, ge=0)
+
+class MemberInsuranceOut(BaseModel):
+    id: int
+    member_id: int
+    provider_name: Optional[str] = None
+    policy_details: Optional[str] = None
+    premium_frequency: str
+    premium_amount: float
+    coverage_amount: float
+    created_at: datetime
+
 class FamilyMemberCreate(BaseModel):
     name: str
     dob: Optional[date_type] = None
@@ -125,6 +142,8 @@ class FamilyMemberCreate(BaseModel):
     avatar_color: Optional[str] = "#0D9488"
     is_self: Optional[bool] = False
     is_active: Optional[bool] = True
+    earning_status: Optional[bool] = False
+    contribution_amount: Optional[float] = 0.0
 
 class FamilyMemberOut(BaseModel):
     id: int
@@ -137,6 +156,8 @@ class FamilyMemberOut(BaseModel):
     avatar_color: str
     is_self: bool
     is_active: bool
+    earning_status: bool = False
+    contribution_amount: float = 0.0
     created_at: datetime
     # Nested fields
     schooling: List[SchoolingOut] = []
@@ -144,3 +165,4 @@ class FamilyMemberOut(BaseModel):
     medicines: List[MedicineOut] = []
     vaccinations: List[VaccinationOut] = []
     earnings: Optional[EarningOut] = None
+    insurances: List[MemberInsuranceOut] = []
