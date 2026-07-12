@@ -380,34 +380,32 @@ class ProfileScreen extends StatelessWidget {
 
                   // ── Personal Information Navigation ────────────────────────────────
                   Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
                     ),
-                    child: Material(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      clipBehavior: Clip.antiAlias,
-                      child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.1), shape: BoxShape.circle),
+                          child: const Icon(Icons.person_outline, color: Color(0xFF0D9488), size: 22),
                         ),
-                        child: const Icon(Icons.person_outline, color: Color(0xFF0D9488)),
-                      ),
-                      title: const Text('Personal Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      subtitle: const Text('Update your name, email, and phone', style: TextStyle(fontSize: 13, color: const Color(0xFF64748B))),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: const Color(0xFF64748B)),
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
-                      },
-                    ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const Text('Personal Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
+                          const SizedBox(height: 2),
+                          const Text('Update your name, email, and phone', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                        ])),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B)),
+                      ]),
                     ),
                   ),
-            const SizedBox(height: 40),
+                  const SizedBox(height: 20),
 
             
 
@@ -501,9 +499,9 @@ class ProfileScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D9488).withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
@@ -516,7 +514,7 @@ class ProfileScreen extends StatelessWidget {
                   const Expanded(child: Text('Family Sharing', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)))),
                 ]),
                 const SizedBox(height: 12),
-                const Text('Share access with your family. They can register with your invite code to view and manage finances together.',
+                const Text('Share access with your family. Share your invite code or join an existing household.',
                     style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4)),
                 const SizedBox(height: 16),
                 Consumer<FinancialProvider>(
@@ -535,34 +533,79 @@ class ProfileScreen extends StatelessWidget {
                                 border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
                               ),
                               child: Text(
-                                code != null ? 'Code: $code' : 'Generating invite...',
+                                code != null ? 'Your Code: $code' : 'Generating invite...',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  letterSpacing: 1.5,
+                                  fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1,
                                   color: code != null ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           if (code != null)
                             GestureDetector(
-                              onTap: () {
-                                UiUtils.showSnack(context, 'Invite code copied!');
-                              },
+                              onTap: () => UiUtils.showSnack(context, 'Invite code copied!'),
                               child: Container(
                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                                decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                                 child: const Icon(Icons.copy_rounded, color: Color(0xFF0D9488), size: 20),
                               ),
                             ),
                         ]);
                       },
                     );
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                const SizedBox(height: 16),
+                const Text('Join a Household', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+                const SizedBox(height: 4),
+                const Text('Enter the invite code shared by your family member.', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                const SizedBox(height: 12),
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    final joinCodeCtrl = TextEditingController();
+                    return Row(children: [
+                      Expanded(
+                        child: TextField(
+                          controller: joinCodeCtrl,
+                          decoration: InputDecoration(
+                            hintText: 'Enter invite code',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            isDense: true,
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final code = joinCodeCtrl.text.trim().toUpperCase();
+                          if (code.isEmpty) return;
+                          try {
+                            final provider = Provider.of<FinancialProvider>(context, listen: false);
+                            await provider.joinHousehold(code);
+                            if (context.mounted) {
+                              UiUtils.showSnack(context, 'Joined household successfully!');
+                              joinCodeCtrl.clear();
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              UiUtils.showSnack(context, 'Failed: $e', isError: true);
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D9488),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Join', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ]);
                   },
                 ),
               ]),
@@ -641,9 +684,24 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-          ],
-        ),
+    ],
+      ),
+      ),
+      ),
+    ],
       ),
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFF0D9488).withValues(alpha: 0.035)..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    for (double y = 0; y < size.height; y += spacing) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

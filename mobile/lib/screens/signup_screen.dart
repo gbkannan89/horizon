@@ -19,8 +19,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
   final _passwordCtrl = TextEditingController();
   final _inviteCtrl = TextEditingController();
   bool _obscurePassword = true;
-  String _userType = 'salaried';
-  String _riskProfile = 'moderate';
   double _passwordStrength = 0;
 
   late final AnimationController _animCtrl;
@@ -82,7 +80,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
       final inviteCode = _inviteCtrl.text.trim();
       final result = await auth.register(
         _nameCtrl.text.trim(), _emailCtrl.text.trim(), _passwordCtrl.text,
-        userType: _userType, riskProfile: _riskProfile, phone: _phoneCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
         inviteCode: inviteCode.isNotEmpty ? inviteCode : null,
       );
       if (!mounted) return;
@@ -98,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         if (confirmed && mounted) {
           final retryResult = await auth.register(
             _nameCtrl.text.trim(), _emailCtrl.text.trim(), _passwordCtrl.text,
-            userType: _userType, riskProfile: _riskProfile, phone: _phoneCtrl.text.trim(),
+            phone: _phoneCtrl.text.trim(),
             inviteCode: detail['inviteCode'] ?? '',
           );
           if (mounted && retryResult['success'] == true) {
@@ -277,18 +275,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("I am a...", style: TextStyle(color: _textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 10),
-                                Row(children: [
-                                  _typeChip('salaried', '💼', 'Salaried'),
-                                  const SizedBox(width: 8),
-                                  _typeChip('self-employed', '🦄', 'Freelancer'),
-                                  const SizedBox(width: 8),
-                                  _typeChip('business', '🏢', 'Business'),
-                                  const SizedBox(width: 8),
-                                  _typeChip('student', '🎓', 'Student'),
-                                ]),
-                                const SizedBox(height: 24),
                                 _glassField(controller: _nameCtrl, focusNode: _focusName, icon: Icons.person_outline_rounded, hint: 'Full name', nextFocus: _focusEmail),
                                 const SizedBox(height: 14),
                                 _glassField(controller: _emailCtrl, focusNode: _focusEmail, icon: Icons.email_outlined, hint: 'Email address', keyboardType: TextInputType.emailAddress, nextFocus: _focusPhone),
@@ -302,18 +288,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 ],
                                 const SizedBox(height: 14),
                                 _glassField(controller: _inviteCtrl, focusNode: _focusInvite, icon: Icons.family_restroom_rounded, hint: 'Family invite code (optional)', textCapitalization: TextCapitalization.characters),
-                                const SizedBox(height: 14),
-                                const SizedBox(height: 6),
-                                const Text("Investment style", style: TextStyle(color: _textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 10),
-                                Row(children: [
-                                  _riskChip('conservative', '🛡️', 'Safe'),
-                                  const SizedBox(width: 8),
-                                  _riskChip('moderate', '⚖️', 'Balanced'),
-                                  const SizedBox(width: 8),
-                                  _riskChip('aggressive', '🚀', 'Growth'),
-                                ]),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 8),
                                 Text('By creating an account, you agree to our Terms and Privacy Policy.',
                                     style: TextStyle(color: Colors.black.withValues(alpha: 0.4), fontSize: 11)),
                                 const SizedBox(height: 16),
@@ -352,52 +327,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _typeChip(String value, String emoji, String label) {
-    final selected = _userType == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _userType = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF0FDFA) : Colors.white.withValues(alpha: 0.60),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? _accent : Colors.grey.shade200, width: 1.5),
-          ),
-          child: Column(children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: selected ? _accent : _textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget _riskChip(String value, String emoji, String label) {
-    final selected = _riskProfile == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _riskProfile = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF0FDFA) : Colors.white.withValues(alpha: 0.60),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? _accent : Colors.grey.shade200, width: 1.5),
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: selected ? _accent : _textMuted, fontSize: 13, fontWeight: FontWeight.w700)),
-          ]),
-        ),
       ),
     );
   }

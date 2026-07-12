@@ -891,6 +891,14 @@ class FinancialProvider extends ChangeNotifier {
     return result;
   }
 
+  Future<Map<String, dynamic>> joinHousehold(String inviteCode) async {
+    final result = await _apiService.post('/api/household/join', {
+      'invite_code': inviteCode,
+    });
+    await _reloadHousehold();
+    return result;
+  }
+
   // ── REPORT ────────────────────────────────────────────────────────────────
   Future<String> downloadReport() async {
     final bytes = await _apiService.downloadFile('/api/report/summary-pdf');
