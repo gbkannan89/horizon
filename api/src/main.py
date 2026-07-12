@@ -19,6 +19,11 @@ from .routes.advisor import router as advisor_router
 from .routes.analytics import router as analytics_router
 from .routes.report import router as report_router
 from .routes.collections import router as collections_router
+from .routes.market import router as market_router
+from .routes.gold_assets import router as gold_assets_router
+from .routes.stock_holdings import router as stock_holdings_router
+from .routes.pf_assets import router as pf_assets_router
+from .routes.lending import router as lending_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +45,11 @@ app.include_router(advisor_router)
 app.include_router(analytics_router)
 app.include_router(report_router)
 app.include_router(collections_router)
+app.include_router(market_router)
+app.include_router(gold_assets_router)
+app.include_router(stock_holdings_router)
+app.include_router(pf_assets_router)
+app.include_router(lending_router)
 
 # Add CORS Middleware
 app.add_middleware(

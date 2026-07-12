@@ -10,6 +10,7 @@ class AssetCreate(BaseModel):
     interest_rate: float = Field(default=0.0, ge=0)
     start_date: Optional[date_type] = None
     maturity_date: Optional[date_type] = None
+    years_of_deposit: Optional[int] = None
     is_liability: bool = False
     generates_income: bool = False
     income_frequency: Optional[str] = None
@@ -26,6 +27,7 @@ class AssetOut(BaseModel):
     interest_rate: float
     start_date: Optional[date_type]
     maturity_date: Optional[date_type]
+    years_of_deposit: Optional[int] = None
     is_liability: bool
     generates_income: bool
     income_frequency: Optional[str]

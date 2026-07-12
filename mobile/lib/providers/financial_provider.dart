@@ -17,6 +17,16 @@ class FinancialProvider extends ChangeNotifier {
   List<LocalVehicle> vehicles = [];
   List<dynamic> insurances = [];
 
+  // Phase 1: Gold Assets
+  List<LocalGoldAsset> goldAssets = [];
+  // Phase 1: Stock Holdings
+  List<LocalStockHolding> stockHoldings = [];
+  // Phase 1: PF Assets
+  List<LocalPFAsset> pfAssets = [];
+  // Phase 1: Lending Records
+  List<LocalLendingRecord> lendingRecords = [];
+  Map<String, dynamic>? lendingOverview;
+
   // Dashboard Fields
   double netWorth = 0;
   double netWorthChange = 0;
@@ -251,6 +261,52 @@ class FinancialProvider extends ChangeNotifier {
     }
   }
 
+  // ── PHASE 1: GOLD ASSETS ──────────────────────────────────────────────────
+  Future<void> _reloadGoldAssets() async {
+    try {
+      final data = await _apiService.get('/api/assets/gold');
+      if (data is List) {
+        goldAssets = data.map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>)).toList();
+      }
+    } catch (e) { print('Gold assets load error: $e'); }
+  }
+
+  // ── PHASE 1: STOCK HOLDINGS ────────────────────────────────────────────────
+  Future<void> _reloadStockHoldings() async {
+    try {
+      final data = await _apiService.get('/api/assets/stocks');
+      if (data is List) {
+        stockHoldings = data.map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>)).toList();
+      }
+    } catch (e) { print('Stock holdings load error: $e'); }
+  }
+
+  // ── PHASE 1: PF ASSETS ─────────────────────────────────────────────────────
+  Future<void> _reloadPFAssets() async {
+    try {
+      final data = await _apiService.get('/api/assets/pf');
+      if (data is List) {
+        pfAssets = data.map((p) => LocalPFAsset.fromJson(p as Map<String, dynamic>)).toList();
+      }
+    } catch (e) { print('PF assets load error: $e'); }
+  }
+
+  // ── PHASE 1: LENDING RECORDS ───────────────────────────────────────────────
+  Future<void> _reloadLendingRecords() async {
+    try {
+      final data = await _apiService.get('/api/lending');
+      if (data is List) {
+        lendingRecords = data.map((l) => LocalLendingRecord.fromJson(l as Map<String, dynamic>)).toList();
+      }
+    } catch (e) { print('Lending records load error: $e'); }
+  }
+
+  Future<void> _reloadLendingOverview() async {
+    try {
+      lendingOverview = await _apiService.get('/api/lending/overview');
+    } catch (e) { print('Lending overview load error: $e'); }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // FULL DATA LOAD — for initial load, month navigation, and pull-to-refresh
   // ═══════════════════════════════════════════════════════════════════════════
@@ -271,7 +327,12 @@ class FinancialProvider extends ChangeNotifier {
       _reloadWishlist(),
       _reloadInsurances(),
       _reloadScoreHistory(),
+      _reloadGoldAssets(),
+      _reloadStockHoldings(),
+      _reloadPFAssets(),
     ]);
+    _reloadLendingRecords();
+    _reloadLendingOverview();
 
     loadBudgetBreakdown();
     loadNudges();
@@ -804,4 +865,169 @@ class FinancialProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: GOLD ASSETS CRUD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<Map<String, dynamic>> addGoldAsset(Map<String, dynamic> body) async {
+    final created = await _apiService.post('/api/assets/gold', body);
+    goldAssets.add(LocalGoldAsset.fromJson(created));
+    notifyListeners();
+    _reloadDashboard();
+    return created;
+  }
+
+  Future<void> updateGoldAsset(int id, Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/assets/gold/$id', body);
+    final idx = goldAssets.indexWhere((g) => g.id == id);
+    if (idx >= 0) goldAssets[idx] = LocalGoldAsset.fromJson(updated);
+    notifyListeners();
+    _reloadDashboard();
+  }
+
+  Future<void> deleteGoldAsset(int id) async {
+    final idx = goldAssets.indexWhere((g) => g.id == id);
+    if (idx == -1) return;
+    final removed = goldAssets.removeAt(idx);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/assets/gold/$id');
+      _reloadDashboard();
+    } catch (_) {
+      goldAssets.insert(idx, removed);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> refreshGoldValues() async {
+    final data = await _apiService.post('/api/assets/gold/refresh', {});
+    if (data is List) {
+      goldAssets = data.map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>)).toList();
+    }
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: STOCK HOLDINGS CRUD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<Map<String, dynamic>> addStockHolding(Map<String, dynamic> body) async {
+    final created = await _apiService.post('/api/assets/stocks', body);
+    stockHoldings.add(LocalStockHolding.fromJson(created));
+    notifyListeners();
+    _reloadDashboard();
+    return created;
+  }
+
+  Future<void> updateStockHolding(int id, Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/assets/stocks/$id', body);
+    final idx = stockHoldings.indexWhere((s) => s.id == id);
+    if (idx >= 0) stockHoldings[idx] = LocalStockHolding.fromJson(updated);
+    notifyListeners();
+    _reloadDashboard();
+  }
+
+  Future<void> deleteStockHolding(int id) async {
+    final idx = stockHoldings.indexWhere((s) => s.id == id);
+    if (idx == -1) return;
+    final removed = stockHoldings.removeAt(idx);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/assets/stocks/$id');
+      _reloadDashboard();
+    } catch (_) {
+      stockHoldings.insert(idx, removed);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> refreshStockValues() async {
+    final data = await _apiService.post('/api/assets/stocks/refresh', {});
+    if (data is List) {
+      stockHoldings = data.map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>)).toList();
+    }
+    notifyListeners();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: PF ASSETS CRUD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<Map<String, dynamic>> addPFAsset(Map<String, dynamic> body) async {
+    final created = await _apiService.post('/api/assets/pf', body);
+    pfAssets.add(LocalPFAsset.fromJson(created));
+    notifyListeners();
+    _reloadDashboard();
+    return created;
+  }
+
+  Future<void> updatePFAsset(Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/assets/pf', body);
+    final idx = pfAssets.indexWhere((p) => p.id == updated['id']);
+    if (idx >= 0) pfAssets[idx] = LocalPFAsset.fromJson(updated);
+    else pfAssets.add(LocalPFAsset.fromJson(updated));
+    notifyListeners();
+    _reloadDashboard();
+  }
+
+  Future<void> deletePFAsset() async {
+    if (pfAssets.isEmpty) return;
+    pfAssets.clear();
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/assets/pf');
+      _reloadDashboard();
+    } catch (_) {
+      _reloadPFAssets();
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPFProjection() async {
+    try {
+      return await _apiService.get('/api/assets/pf/projection');
+    } catch (e) {
+      print('PF projection error: $e');
+      return null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: LENDING RECORDS CRUD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<Map<String, dynamic>> addLendingRecord(Map<String, dynamic> body) async {
+    final created = await _apiService.post('/api/lending', body);
+    lendingRecords.add(LocalLendingRecord.fromJson(created));
+    notifyListeners();
+    _reloadLendingOverview();
+    _reloadDashboard();
+    return created;
+  }
+
+  Future<void> updateLendingRecord(int id, Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/lending/$id', body);
+    final idx = lendingRecords.indexWhere((l) => l.id == id);
+    if (idx >= 0) lendingRecords[idx] = LocalLendingRecord.fromJson(updated);
+    notifyListeners();
+    _reloadLendingOverview();
+    _reloadDashboard();
+  }
+
+  Future<void> deleteLendingRecord(int id) async {
+    final idx = lendingRecords.indexWhere((l) => l.id == id);
+    if (idx == -1) return;
+    final removed = lendingRecords.removeAt(idx);
+    notifyListeners();
+    try {
+      await _apiService.delete('/api/lending/$id');
+      _reloadLendingOverview();
+      _reloadDashboard();
+    } catch (_) {
+      lendingRecords.insert(idx, removed);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic>? get lendingSummary => lendingOverview;
 }

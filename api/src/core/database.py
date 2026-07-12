@@ -29,7 +29,7 @@ def close_pool():
 def init_db():
     init_pool()
     # Find schema.sql path
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     schema_path = os.path.join(current_dir, "db", "schema.sql")
     
     logger.info(f"Reading database schema from {schema_path}...")

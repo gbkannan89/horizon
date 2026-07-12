@@ -259,3 +259,87 @@ CREATE TABLE IF NOT EXISTS family_invites (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(household_id, email)
 );
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1A: Gold Assets
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS gold_assets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    carat INTEGER NOT NULL CHECK (carat IN (18, 22, 24)),
+    grams NUMERIC(10, 2) NOT NULL CHECK (grams > 0),
+    purchase_price_per_gram NUMERIC(20, 2) NOT NULL,
+    purchase_date DATE NOT NULL,
+    last_current_value NUMERIC(20, 2),
+    last_value_updated_at TIMESTAMP WITH TIME ZONE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1B: Stock/MF Holdings
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS stock_holdings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    ticker VARCHAR(50) NOT NULL,
+    exchange VARCHAR(10) DEFAULT 'NSE',
+    name VARCHAR(255),
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    avg_purchase_price NUMERIC(20, 2) NOT NULL,
+    purchase_date DATE NOT NULL,
+    total_invested NUMERIC(20, 2) NOT NULL,
+    last_current_price NUMERIC(20, 2),
+    last_current_value NUMERIC(20, 2),
+    last_value_updated_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1C: FD Maturity Enhancement
+-- ═══════════════════════════════════════════════════════════════════════════
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS years_of_deposit INTEGER;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1D: PF Assets
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS pf_assets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    start_date DATE NOT NULL,
+    retirement_age INTEGER NOT NULL DEFAULT 58,
+    current_balance NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    monthly_contribution NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    employer_contribution NUMERIC(20, 2) DEFAULT 0.00,
+    interest_rate NUMERIC(5, 2) DEFAULT 8.25 NOT NULL,
+    user_date_of_birth DATE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1E: Gold Loan (extend liabilities)
+-- ═══════════════════════════════════════════════════════════════════════════
+ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS gold_grams NUMERIC(10, 2);
+ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS gold_carat INTEGER;
+ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS gold_items_count INTEGER;
+ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS loan_date DATE;
+ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS bank_name VARCHAR(255);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Phase 1F: Lend/Borrow Records
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS lending_records (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    direction VARCHAR(10) NOT NULL CHECK (direction IN ('lent', 'borrowed')),
+    person_name VARCHAR(255) NOT NULL,
+    amount NUMERIC(20, 2) NOT NULL,
+    date_given DATE NOT NULL,
+    promised_return_date DATE,
+    actual_return_date DATE,
+    returned_amount NUMERIC(20, 2) DEFAULT 0.00 NOT NULL,
+    status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'partial', 'closed', 'overdue')),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
