@@ -6,7 +6,11 @@ class CreateCollectionScreen extends StatefulWidget {
   final double? prefillAmount;
   final String? prefillName;
 
-  const CreateCollectionScreen({super.key, this.prefillAmount, this.prefillName});
+  const CreateCollectionScreen({
+    super.key,
+    this.prefillAmount,
+    this.prefillName,
+  });
 
   @override
   State<CreateCollectionScreen> createState() => _CreateCollectionScreenState();
@@ -19,16 +23,20 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   final _bulkAmountCtrl = TextEditingController();
   bool _isSubmitting = false;
 
-  List<_MemberEntry> _members = [];
+  final List<_MemberEntry> _members = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.prefillName != null && widget.prefillAmount != null) {
-      _members.add(_MemberEntry(
-        nameCtrl: TextEditingController(text: widget.prefillName),
-        amountCtrl: TextEditingController(text: widget.prefillAmount!.toStringAsFixed(0)),
-      ));
+      _members.add(
+        _MemberEntry(
+          nameCtrl: TextEditingController(text: widget.prefillName),
+          amountCtrl: TextEditingController(
+            text: widget.prefillAmount!.toStringAsFixed(0),
+          ),
+        ),
+      );
     }
   }
 
@@ -52,10 +60,14 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
 
     setState(() {
       for (int i = 0; i < count; i++) {
-        _members.add(_MemberEntry(
-          nameCtrl: TextEditingController(text: 'Person ${_members.length + 1}'),
-          amountCtrl: TextEditingController(text: amount.toStringAsFixed(0)),
-        ));
+        _members.add(
+          _MemberEntry(
+            nameCtrl: TextEditingController(
+              text: 'Person ${_members.length + 1}',
+            ),
+            amountCtrl: TextEditingController(text: amount.toStringAsFixed(0)),
+          ),
+        );
       }
       _bulkCountCtrl.text = '1';
       _bulkAmountCtrl.clear();
@@ -64,10 +76,14 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
 
   void _addSingle() {
     setState(() {
-      _members.add(_MemberEntry(
-        nameCtrl: TextEditingController(text: 'Person ${_members.length + 1}'),
-        amountCtrl: TextEditingController(),
-      ));
+      _members.add(
+        _MemberEntry(
+          nameCtrl: TextEditingController(
+            text: 'Person ${_members.length + 1}',
+          ),
+          amountCtrl: TextEditingController(),
+        ),
+      );
     });
   }
 
@@ -82,27 +98,41 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   Future<void> _submit() async {
     if (_labelCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a collection label'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Please enter a collection label'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
     if (_members.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one member'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Add at least one member'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
-      final members = _members.map((m) => {
-        'name': m.nameCtrl.text.trim(),
-        'expected_amount': double.tryParse(m.amountCtrl.text) ?? 0,
-      }).where((m) => (m['expected_amount'] as double) > 0).toList();
+      final members = _members
+          .map(
+            (m) => {
+              'name': m.nameCtrl.text.trim(),
+              'expected_amount': double.tryParse(m.amountCtrl.text) ?? 0,
+            },
+          )
+          .where((m) => (m['expected_amount'] as double) > 0)
+          .toList();
 
       if (members.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All members need a valid amount'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('All members need a valid amount'),
+            backgroundColor: Colors.red,
+          ),
         );
         setState(() => _isSubmitting = false);
         return;
@@ -111,13 +141,18 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
       final fp = Provider.of<FinancialProvider>(context, listen: false);
       await fp.createCollection({
         'label': _labelCtrl.text.trim(),
-        'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+        'description': _descCtrl.text.trim().isEmpty
+            ? null
+            : _descCtrl.text.trim(),
         'members': members,
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Collection created!'), backgroundColor: Color(0xFF059669)),
+          const SnackBar(
+            content: Text('Collection created!'),
+            backgroundColor: Color(0xFF059669),
+          ),
         );
         Navigator.of(context).pop();
       }
@@ -142,8 +177,15 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
           TextButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text(
+                    'Create',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
           ),
         ],
       ),
@@ -179,17 +221,29 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF0D9488).withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.1)),
+              border: Border.all(
+                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.group_add, color: const Color(0xFF0D9488), size: 20),
+                    Icon(
+                      Icons.group_add,
+                      color: const Color(0xFF0D9488),
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
-                    const Text('Bulk Add Members',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1E293B))),
+                    const Text(
+                      'Bulk Add Members',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -221,7 +275,10 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                     ElevatedButton(
                       onPressed: _addBulk,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         backgroundColor: const Color(0xFF0D9488),
                       ),
                       child: const Text('Add'),
@@ -236,10 +293,19 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
           // Members List
           Row(
             children: [
-              const Text('Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
+              const Text(
+                'Members',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const Spacer(),
-              Text('${_members.length} person${_members.length != 1 ? 's' : ''}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                '${_members.length} person${_members.length != 1 ? 's' : ''}',
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -253,8 +319,10 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: const Center(
-                child: Text('No members yet. Use bulk add above or add one below.',
-                    style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'No members yet. Use bulk add above or add one below.',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             )
           else
@@ -262,7 +330,10 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
               final m = _members[i];
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -281,7 +352,13 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                         ),
                       ),
                     ),
-                    const Text('₹ ', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                    const Text(
+                      '₹ ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     SizedBox(
                       width: 80,
                       child: TextField(
@@ -295,7 +372,11 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                      icon: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Colors.red,
+                      ),
                       onPressed: () => _removeMember(i),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),

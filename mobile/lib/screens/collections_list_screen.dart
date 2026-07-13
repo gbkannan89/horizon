@@ -29,12 +29,15 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
         title: const Text('Collections'),
         actions: [
           Consumer<FinancialProvider>(
-            builder: (_, fp, __) => fp.collections.isNotEmpty
+            builder: (_, fp, _) => fp.collections.isNotEmpty
                 ? PopupMenuButton<String>(
                     icon: const Icon(Icons.filter_list),
                     onSelected: (v) {
-                      if (v == 'all') fp.setCollectionFilter(null);
-                      else fp.setCollectionFilter(v);
+                      if (v == 'all') {
+                        fp.setCollectionFilter(null);
+                      } else {
+                        fp.setCollectionFilter(v);
+                      }
                     },
                     itemBuilder: (_) => [
                       CheckedPopupMenuItem(
@@ -71,13 +74,25 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people_outline, size: 80, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.people_outline,
+                    size: 80,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 20),
-                  const Text('No collections yet',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const Text(
+                    'No collections yet',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('Create a collection to track group payments.',
-                      style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    'Create a collection to track group payments.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => _createCollection(context),
@@ -108,15 +123,21 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
   }
 
   void _createCollection(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CreateCollectionScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CreateCollectionScreen()));
   }
 
-  Widget _collectionCard(BuildContext context, FinancialProvider fp, Map<String, dynamic> c) {
+  Widget _collectionCard(
+    BuildContext context,
+    FinancialProvider fp,
+    Map<String, dynamic> c,
+  ) {
     final totalExpected = (c['total_expected'] ?? 0).toDouble();
     final totalCollected = (c['total_collected'] ?? 0).toDouble();
-    final pct = totalExpected > 0 ? (totalCollected / totalExpected).clamp(0.0, 1.0) : 0.0;
+    final pct = totalExpected > 0
+        ? (totalCollected / totalExpected).clamp(0.0, 1.0)
+        : 0.0;
     final memberCount = c['member_count'] ?? 0;
     final paidCount = c['paid_count'] ?? 0;
     final status = c['status'] ?? 'active';
@@ -126,7 +147,9 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => CollectionDetailScreen(collection: c)),
+          MaterialPageRoute(
+            builder: (_) => CollectionDetailScreen(collection: c),
+          ),
         );
       },
       child: Container(
@@ -136,7 +159,9 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : const Color(0xFF94A3B8).withValues(alpha: 0.2),
+            color: isActive
+                ? const Color(0xFF0D9488).withValues(alpha: 0.1)
+                : const Color(0xFF94A3B8).withValues(alpha: 0.2),
           ),
           boxShadow: [
             BoxShadow(
@@ -154,7 +179,9 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF0D9488).withValues(alpha: 0.1) : Colors.grey.shade100,
+                    color: isActive
+                        ? const Color(0xFF0D9488).withValues(alpha: 0.1)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -168,25 +195,48 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 2),
-                      Text('$paidCount / $memberCount paid',
-                          style: TextStyle(fontSize: 12, color: isActive ? const Color(0xFF64748B) : Colors.grey)),
+                      Text(
+                        '$paidCount / $memberCount paid',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isActive
+                              ? const Color(0xFF64748B)
+                              : Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 if (!isActive)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: status == 'settled' ? Colors.green.shade50 : Colors.grey.shade100,
+                      color: status == 'settled'
+                          ? Colors.green.shade50
+                          : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(status.toUpperCase(),
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                            color: status == 'settled' ? Colors.green : Colors.grey)),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: status == 'settled' ? Colors.green : Colors.grey,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -197,23 +247,45 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('₹${_fmt(totalCollected)}',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0D9488))),
-                      Text('collected of ₹${_fmt(totalExpected)}',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      Text(
+                        '₹${_fmt(totalCollected)}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0D9488),
+                        ),
+                      ),
+                      Text(
+                        'collected of ₹${_fmt(totalExpected)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: pct >= 1.0 ? Colors.green.shade50 : const Color(0xFF0D9488).withValues(alpha: 0.05),
+                    color: pct >= 1.0
+                        ? Colors.green.shade50
+                        : const Color(0xFF0D9488).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text('${(pct * 100).toInt()}%',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w800,
-                          color: pct >= 1.0 ? Colors.green : const Color(0xFF0D9488))),
+                  child: Text(
+                    '${(pct * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: pct >= 1.0
+                          ? Colors.green
+                          : const Color(0xFF0D9488),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -223,8 +295,12 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
               child: LinearPercentIndicator(
                 lineHeight: 8,
                 percent: pct,
-                progressColor: pct >= 1.0 ? const Color(0xFF059669) : const Color(0xFF0D9488),
-                backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                progressColor: pct >= 1.0
+                    ? const Color(0xFF059669)
+                    : const Color(0xFF0D9488),
+                backgroundColor: const Color(
+                  0xFF0D9488,
+                ).withValues(alpha: 0.08),
                 barRadius: const Radius.circular(6),
                 padding: EdgeInsets.zero,
               ),

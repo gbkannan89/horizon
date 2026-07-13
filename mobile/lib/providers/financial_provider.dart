@@ -113,7 +113,9 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<void> _reloadDashboard() async {
     try {
-      final data = await _apiService.get('/api/v1/dashboard/overview?month=$selectedMonth&year=$selectedYear');
+      final data = await _apiService.get(
+        '/api/v1/dashboard/overview?month=$selectedMonth&year=$selectedYear',
+      );
       netWorth = (data['net_worth'] ?? 0).toDouble();
       netWorthChange = (data['net_worth_change'] ?? 0).toDouble();
       netWorthChangePeriod = data['net_worth_change_period'] ?? '';
@@ -141,32 +143,47 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/assets');
       if (data is List) {
-        assets = data.map((a) => LocalAsset(
-          id: a['id'].toString(), name: a['name'],
-          amount: (a['amount'] ?? 0).toDouble(),
-          interestRate: (a['interest_rate'] ?? 0).toDouble(),
-          isLiability: a['is_liability'] ?? false,
-          generatesIncome: a['generates_income'] ?? false,
-          purchasePrice: a['purchase_price']?.toDouble(),
-          purchaseDate: a['purchase_date'],
-        )).toList();
+        assets = data
+            .map(
+              (a) => LocalAsset(
+                id: a['id'].toString(),
+                name: a['name'],
+                amount: (a['amount'] ?? 0).toDouble(),
+                interestRate: (a['interest_rate'] ?? 0).toDouble(),
+                isLiability: a['is_liability'] ?? false,
+                generatesIncome: a['generates_income'] ?? false,
+                purchasePrice: a['purchase_price']?.toDouble(),
+                purchaseDate: a['purchase_date'],
+              ),
+            )
+            .toList();
       }
-    } catch (e) { print('Assets load error: $e'); }
+    } catch (e) {
+      print('Assets load error: $e');
+    }
   }
 
   Future<void> _reloadPortfolioSummary() async {
     try {
-      portfolioSummary = await _apiService.get('/api/analytics/portfolio-summary');
-    } catch (e) { print('Portfolio summary load error: $e'); }
+      portfolioSummary = await _apiService.get(
+        '/api/analytics/portfolio-summary',
+      );
+    } catch (e) {
+      print('Portfolio summary load error: $e');
+    }
   }
 
   Future<void> _reloadVehicles() async {
     try {
       final data = await _apiService.get('/api/assets/vehicles');
       if (data is List) {
-        vehicles = data.map((v) => LocalVehicle.fromJson(v as Map<String, dynamic>)).toList();
+        vehicles = data
+            .map((v) => LocalVehicle.fromJson(v as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('Vehicles load error: $e'); }
+    } catch (e) {
+      print('Vehicles load error: $e');
+    }
   }
 
   Future<void> reloadVehicleServiceRecords(String vehicleId) async {
@@ -174,10 +191,14 @@ class FinancialProvider extends ChangeNotifier {
       final intId = int.parse(vehicleId);
       final data = await _apiService.get('/api/assets/vehicles/$intId/service');
       if (data is List) {
-        vehicleServices = data.map((x) => LocalVehicleService.fromJson(x as Map<String, dynamic>)).toList();
+        vehicleServices = data
+            .map((x) => LocalVehicleService.fromJson(x as Map<String, dynamic>))
+            .toList();
       }
       notifyListeners();
-    } catch (e) { print('Service records load error: $e'); }
+    } catch (e) {
+      print('Service records load error: $e');
+    }
   }
 
   Future<void> reloadVehicleFuelRecords(String vehicleId) async {
@@ -185,10 +206,14 @@ class FinancialProvider extends ChangeNotifier {
       final intId = int.parse(vehicleId);
       final data = await _apiService.get('/api/assets/vehicles/$intId/fuel');
       if (data is List) {
-        vehicleFuels = data.map((x) => LocalVehicleFuel.fromJson(x as Map<String, dynamic>)).toList();
+        vehicleFuels = data
+            .map((x) => LocalVehicleFuel.fromJson(x as Map<String, dynamic>))
+            .toList();
       }
       notifyListeners();
-    } catch (e) { print('Fuel records load error: $e'); }
+    } catch (e) {
+      print('Fuel records load error: $e');
+    }
   }
 
   Future<void> reloadVehicleLoan(String vehicleId) async {
@@ -201,17 +226,23 @@ class FinancialProvider extends ChangeNotifier {
         vehicleLoan = null;
       }
       notifyListeners();
-    } catch (e) { print('Vehicle loan load error: $e'); }
+    } catch (e) {
+      print('Vehicle loan load error: $e');
+    }
   }
 
   Future<void> reloadElectronics() async {
     try {
       final data = await _apiService.get('/api/electronics');
       if (data is List) {
-        electronics = data.map((e) => LocalElectronic.fromJson(e as Map<String, dynamic>)).toList();
+        electronics = data
+            .map((e) => LocalElectronic.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
       notifyListeners();
-    } catch (e) { print('Electronics load error: $e'); }
+    } catch (e) {
+      print('Electronics load error: $e');
+    }
   }
 
   Future<void> reloadElectronicServices(String deviceId) async {
@@ -219,10 +250,16 @@ class FinancialProvider extends ChangeNotifier {
       final intId = int.parse(deviceId);
       final data = await _apiService.get('/api/electronics/$intId/service');
       if (data is List) {
-        electronicServices = data.map((x) => LocalElectronicService.fromJson(x as Map<String, dynamic>)).toList();
+        electronicServices = data
+            .map(
+              (x) => LocalElectronicService.fromJson(x as Map<String, dynamic>),
+            )
+            .toList();
       }
       notifyListeners();
-    } catch (e) { print('Electronic service load error: $e'); }
+    } catch (e) {
+      print('Electronic service load error: $e');
+    }
   }
 
   Future<void> reloadElectronicEmi(String deviceId) async {
@@ -235,55 +272,76 @@ class FinancialProvider extends ChangeNotifier {
         electronicEmi = null;
       }
       notifyListeners();
-    } catch (e) { print('Electronic EMI load error: $e'); }
+    } catch (e) {
+      print('Electronic EMI load error: $e');
+    }
   }
 
   Future<void> _reloadBills() async {
     try {
       final data = await _apiService.get('/api/bills');
       if (data is List) {
-        bills = data.map((b) => LocalBill(
-          id: b['id'].toString(),
-          name: b['name'],
-          amount: (b['amount'] ?? 0).toDouble(),
-          frequency: b['frequency'] ?? 'monthly',
-          dueDate: DateTime.now(),
-          isEmi: b['is_emi'] ?? false,
-          emiTotalMonths: b['emi_total_months'] ?? 0,
-          emiMonthsPaid: b['emi_months_paid'] ?? 0,
-        )).toList();
+        bills = data
+            .map(
+              (b) => LocalBill(
+                id: b['id'].toString(),
+                name: b['name'],
+                amount: (b['amount'] ?? 0).toDouble(),
+                frequency: b['frequency'] ?? 'monthly',
+                dueDate: DateTime.now(),
+                isEmi: b['is_emi'] ?? false,
+                emiTotalMonths: b['emi_total_months'] ?? 0,
+                emiMonthsPaid: b['emi_months_paid'] ?? 0,
+              ),
+            )
+            .toList();
       }
-    } catch (e) { print('Bills load error: $e'); }
+    } catch (e) {
+      print('Bills load error: $e');
+    }
   }
 
   Future<void> _reloadLiabilities() async {
     try {
       final data = await _apiService.get('/api/liabilities');
       if (data is List) {
-        liabilities = data.map((l) => LocalLiability(
-          id: l['id'].toString(), name: l['name'],
-          amount: (l['outstanding'] ?? 0).toDouble(),
-          interestRate: (l['interest_rate'] ?? 0).toDouble()
-        )).toList();
+        liabilities = data
+            .map(
+              (l) => LocalLiability(
+                id: l['id'].toString(),
+                name: l['name'],
+                amount: (l['outstanding'] ?? 0).toDouble(),
+                interestRate: (l['interest_rate'] ?? 0).toDouble(),
+              ),
+            )
+            .toList();
       }
-    } catch (e) { print('Liabilities load error: $e'); }
+    } catch (e) {
+      print('Liabilities load error: $e');
+    }
   }
 
   Future<void> _reloadIncomes() async {
     try {
       final data = await _apiService.get('/api/incomes');
       if (data is List) {
-        incomes = data.map((i) => LocalIncome(
-          id: i['id'].toString(),
-          label: i['label'] ?? _typeToLabel(i['type'] ?? 'salary'),
-          type: i['type'] ?? 'salary',
-          amount: (i['amount'] ?? 0).toDouble(),
-          frequency: i['frequency'] ?? 'monthly',
-          companyName: i['company_name'],
-          notes: i['notes'],
-        )).toList();
+        incomes = data
+            .map(
+              (i) => LocalIncome(
+                id: i['id'].toString(),
+                label: i['label'] ?? _typeToLabel(i['type'] ?? 'salary'),
+                type: i['type'] ?? 'salary',
+                amount: (i['amount'] ?? 0).toDouble(),
+                frequency: i['frequency'] ?? 'monthly',
+                companyName: i['company_name'],
+                notes: i['notes'],
+              ),
+            )
+            .toList();
       }
-    } catch (e) { print('Incomes load error: $e'); }
+    } catch (e) {
+      print('Incomes load error: $e');
+    }
   }
 
   Map<String, dynamic>? _householdSummary;
@@ -294,13 +352,17 @@ class FinancialProvider extends ChangeNotifier {
       _householdSummary = hhData;
       if (hhData['contributingMembers'] != null) {
         final members = hhData['contributingMembers'] as List;
-        householdMembers = members.map((m) => LocalHouseholdMember(
-          id: m['id'].toString(),
-          name: m['name'],
-          monthlyIncome: (m['monthlyIncome'] ?? 0).toDouble(),
-          contribution: (m['contributionToHousehold'] ?? 0).toDouble(),
-          relationship: m['relationship'] ?? 'Member',
-        )).toList();
+        householdMembers = members
+            .map(
+              (m) => LocalHouseholdMember(
+                id: m['id'].toString(),
+                name: m['name'],
+                monthlyIncome: (m['monthlyIncome'] ?? 0).toDouble(),
+                contribution: (m['contributionToHousehold'] ?? 0).toDouble(),
+                relationship: m['relationship'] ?? 'Member',
+              ),
+            )
+            .toList();
       } else {
         householdMembers = [];
       }
@@ -324,7 +386,9 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final wData = await _apiService.get('/api/discipline/wishlist');
       if (wData is List) {
-        wishlist = wData.map((w) => WishlistItem.fromJson(w as Map<String, dynamic>)).toList();
+        wishlist = wData
+            .map((w) => WishlistItem.fromJson(w as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       print('Wishlist load error: $e');
@@ -360,7 +424,9 @@ class FinancialProvider extends ChangeNotifier {
         investmentReturns = data;
         notifyListeners();
       }
-    } catch (e) { print('Investment returns load error: $e'); }
+    } catch (e) {
+      print('Investment returns load error: $e');
+    }
   }
 
   Future<void> reloadTaxEstimate() async {
@@ -368,7 +434,9 @@ class FinancialProvider extends ChangeNotifier {
       final data = await _apiService.get('/api/advisor/tax-estimate');
       taxEstimate = data;
       notifyListeners();
-    } catch (e) { print('Tax estimate load error: $e'); }
+    } catch (e) {
+      print('Tax estimate load error: $e');
+    }
   }
 
   Future<void> reloadDebtDashboard() async {
@@ -376,7 +444,9 @@ class FinancialProvider extends ChangeNotifier {
       final data = await _apiService.get('/api/advisor/debt-dashboard');
       debtDashboard = data;
       notifyListeners();
-    } catch (e) { print('Debt dashboard load error: $e'); }
+    } catch (e) {
+      print('Debt dashboard load error: $e');
+    }
   }
 
   // ── PHASE 1: GOLD ASSETS ──────────────────────────────────────────────────
@@ -384,9 +454,13 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/assets/gold');
       if (data is List) {
-        goldAssets = data.map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>)).toList();
+        goldAssets = data
+            .map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('Gold assets load error: $e'); }
+    } catch (e) {
+      print('Gold assets load error: $e');
+    }
   }
 
   // ── PHASE 1: STOCK HOLDINGS ────────────────────────────────────────────────
@@ -394,9 +468,13 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/assets/stocks');
       if (data is List) {
-        stockHoldings = data.map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>)).toList();
+        stockHoldings = data
+            .map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('Stock holdings load error: $e'); }
+    } catch (e) {
+      print('Stock holdings load error: $e');
+    }
   }
 
   // ── PHASE 1: PF ASSETS ─────────────────────────────────────────────────────
@@ -404,9 +482,13 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/assets/pf');
       if (data is List) {
-        pfAssets = data.map((p) => LocalPFAsset.fromJson(p as Map<String, dynamic>)).toList();
+        pfAssets = data
+            .map((p) => LocalPFAsset.fromJson(p as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('PF assets load error: $e'); }
+    } catch (e) {
+      print('PF assets load error: $e');
+    }
   }
 
   // ── PHASE 1: LENDING RECORDS ───────────────────────────────────────────────
@@ -414,24 +496,34 @@ class FinancialProvider extends ChangeNotifier {
     try {
       final data = await _apiService.get('/api/lending');
       if (data is List) {
-        lendingRecords = data.map((l) => LocalLendingRecord.fromJson(l as Map<String, dynamic>)).toList();
+        lendingRecords = data
+            .map((l) => LocalLendingRecord.fromJson(l as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('Lending records load error: $e'); }
+    } catch (e) {
+      print('Lending records load error: $e');
+    }
   }
 
   Future<void> _reloadLendingOverview() async {
     try {
       lendingOverview = await _apiService.get('/api/lending/overview');
-    } catch (e) { print('Lending overview load error: $e'); }
+    } catch (e) {
+      print('Lending overview load error: $e');
+    }
   }
 
   Future<void> _reloadFamilyMembers() async {
     try {
       final data = await _apiService.get('/api/profile/family');
       if (data is List) {
-        familyMembers = data.map((f) => LocalFamilyMember.fromJson(f as Map<String, dynamic>)).toList();
+        familyMembers = data
+            .map((f) => LocalFamilyMember.fromJson(f as Map<String, dynamic>))
+            .toList();
       }
-    } catch (e) { print('Family members load error: $e'); }
+    } catch (e) {
+      print('Family members load error: $e');
+    }
   }
 
   Future<void> _reloadRecurringFamilyCosts() async {
@@ -439,21 +531,31 @@ class FinancialProvider extends ChangeNotifier {
       final data = await _apiService.get('/api/profile/family/recurring-costs');
       recurringFamilyCosts = (data['total_monthly'] ?? 0).toDouble();
       recurringCostsBreakdown = data;
-    } catch (e) { print('Recurring costs load error: $e'); }
+    } catch (e) {
+      print('Recurring costs load error: $e');
+    }
   }
 
   Future<void> _reloadBudgetPlan() async {
     try {
-      final data = await _apiService.get('/api/budget/plan?month=$selectedMonth&year=$selectedYear');
+      final data = await _apiService.get(
+        '/api/budget/plan?month=$selectedMonth&year=$selectedYear',
+      );
       budgetPlan = LocalBudgetPlan.fromJson(data);
-    } catch (e) { print('Budget plan load error: $e'); }
+    } catch (e) {
+      print('Budget plan load error: $e');
+    }
   }
 
   Future<void> _reloadBudgetComparison() async {
     try {
-      final data = await _apiService.get('/api/budget/compare?month=$selectedMonth&year=$selectedYear');
+      final data = await _apiService.get(
+        '/api/budget/compare?month=$selectedMonth&year=$selectedYear',
+      );
       budgetComparison = LocalBudgetComparison.fromJson(data);
-    } catch (e) { print('Budget comparison load error: $e'); }
+    } catch (e) {
+      print('Budget comparison load error: $e');
+    }
   }
 
   Future<void> reloadSalaryDetails(String incomeId) async {
@@ -461,10 +563,14 @@ class FinancialProvider extends ChangeNotifier {
       final intId = int.parse(incomeId);
       final data = await _apiService.get('/api/incomes/$intId/salary');
       if (data is List) {
-        salaryDetails = data.map((x) => LocalSalaryDetail.fromJson(x as Map<String, dynamic>)).toList();
+        salaryDetails = data
+            .map((x) => LocalSalaryDetail.fromJson(x as Map<String, dynamic>))
+            .toList();
       }
       notifyListeners();
-    } catch (e) { print('Salary details load error: $e'); }
+    } catch (e) {
+      print('Salary details load error: $e');
+    }
   }
 
   Future<void> loadSalaryGrowth() async {
@@ -472,7 +578,9 @@ class FinancialProvider extends ChangeNotifier {
       final data = await _apiService.get('/api/incomes/salary-growth');
       salaryGrowth = LocalSalaryGrowth.fromJson(data);
       notifyListeners();
-    } catch (e) { print('Salary growth load error: $e'); }
+    } catch (e) {
+      print('Salary growth load error: $e');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -520,18 +628,31 @@ class FinancialProvider extends ChangeNotifier {
 
   static String _typeToLabel(String type) {
     switch (type) {
-      case 'salary':   return 'Salary';
-      case 'business': return 'Business';
-      case 'passive':  return 'Passive';
-      default: return type[0].toUpperCase() + type.substring(1);
+      case 'salary':
+        return 'Salary';
+      case 'business':
+        return 'Business';
+      case 'passive':
+        return 'Passive';
+      default:
+        return type[0].toUpperCase() + type.substring(1);
     }
   }
 
   // ── EXPENSE ────────────────────────────────────────────────────────────────
-  Future<void> addExpense(String name, double amount, String category, String bucket) async {
+  Future<void> addExpense(
+    String name,
+    double amount,
+    String category,
+    String bucket,
+  ) async {
     final created = await _apiService.post('/api/v1/dashboard/expense', {
-      'name': name, 'amount': amount, 'category': category, 'bucket': bucket,
-      'date': DateTime.now().toIso8601String().split('T').first, 'icon': 'receipt'
+      'name': name,
+      'amount': amount,
+      'category': category,
+      'bucket': bucket,
+      'date': DateTime.now().toIso8601String().split('T').first,
+      'icon': 'receipt',
     });
     if (created != null && created['id'] != null) {
       recentExpenses.insert(0, created);
@@ -541,20 +662,33 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── INCOME ─────────────────────────────────────────────────────────────────
-  Future<void> addIncome(String label, String type, double amount, String frequency, {String? companyName, String? notes}) async {
+  Future<void> addIncome(
+    String label,
+    String type,
+    double amount,
+    String frequency, {
+    String? companyName,
+    String? notes,
+  }) async {
     final created = await _apiService.post('/api/incomes', {
-      'label': label, 'type': type, 'amount': amount, 'frequency': frequency,
-      'company_name': companyName, 'notes': notes,
+      'label': label,
+      'type': type,
+      'amount': amount,
+      'frequency': frequency,
+      'company_name': companyName,
+      'notes': notes,
     });
-    incomes.add(LocalIncome(
-      id: created['id'].toString(),
-      label: created['label'] ?? label,
-      type: created['type'] ?? type,
-      amount: (created['amount'] ?? amount).toDouble(),
-      frequency: created['frequency'] ?? frequency,
-      companyName: created['company_name'] ?? companyName,
-      notes: created['notes'] ?? notes,
-    ));
+    incomes.add(
+      LocalIncome(
+        id: created['id'].toString(),
+        label: created['label'] ?? label,
+        type: created['type'] ?? type,
+        amount: (created['amount'] ?? amount).toDouble(),
+        frequency: created['frequency'] ?? frequency,
+        companyName: created['company_name'] ?? companyName,
+        notes: created['notes'] ?? notes,
+      ),
+    );
     notifyListeners();
     _reloadDashboard();
   }
@@ -575,32 +709,38 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── RECURRING BILLS ────────────────────────────────────────────────────────
-  Future<void> addRecurringBill(String name, double amount, String category, String bucket, {
+  Future<void> addRecurringBill(
+    String name,
+    double amount,
+    String category,
+    String bucket, {
     String frequency = 'monthly',
     bool isEmi = false,
     int? emiTotalMonths,
     DateTime? startDate,
   }) async {
     final created = await _apiService.post('/api/bills', {
-      'name': name, 
-      'amount': amount, 
-      'category': category, 
+      'name': name,
+      'amount': amount,
+      'category': category,
       'bucket': bucket,
       'frequency': frequency,
       'is_emi': isEmi,
       'emi_total_months': emiTotalMonths,
       'start_date': startDate?.toIso8601String().split('T').first,
     });
-    bills.add(LocalBill(
-      id: created['id'].toString(),
-      name: created['name'] ?? name,
-      amount: (created['amount'] ?? amount).toDouble(),
-      frequency: created['frequency'] ?? frequency,
-      dueDate: DateTime.now(),
-      isEmi: created['is_emi'] ?? isEmi,
-      emiTotalMonths: created['emi_total_months'] ?? emiTotalMonths ?? 0,
-      emiMonthsPaid: created['emi_months_paid'] ?? 0,
-    ));
+    bills.add(
+      LocalBill(
+        id: created['id'].toString(),
+        name: created['name'] ?? name,
+        amount: (created['amount'] ?? amount).toDouble(),
+        frequency: created['frequency'] ?? frequency,
+        dueDate: DateTime.now(),
+        isEmi: created['is_emi'] ?? isEmi,
+        emiTotalMonths: created['emi_total_months'] ?? emiTotalMonths ?? 0,
+        emiMonthsPaid: created['emi_months_paid'] ?? 0,
+      ),
+    );
     notifyListeners();
     _reloadDashboard();
   }
@@ -657,13 +797,18 @@ class FinancialProvider extends ChangeNotifier {
 
     if (runAnalysis && res['analysis'] != null) {
       lastAnalysisResult = res['analysis'];
-      pendingRecurringSuggestions = List<dynamic>.from(res['analysis']['recurring_detections'] ?? []);
+      pendingRecurringSuggestions = List<dynamic>.from(
+        res['analysis']['recurring_detections'] ?? [],
+      );
     }
     notifyListeners();
     return res['inserted'] ?? 0;
   }
 
-  Future<void> confirmRecurringSuggestion(Map<String, dynamic> suggestion, {int dueDay = 1}) async {
+  Future<void> confirmRecurringSuggestion(
+    Map<String, dynamic> suggestion, {
+    int dueDay = 1,
+  }) async {
     try {
       await _apiService.post('/api/analytics/recurring-detection/confirm', {
         'name': suggestion['name'],
@@ -674,7 +819,9 @@ class FinancialProvider extends ChangeNotifier {
         'due_day': dueDay,
         'is_subscription': suggestion['is_subscription'] ?? false,
       });
-      pendingRecurringSuggestions.removeWhere((s) => s['name'] == suggestion['name']);
+      pendingRecurringSuggestions.removeWhere(
+        (s) => s['name'] == suggestion['name'],
+      );
       notifyListeners();
       await _reloadDashboard();
     } catch (e) {
@@ -685,7 +832,9 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<void> loadSpendingPatterns() async {
     try {
-      spendingPatterns = await _apiService.get('/api/analytics/spending-patterns');
+      spendingPatterns = await _apiService.get(
+        '/api/analytics/spending-patterns',
+      );
     } catch (e) {
       print('Load spending patterns error: $e');
     }
@@ -694,7 +843,9 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<void> detectSubscriptions() async {
     try {
-      subscriptionCandidates = await _apiService.get('/api/analytics/subscriptions/detect');
+      subscriptionCandidates = await _apiService.get(
+        '/api/analytics/subscriptions/detect',
+      );
     } catch (e) {
       print('Detect subscriptions error: $e');
     }
@@ -703,7 +854,9 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<void> detectLapsedSubscriptions() async {
     try {
-      lapsedSubscriptionDetections = await _apiService.get('/api/analytics/subscriptions/lapsed');
+      lapsedSubscriptionDetections = await _apiService.get(
+        '/api/analytics/subscriptions/lapsed',
+      );
     } catch (e) {
       print('Detect lapsed subscriptions error: $e');
     }
@@ -712,8 +865,13 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<void> runFullAnalysis() async {
     try {
-      lastAnalysisResult = await _apiService.post('/api/analytics/run-analysis', {});
-      pendingRecurringSuggestions = List<dynamic>.from(lastAnalysisResult?['recurring_detections'] ?? []);
+      lastAnalysisResult = await _apiService.post(
+        '/api/analytics/run-analysis',
+        {},
+      );
+      pendingRecurringSuggestions = List<dynamic>.from(
+        lastAnalysisResult?['recurring_detections'] ?? [],
+      );
       await loadAllAdvisorData();
     } catch (e) {
       print('Run full analysis error: $e');
@@ -722,7 +880,10 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── ASSETS ─────────────────────────────────────────────────────────────────
-  Future<void> addAsset(String name, String type, double amount, {
+  Future<void> addAsset(
+    String name,
+    String type,
+    double amount, {
     double interestRate = 0.0,
     bool isLiability = false,
     bool isEmergency = false,
@@ -733,7 +894,9 @@ class FinancialProvider extends ChangeNotifier {
     int? yearsOfDeposit,
   }) async {
     final created = await _apiService.post('/api/assets', {
-      'name': name, 'type': type, 'amount': amount,
+      'name': name,
+      'type': type,
+      'amount': amount,
       'interest_rate': interestRate,
       'is_liability': isLiability,
       'is_emergency': isEmergency,
@@ -743,16 +906,18 @@ class FinancialProvider extends ChangeNotifier {
       'purchase_date': purchaseDate,
       'years_of_deposit': yearsOfDeposit,
     });
-    assets.add(LocalAsset(
-      id: created['id'].toString(),
-      name: created['name'] ?? name,
-      amount: (created['amount'] ?? amount).toDouble(),
-      interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
-      isLiability: created['is_liability'] ?? isLiability,
-      generatesIncome: created['generates_income'] ?? generatesIncome,
-      purchasePrice: created['purchase_price']?.toDouble(),
-      purchaseDate: created['purchase_date'],
-    ));
+    assets.add(
+      LocalAsset(
+        id: created['id'].toString(),
+        name: created['name'] ?? name,
+        amount: (created['amount'] ?? amount).toDouble(),
+        interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
+        isLiability: created['is_liability'] ?? isLiability,
+        generatesIncome: created['generates_income'] ?? generatesIncome,
+        purchasePrice: created['purchase_price']?.toDouble(),
+        purchaseDate: created['purchase_date'],
+      ),
+    );
     notifyListeners();
     _reloadDashboard();
   }
@@ -772,7 +937,10 @@ class FinancialProvider extends ChangeNotifier {
     final created = await _apiService.post('/api/assets/vehicles', {
       'make_model': makeModel,
       'purchase_cost': purchaseCost,
-      'insurance_renewal_date': insuranceRenewalDate?.toIso8601String().split('T').first,
+      'insurance_renewal_date': insuranceRenewalDate
+          ?.toIso8601String()
+          .split('T')
+          .first,
       'model_year': modelYear,
       'purchase_year': purchaseYear,
       'fuel_type': fuelType,
@@ -824,7 +992,8 @@ class FinancialProvider extends ChangeNotifier {
         id: updated['id'].toString(),
         name: updated['name'] ?? assets[idx].name,
         amount: (updated['amount'] ?? assets[idx].amount).toDouble(),
-        interestRate: (updated['interest_rate'] ?? assets[idx].interestRate).toDouble(),
+        interestRate: (updated['interest_rate'] ?? assets[idx].interestRate)
+            .toDouble(),
         isLiability: updated['is_liability'] ?? false,
         generatesIncome: updated['generates_income'] ?? false,
         purchasePrice: updated['purchase_price']?.toDouble(),
@@ -836,17 +1005,28 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── LIABILITIES ────────────────────────────────────────────────────────────
-  Future<void> addLiability(String name, String type, double outstanding, double emi, double interestRate) async {
+  Future<void> addLiability(
+    String name,
+    String type,
+    double outstanding,
+    double emi,
+    double interestRate,
+  ) async {
     final created = await _apiService.post('/api/liabilities', {
-      'name': name, 'type': type, 'outstanding': outstanding,
-      'emi': emi, 'interest_rate': interestRate,
+      'name': name,
+      'type': type,
+      'outstanding': outstanding,
+      'emi': emi,
+      'interest_rate': interestRate,
     });
-    liabilities.add(LocalLiability(
-      id: created['id'].toString(),
-      name: created['name'] ?? name,
-      amount: (created['outstanding'] ?? outstanding).toDouble(),
-      interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
-    ));
+    liabilities.add(
+      LocalLiability(
+        id: created['id'].toString(),
+        name: created['name'] ?? name,
+        amount: (created['outstanding'] ?? outstanding).toDouble(),
+        interestRate: (created['interest_rate'] ?? interestRate).toDouble(),
+      ),
+    );
     notifyListeners();
     _reloadDashboard();
   }
@@ -867,25 +1047,42 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // ── HOUSEHOLD MEMBERS ──────────────────────────────────────────────────────
-  Future<void> addContributingMember(String name, double monthlyIncome, double contribution, String relationship) async {
-    final created = await _apiService.post('/api/household/contributing-members', {
-      'name': name, 'monthly_income': monthlyIncome,
-      'contribution_to_household': contribution, 'relationship': relationship
-    });
-    householdMembers.add(LocalHouseholdMember(
-      id: created['id'].toString(),
-      name: created['name'] ?? name,
-      monthlyIncome: (created['monthlyIncome'] ?? monthlyIncome).toDouble(),
-      contribution: (created['contributionToHousehold'] ?? contribution).toDouble(),
-      relationship: created['relationship'] ?? relationship,
-    ));
+  Future<void> addContributingMember(
+    String name,
+    double monthlyIncome,
+    double contribution,
+    String relationship,
+  ) async {
+    final created = await _apiService
+        .post('/api/household/contributing-members', {
+          'name': name,
+          'monthly_income': monthlyIncome,
+          'contribution_to_household': contribution,
+          'relationship': relationship,
+        });
+    householdMembers.add(
+      LocalHouseholdMember(
+        id: created['id'].toString(),
+        name: created['name'] ?? name,
+        monthlyIncome: (created['monthlyIncome'] ?? monthlyIncome).toDouble(),
+        contribution: (created['contributionToHousehold'] ?? contribution)
+            .toDouble(),
+        relationship: created['relationship'] ?? relationship,
+      ),
+    );
     notifyListeners();
     _reloadDashboard();
   }
 
-  Future<Map<String, dynamic>> inviteFamilyMember(String name, String email, String relationship) async {
+  Future<Map<String, dynamic>> inviteFamilyMember(
+    String name,
+    String email,
+    String relationship,
+  ) async {
     final result = await _apiService.post('/api/household/invite-by-email', {
-      'name': name, 'email': email, 'relationship': relationship,
+      'name': name,
+      'email': email,
+      'relationship': relationship,
     });
     await _reloadHousehold();
     return result;
@@ -912,7 +1109,9 @@ class FinancialProvider extends ChangeNotifier {
   // ── ANALYTICS ─────────────────────────────────────────────────────────────
   Future<void> loadBudgetBreakdown() async {
     try {
-      budgetBreakdown = await _apiService.get('/api/analytics/budget-breakdown');
+      budgetBreakdown = await _apiService.get(
+        '/api/analytics/budget-breakdown',
+      );
     } catch (e) {
       print('Budget breakdown load error: $e');
     }
@@ -940,12 +1139,19 @@ class FinancialProvider extends ChangeNotifier {
     await loadNudges();
   }
 
-  Future<Map<String, dynamic>> lifecycleSimulate(Map<String, dynamic> params) async {
-    final result = await _apiService.post('/api/advisor/lifecycle-simulate', params);
+  Future<Map<String, dynamic>> lifecycleSimulate(
+    Map<String, dynamic> params,
+  ) async {
+    final result = await _apiService.post(
+      '/api/advisor/lifecycle-simulate',
+      params,
+    );
     return result;
   }
 
-  Future<Map<String, dynamic>> runSimulation(Map<String, dynamic> params) async {
+  Future<Map<String, dynamic>> runSimulation(
+    Map<String, dynamic> params,
+  ) async {
     final result = await _apiService.post('/api/advisor/simulate', params);
     await loadSimulations();
     return result;
@@ -981,7 +1187,9 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   Future<void> flagSubscription(int billId, String status) async {
-    await _apiService.put('/api/advisor/subscription-insights/$billId', {'status': status});
+    await _apiService.put('/api/advisor/subscription-insights/$billId', {
+      'status': status,
+    });
     await loadSubscriptionInsights();
   }
 
@@ -1050,7 +1258,12 @@ class FinancialProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateCollection(int id, {String? label, String? description, String? status}) async {
+  Future<void> updateCollection(
+    int id, {
+    String? label,
+    String? description,
+    String? status,
+  }) async {
     try {
       final body = <String, dynamic>{};
       if (label != null) body['label'] = label;
@@ -1127,7 +1340,9 @@ class FinancialProvider extends ChangeNotifier {
   Future<void> refreshGoldValues() async {
     final data = await _apiService.post('/api/assets/gold/refresh', {});
     if (data is List) {
-      goldAssets = data.map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>)).toList();
+      goldAssets = data
+          .map((g) => LocalGoldAsset.fromJson(g as Map<String, dynamic>))
+          .toList();
     }
     notifyListeners();
   }
@@ -1135,7 +1350,9 @@ class FinancialProvider extends ChangeNotifier {
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1: STOCK HOLDINGS CRUD
   // ═══════════════════════════════════════════════════════════════════════════
-  Future<Map<String, dynamic>> addStockHolding(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> addStockHolding(
+    Map<String, dynamic> body,
+  ) async {
     final created = await _apiService.post('/api/assets/stocks', body);
     stockHoldings.add(LocalStockHolding.fromJson(created));
     notifyListeners();
@@ -1169,7 +1386,9 @@ class FinancialProvider extends ChangeNotifier {
   Future<void> refreshStockValues() async {
     final data = await _apiService.post('/api/assets/stocks/refresh', {});
     if (data is List) {
-      stockHoldings = data.map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>)).toList();
+      stockHoldings = data
+          .map((s) => LocalStockHolding.fromJson(s as Map<String, dynamic>))
+          .toList();
     }
     notifyListeners();
   }
@@ -1188,8 +1407,11 @@ class FinancialProvider extends ChangeNotifier {
   Future<void> updatePFAsset(Map<String, dynamic> body) async {
     final updated = await _apiService.put('/api/assets/pf', body);
     final idx = pfAssets.indexWhere((p) => p.id == updated['id']);
-    if (idx >= 0) pfAssets[idx] = LocalPFAsset.fromJson(updated);
-    else pfAssets.add(LocalPFAsset.fromJson(updated));
+    if (idx >= 0) {
+      pfAssets[idx] = LocalPFAsset.fromJson(updated);
+    } else {
+      pfAssets.add(LocalPFAsset.fromJson(updated));
+    }
     notifyListeners();
     _reloadDashboard();
   }
@@ -1219,7 +1441,9 @@ class FinancialProvider extends ChangeNotifier {
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 1: LENDING RECORDS CRUD
   // ═══════════════════════════════════════════════════════════════════════════
-  Future<Map<String, dynamic>> addLendingRecord(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> addLendingRecord(
+    Map<String, dynamic> body,
+  ) async {
     final created = await _apiService.post('/api/lending', body);
     lendingRecords.add(LocalLendingRecord.fromJson(created));
     notifyListeners();
@@ -1287,15 +1511,24 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateSchooling(int memberId, int schoolingId, Map<String, dynamic> body) async {
-    await _apiService.put('/api/profile/family/$memberId/schooling/$schoolingId', body);
+  Future<void> updateSchooling(
+    int memberId,
+    int schoolingId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.put(
+      '/api/profile/family/$memberId/schooling/$schoolingId',
+      body,
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
   }
 
   Future<void> deleteSchooling(int memberId, int schoolingId) async {
-    await _apiService.delete('/api/profile/family/$memberId/schooling/$schoolingId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/schooling/$schoolingId',
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
@@ -1303,20 +1536,35 @@ class FinancialProvider extends ChangeNotifier {
 
   Future<dynamic> getSchoolingPayments(int memberId, int schoolingId) async {
     try {
-      return await _apiService.get('/api/profile/family/$memberId/schooling/$schoolingId/payments');
+      return await _apiService.get(
+        '/api/profile/family/$memberId/schooling/$schoolingId/payments',
+      );
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> deleteSchoolingPayment(int memberId, int schoolingId, int paymentId) async {
-    await _apiService.delete('/api/profile/family/$memberId/schooling/$schoolingId/payments/$paymentId');
+  Future<void> deleteSchoolingPayment(
+    int memberId,
+    int schoolingId,
+    int paymentId,
+  ) async {
+    await _apiService.delete(
+      '/api/profile/family/$memberId/schooling/$schoolingId/payments/$paymentId',
+    );
     await _reloadFamilyMembers();
     notifyListeners();
   }
 
-  Future<void> recordSchoolingPayment(int memberId, int schoolingId, Map<String, dynamic> body) async {
-    await _apiService.post('/api/profile/family/$memberId/schooling/$schoolingId/payments', body);
+  Future<void> recordSchoolingPayment(
+    int memberId,
+    int schoolingId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.post(
+      '/api/profile/family/$memberId/schooling/$schoolingId/payments',
+      body,
+    );
     await _reloadFamilyMembers();
     notifyListeners();
   }
@@ -1329,15 +1577,24 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateCheckup(int memberId, int checkupId, Map<String, dynamic> body) async {
-    await _apiService.put('/api/profile/family/$memberId/checkups/$checkupId', body);
+  Future<void> updateCheckup(
+    int memberId,
+    int checkupId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.put(
+      '/api/profile/family/$memberId/checkups/$checkupId',
+      body,
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
   }
 
   Future<void> deleteCheckup(int memberId, int checkupId) async {
-    await _apiService.delete('/api/profile/family/$memberId/checkups/$checkupId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/checkups/$checkupId',
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
@@ -1351,15 +1608,24 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateMedicine(int memberId, int medicineId, Map<String, dynamic> body) async {
-    await _apiService.put('/api/profile/family/$memberId/medicines/$medicineId', body);
+  Future<void> updateMedicine(
+    int memberId,
+    int medicineId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.put(
+      '/api/profile/family/$memberId/medicines/$medicineId',
+      body,
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
   }
 
   Future<void> deleteMedicine(int memberId, int medicineId) async {
-    await _apiService.delete('/api/profile/family/$memberId/medicines/$medicineId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/medicines/$medicineId',
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
@@ -1373,15 +1639,24 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateVaccination(int memberId, int vaccinationId, Map<String, dynamic> body) async {
-    await _apiService.put('/api/profile/family/$memberId/vaccinations/$vaccinationId', body);
+  Future<void> updateVaccination(
+    int memberId,
+    int vaccinationId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.put(
+      '/api/profile/family/$memberId/vaccinations/$vaccinationId',
+      body,
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
   }
 
   Future<void> deleteVaccination(int memberId, int vaccinationId) async {
-    await _apiService.delete('/api/profile/family/$memberId/vaccinations/$vaccinationId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/vaccinations/$vaccinationId',
+    );
     await _reloadFamilyMembers();
     await _reloadRecurringFamilyCosts();
     notifyListeners();
@@ -1394,14 +1669,23 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateEarnings(int memberId, int earningsId, Map<String, dynamic> body) async {
-    await _apiService.put('/api/profile/family/$memberId/earnings/$earningsId', body);
+  Future<void> updateEarnings(
+    int memberId,
+    int earningsId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.put(
+      '/api/profile/family/$memberId/earnings/$earningsId',
+      body,
+    );
     await _reloadFamilyMembers();
     notifyListeners();
   }
 
   Future<void> deleteEarnings(int memberId, int earningsId) async {
-    await _apiService.delete('/api/profile/family/$memberId/earnings/$earningsId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/earnings/$earningsId',
+    );
     await _reloadFamilyMembers();
     notifyListeners();
   }
@@ -1414,7 +1698,9 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   Future<void> unlinkInsurance(int memberId, int insuranceId) async {
-    await _apiService.delete('/api/profile/family/$memberId/insurance/$insuranceId');
+    await _apiService.delete(
+      '/api/profile/family/$memberId/insurance/$insuranceId',
+    );
     await _reloadFamilyMembers();
     notifyListeners();
   }
@@ -1423,14 +1709,20 @@ class FinancialProvider extends ChangeNotifier {
   // PHASE 6: BUDGET PLAN ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
   Future<void> autoPopulateBudget() async {
-    await _apiService.post('/api/budget/plan/auto-populate?month=$selectedMonth&year=$selectedYear', {});
+    await _apiService.post(
+      '/api/budget/plan/auto-populate?month=$selectedMonth&year=$selectedYear',
+      {},
+    );
     await _reloadBudgetPlan();
     await _reloadBudgetComparison();
     notifyListeners();
   }
 
   Future<void> addBudgetItem(Map<String, dynamic> body) async {
-    await _apiService.post('/api/budget/items?month=$selectedMonth&year=$selectedYear', body);
+    await _apiService.post(
+      '/api/budget/items?month=$selectedMonth&year=$selectedYear',
+      body,
+    );
     await _reloadBudgetPlan();
     await _reloadBudgetComparison();
     notifyListeners();
@@ -1453,7 +1745,10 @@ class FinancialProvider extends ChangeNotifier {
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 2: SALARY DETAIL ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
-  Future<void> addSalaryDetail(String incomeId, Map<String, dynamic> body) async {
+  Future<void> addSalaryDetail(
+    String incomeId,
+    Map<String, dynamic> body,
+  ) async {
     final intId = int.parse(incomeId);
     await _apiService.post('/api/incomes/$intId/salary', body);
     await reloadSalaryDetails(incomeId);
@@ -1462,7 +1757,11 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateSalaryDetail(String incomeId, int salaryId, Map<String, dynamic> body) async {
+  Future<void> updateSalaryDetail(
+    String incomeId,
+    int salaryId,
+    Map<String, dynamic> body,
+  ) async {
     final intId = int.parse(incomeId);
     await _apiService.put('/api/incomes/$intId/salary/$salaryId', body);
     await reloadSalaryDetails(incomeId);
@@ -1492,7 +1791,10 @@ class FinancialProvider extends ChangeNotifier {
   // ═══════════════════════════════════════════════════════════════════════════
   // PHASE 3: VEHICLE LOGGING ACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
-  Future<void> addServiceRecord(String vehicleId, Map<String, dynamic> body) async {
+  Future<void> addServiceRecord(
+    String vehicleId,
+    Map<String, dynamic> body,
+  ) async {
     final intId = int.parse(vehicleId);
     await _apiService.post('/api/assets/vehicles/$intId/service', body);
     await reloadVehicleServiceRecords(vehicleId);
@@ -1508,7 +1810,10 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addFuelRecord(String vehicleId, Map<String, dynamic> body) async {
+  Future<void> addFuelRecord(
+    String vehicleId,
+    Map<String, dynamic> body,
+  ) async {
     final intId = int.parse(vehicleId);
     await _apiService.post('/api/assets/vehicles/$intId/fuel', body);
     await reloadVehicleFuelRecords(vehicleId);
@@ -1524,7 +1829,11 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addOrUpdateVehicleLoan(String vehicleId, Map<String, dynamic> body, {bool isUpdate = false}) async {
+  Future<void> addOrUpdateVehicleLoan(
+    String vehicleId,
+    Map<String, dynamic> body, {
+    bool isUpdate = false,
+  }) async {
     final intId = int.parse(vehicleId);
     if (isUpdate) {
       await _apiService.put('/api/assets/vehicles/$intId/loan', body);
@@ -1565,7 +1874,10 @@ class FinancialProvider extends ChangeNotifier {
     _reloadDashboard();
   }
 
-  Future<void> addElectronicService(String deviceId, Map<String, dynamic> body) async {
+  Future<void> addElectronicService(
+    String deviceId,
+    Map<String, dynamic> body,
+  ) async {
     final intId = int.parse(deviceId);
     await _apiService.post('/api/electronics/$intId/service', body);
     await reloadElectronicServices(deviceId);
@@ -1581,7 +1893,11 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addOrUpdateElectronicEmi(String deviceId, Map<String, dynamic> body, {bool isUpdate = false}) async {
+  Future<void> addOrUpdateElectronicEmi(
+    String deviceId,
+    Map<String, dynamic> body, {
+    bool isUpdate = false,
+  }) async {
     final intId = int.parse(deviceId);
     if (isUpdate) {
       await _apiService.put('/api/electronics/$intId/emi', body);

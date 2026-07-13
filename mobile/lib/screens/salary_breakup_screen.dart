@@ -47,19 +47,39 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
     super.initState();
     final sd = widget.salaryDetail;
 
-    _companyCtrl = TextEditingController(text: sd?.companyName ?? widget.income.companyName);
-    _fromYearCtrl = TextEditingController(text: sd?.fromYear.toString() ?? DateTime.now().year.toString());
+    _companyCtrl = TextEditingController(
+      text: sd?.companyName ?? widget.income.companyName,
+    );
+    _fromYearCtrl = TextEditingController(
+      text: sd?.fromYear.toString() ?? DateTime.now().year.toString(),
+    );
     _toYearCtrl = TextEditingController(text: sd?.toYear?.toString() ?? '');
-    _fixedPayCtrl = TextEditingController(text: sd?.fixedPay?.toStringAsFixed(0) ?? '');
-    _basicPayCtrl = TextEditingController(text: sd?.basicPay?.toStringAsFixed(0) ?? '');
+    _fixedPayCtrl = TextEditingController(
+      text: sd?.fixedPay?.toStringAsFixed(0) ?? '',
+    );
+    _basicPayCtrl = TextEditingController(
+      text: sd?.basicPay?.toStringAsFixed(0) ?? '',
+    );
     _hraCtrl = TextEditingController(text: sd?.hra?.toStringAsFixed(0) ?? '');
     _ltaCtrl = TextEditingController(text: sd?.lta?.toStringAsFixed(0) ?? '');
-    _pfEmployeeCtrl = TextEditingController(text: sd?.pfEmployee?.toStringAsFixed(0) ?? '');
-    _pfEmployerCtrl = TextEditingController(text: sd?.pfEmployer?.toStringAsFixed(0) ?? '');
-    _specialCtrl = TextEditingController(text: sd?.specialAllowance?.toStringAsFixed(0) ?? '');
-    _mealCardCtrl = TextEditingController(text: sd?.mealCard?.toStringAsFixed(0) ?? '');
-    _varPctCtrl = TextEditingController(text: sd?.variablePayPercentage?.toStringAsFixed(1) ?? '');
-    _varAmtCtrl = TextEditingController(text: sd?.variablePayAmount?.toStringAsFixed(0) ?? '');
+    _pfEmployeeCtrl = TextEditingController(
+      text: sd?.pfEmployee?.toStringAsFixed(0) ?? '',
+    );
+    _pfEmployerCtrl = TextEditingController(
+      text: sd?.pfEmployer?.toStringAsFixed(0) ?? '',
+    );
+    _specialCtrl = TextEditingController(
+      text: sd?.specialAllowance?.toStringAsFixed(0) ?? '',
+    );
+    _mealCardCtrl = TextEditingController(
+      text: sd?.mealCard?.toStringAsFixed(0) ?? '',
+    );
+    _varPctCtrl = TextEditingController(
+      text: sd?.variablePayPercentage?.toStringAsFixed(1) ?? '',
+    );
+    _varAmtCtrl = TextEditingController(
+      text: sd?.variablePayAmount?.toStringAsFixed(0) ?? '',
+    );
 
     _isCurrent = sd?.isCurrent ?? (sd == null); // default true for new entries
 
@@ -110,7 +130,10 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
     setState(() {
       _grossAnnual = fixedPay + varAmt;
       final monthlyGross = fixedPay / 12.0;
-      _monthlyInHand = (monthlyGross - pfEmp - meal).clamp(0.0, double.infinity);
+      _monthlyInHand = (monthlyGross - pfEmp - meal).clamp(
+        0.0,
+        double.infinity,
+      );
     });
   }
 
@@ -119,7 +142,8 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
 
     setState(() => _isLoading = true);
 
-    final fromYear = int.tryParse(_fromYearCtrl.text.trim()) ?? DateTime.now().year;
+    final fromYear =
+        int.tryParse(_fromYearCtrl.text.trim()) ?? DateTime.now().year;
     final toYear = int.tryParse(_toYearCtrl.text.trim());
     final fixedPay = double.tryParse(_fixedPayCtrl.text.trim());
     final basicPay = double.tryParse(_basicPayCtrl.text.trim());
@@ -137,22 +161,26 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
       'from_year': fromYear,
       'to_year': toYear,
       'is_current': _isCurrent,
-      if (fixedPay != null) 'fixed_pay': fixedPay,
-      if (basicPay != null) 'basic_pay': basicPay,
-      if (hra != null) 'hra': hra,
-      if (lta != null) 'lta': lta,
-      if (pfEmployee != null) 'pf_employee': pfEmployee,
-      if (pfEmployer != null) 'pf_employer': pfEmployer,
-      if (special != null) 'special_allowance': special,
-      if (meal != null) 'meal_card': meal,
-      if (varPct != null) 'variable_pay_percentage': varPct,
-      if (varAmt != null) 'variable_pay_amount': varAmt,
+      'fixed_pay': ?fixedPay,
+      'basic_pay': ?basicPay,
+      'hra': ?hra,
+      'lta': ?lta,
+      'pf_employee': ?pfEmployee,
+      'pf_employer': ?pfEmployer,
+      'special_allowance': ?special,
+      'meal_card': ?meal,
+      'variable_pay_percentage': ?varPct,
+      'variable_pay_amount': ?varAmt,
     };
 
     try {
       final provider = Provider.of<FinancialProvider>(context, listen: false);
       if (widget.salaryDetail != null) {
-        await provider.updateSalaryDetail(widget.income.id, widget.salaryDetail!.id, body);
+        await provider.updateSalaryDetail(
+          widget.income.id,
+          widget.salaryDetail!.id,
+          body,
+        );
       } else {
         await provider.addSalaryDetail(widget.income.id, body);
       }
@@ -179,14 +207,18 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _saveForm,
-            )
+            IconButton(icon: const Icon(Icons.check), onPressed: _saveForm),
         ],
       ),
       body: SingleChildScrollView(
@@ -203,26 +235,53 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0D9488).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+                  border: Border.all(
+                    color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Computed Salary Summary', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Computed Salary Summary',
+                      style: TextStyle(
+                        color: Color(0xFF0D9488),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Gross Annual Package:', style: TextStyle(color: Colors.black87)),
-                        Text('₹${_grossAnnual.toStringAsFixed(0)} /yr', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        const Text(
+                          'Gross Annual Package:',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        Text(
+                          '₹${_grossAnnual.toStringAsFixed(0)} /yr',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Est. Monthly In-Hand:', style: TextStyle(color: Colors.black87)),
-                        Text('₹${_monthlyInHand.toStringAsFixed(0)} /mo', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D9488), fontSize: 16)),
+                        const Text(
+                          'Est. Monthly In-Hand:',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        Text(
+                          '₹${_monthlyInHand.toStringAsFixed(0)} /mo',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0D9488),
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -230,13 +289,24 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
               ),
               const SizedBox(height: 24),
 
-              const Text('Company & Duration', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const Text(
+                'Company & Duration',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const Divider(),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _companyCtrl,
-                decoration: const InputDecoration(labelText: 'Company Name', border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? 'Company name required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Company Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Company name required' : null,
               ),
               const SizedBox(height: 16),
               Row(
@@ -245,8 +315,13 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                     child: TextFormField(
                       controller: _fromYearCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'From Year (e.g. 2025)', border: OutlineInputBorder()),
-                      validator: (val) => val == null || val.isEmpty ? 'Start year required' : null,
+                      decoration: const InputDecoration(
+                        labelText: 'From Year (e.g. 2025)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Start year required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -254,7 +329,10 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                     child: TextFormField(
                       controller: _toYearCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'To Year (Optional)', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'To Year (Optional)',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                 ],
@@ -264,27 +342,41 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                 value: _isCurrent,
                 title: const Text('Is Current Salary'),
                 subtitle: const Text('Syncs with primary income list'),
-                activeColor: const Color(0xFF0D9488),
+                activeThumbColor: const Color(0xFF0D9488),
                 onChanged: (val) {
                   setState(() => _isCurrent = val);
                 },
               ),
               const SizedBox(height: 24),
 
-              const Text('Fixed Pay Components', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const Text(
+                'Fixed Pay Components',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const Divider(),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _fixedPayCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Fixed Pay (Annual, ₹)', border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? 'Fixed pay required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Fixed Pay (Annual, ₹)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Fixed pay required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _basicPayCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Basic Pay (Annual, ₹ - Optional)', hintText: 'Defaults to 50% of Fixed Pay'),
+                decoration: const InputDecoration(
+                  labelText: 'Basic Pay (Annual, ₹ - Optional)',
+                  hintText: 'Defaults to 50% of Fixed Pay',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -302,45 +394,72 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
               TextFormField(
                 controller: _specialCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Special Allowance (Annual, ₹)'),
+                decoration: const InputDecoration(
+                  labelText: 'Special Allowance (Annual, ₹)',
+                ),
               ),
               const SizedBox(height: 24),
 
-              const Text('Deductions & Benefits (Monthly)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const Text(
+                'Deductions & Benefits (Monthly)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const Divider(),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _pfEmployeeCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'PF (Employee Contribution, Monthly ₹)'),
+                decoration: const InputDecoration(
+                  labelText: 'PF (Employee Contribution, Monthly ₹)',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _pfEmployerCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'PF (Employer Contribution, Monthly ₹)'),
+                decoration: const InputDecoration(
+                  labelText: 'PF (Employer Contribution, Monthly ₹)',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _mealCardCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Meal Card Deductions (Monthly ₹)'),
+                decoration: const InputDecoration(
+                  labelText: 'Meal Card Deductions (Monthly ₹)',
+                ),
               ),
               const SizedBox(height: 24),
 
-              const Text('Variable Pay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const Text(
+                'Variable Pay',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
               const Divider(),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _varPctCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Variable Pay Percentage (%)'),
+                decoration: const InputDecoration(
+                  labelText: 'Variable Pay Percentage (%)',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _varAmtCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Variable Pay Amount (Annual, ₹ - Optional)', hintText: 'Auto-calculates if target % is set'),
+                decoration: const InputDecoration(
+                  labelText: 'Variable Pay Amount (Annual, ₹ - Optional)',
+                  hintText: 'Auto-calculates if target % is set',
+                ),
               ),
               const SizedBox(height: 40),
             ],

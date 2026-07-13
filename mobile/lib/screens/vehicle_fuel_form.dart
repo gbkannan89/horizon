@@ -6,10 +6,7 @@ import '../utils/ui_utils.dart';
 class VehicleFuelForm extends StatefulWidget {
   final String vehicleId;
 
-  const VehicleFuelForm({
-    super.key,
-    required this.vehicleId,
-  });
+  const VehicleFuelForm({super.key, required this.vehicleId});
 
   @override
   State<VehicleFuelForm> createState() => _VehicleFuelFormState();
@@ -30,7 +27,9 @@ class _VehicleFuelFormState extends State<VehicleFuelForm> {
   @override
   void initState() {
     super.initState();
-    _dateCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+    _dateCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().substring(0, 10),
+    );
     _amountCtrl = TextEditingController();
     _litersCtrl = TextEditingController();
     _kmCtrl = TextEditingController();
@@ -92,13 +91,17 @@ class _VehicleFuelFormState extends State<VehicleFuelForm> {
     };
 
     try {
-      await Provider.of<FinancialProvider>(context, listen: false).addFuelRecord(widget.vehicleId, body);
+      await Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      ).addFuelRecord(widget.vehicleId, body);
       if (mounted) {
         UiUtils.showSnack(context, 'Fuel log added successfully');
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) UiUtils.showSnack(context, 'Failed to add fuel log: $e', isError: true);
+      if (mounted)
+        UiUtils.showSnack(context, 'Failed to add fuel log: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -114,14 +117,18 @@ class _VehicleFuelFormState extends State<VehicleFuelForm> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _submit,
-            )
+            IconButton(icon: const Icon(Icons.check), onPressed: _submit),
         ],
       ),
       body: SingleChildScrollView(
@@ -134,38 +141,57 @@ class _VehicleFuelFormState extends State<VehicleFuelForm> {
                 controller: _dateCtrl,
                 readOnly: true,
                 onTap: _selectDate,
-                decoration: const InputDecoration(labelText: 'Fill Date', suffixIcon: Icon(Icons.calendar_today), border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Fill Date',
+                  suffixIcon: Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Total Amount Paid (₹)', border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? 'Amount is required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Total Amount Paid (₹)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Amount is required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _litersCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Liters Filled', border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? 'Liters filled is required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Liters Filled',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) => val == null || val.isEmpty
+                    ? 'Liters filled is required'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _priceCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Price per Liter (₹/L - Optional)', hintText: 'Auto-computed'),
+                decoration: const InputDecoration(
+                  labelText: 'Price per Liter (₹/L - Optional)',
+                  hintText: 'Auto-computed',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _kmCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Odometer Reading (KM - Optional)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Odometer Reading (KM - Optional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('Is Full Tank fill?'),
-                activeColor: const Color(0xFF0D9488),
+                activeThumbColor: const Color(0xFF0D9488),
                 value: _isFullTank,
                 onChanged: (val) {
                   setState(() => _isFullTank = val);

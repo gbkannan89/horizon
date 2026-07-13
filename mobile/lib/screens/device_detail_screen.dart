@@ -7,16 +7,14 @@ import '../utils/ui_utils.dart';
 class DeviceDetailScreen extends StatefulWidget {
   final LocalElectronic device;
 
-  const DeviceDetailScreen({
-    super.key,
-    required this.device,
-  });
+  const DeviceDetailScreen({super.key, required this.device});
 
   @override
   State<DeviceDetailScreen> createState() => _DeviceDetailScreenState();
 }
 
-class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTickerProviderStateMixin {
+class _DeviceDetailScreenState extends State<DeviceDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -87,7 +85,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,33 +99,65 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.08), shape: BoxShape.circle),
-                        child: Icon(_getCategoryIcon(d.category), color: const Color(0xFF0D9488), size: 28),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFF0D9488,
+                          ).withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(d.category),
+                          color: const Color(0xFF0D9488),
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(d.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                            Text(
+                              d.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
                             if (d.brand != null || d.model != null) ...[
                               const SizedBox(height: 4),
-                              Text('${d.brand ?? ''} ${d.model ?? ''}'.trim(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.bold)),
-                            ]
+                              Text(
+                                '${d.brand ?? ''} ${d.model ?? ''}'.trim(),
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                   const Divider(height: 30),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildSpecItem('Purchase Date', '${d.purchaseDate.day}/${d.purchaseDate.month}/${d.purchaseDate.year}'),
-                      _buildSpecItem('Original Cost', '₹${d.purchaseAmount.toStringAsFixed(0)}'),
-                      _buildSpecItem('Life Expectancy', '${d.expectedLifeYears} Years'),
+                      _buildSpecItem(
+                        'Purchase Date',
+                        '${d.purchaseDate.day}/${d.purchaseDate.month}/${d.purchaseDate.year}',
+                      ),
+                      _buildSpecItem(
+                        'Original Cost',
+                        '₹${d.purchaseAmount.toStringAsFixed(0)}',
+                      ),
+                      _buildSpecItem(
+                        'Life Expectancy',
+                        '${d.expectedLifeYears} Years',
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -134,34 +169,74 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Current Value & Depreciation', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const Text(
+                    'Current Value & Depreciation',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Purchase Price', style: TextStyle(color: Colors.black87)),
-                      Text('₹${d.purchaseAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Purchase Price',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                      Text(
+                        '₹${d.purchaseAmount.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Depreciation (${depPct.toStringAsFixed(0)}%)', style: const TextStyle(color: Colors.redAccent)),
-                      Text('-₹${(d.purchaseAmount - d.currentValue).toStringAsFixed(0)}', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Depreciation (${depPct.toStringAsFixed(0)}%)',
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                      Text(
+                        '-₹${(d.purchaseAmount - d.currentValue).toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Estimated Current Value', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                      Text('₹${d.currentValue.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0D9488), fontSize: 18)),
+                      const Text(
+                        'Estimated Current Value',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '₹${d.currentValue.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0D9488),
+                          fontSize: 18,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -175,18 +250,36 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Warranty Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const Text(
+                    'Warranty Status',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Warranty Period', style: TextStyle(color: Colors.black87)),
-                      Text('${d.warrantyYears} Year${d.warrantyYears > 1 ? 's' : ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Warranty Period',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                      Text(
+                        '${d.warrantyYears} Year${d.warrantyYears > 1 ? 's' : ''}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   if (d.warrantyExpiryDate != null) ...[
@@ -194,8 +287,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Expiry Date', style: TextStyle(color: Colors.black87)),
-                        Text('${d.warrantyExpiryDate!.day}/${d.warrantyExpiryDate!.month}/${d.warrantyExpiryDate!.year}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Expiry Date',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        Text(
+                          '${d.warrantyExpiryDate!.day}/${d.warrantyExpiryDate!.month}/${d.warrantyExpiryDate!.year}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                   ],
@@ -203,19 +302,27 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Status', style: TextStyle(color: Colors.black87)),
+                      const Text(
+                        'Status',
+                        style: TextStyle(color: Colors.black87),
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _getWarrantyColor(d.warrantyStatus).withValues(alpha: 0.1),
+                          color: _getWarrantyColor(
+                            d.warrantyStatus,
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           d.warrantyStatus == 'expired'
                               ? 'EXPIRED'
                               : d.warrantyStatus == 'near_expiry'
-                                  ? 'EXPIRING SOON'
-                                  : 'ACTIVE',
+                              ? 'EXPIRING SOON'
+                              : 'ACTIVE',
                           style: TextStyle(
                             color: _getWarrantyColor(d.warrantyStatus),
                             fontWeight: FontWeight.bold,
@@ -229,7 +336,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                     const SizedBox(height: 12),
                     Text(
                       '${d.warrantyDaysRemaining} days remaining in coverage.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ],
@@ -248,7 +359,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
       children: [
         Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
       ],
     );
   }
@@ -274,7 +392,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8)],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,32 +407,78 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                         children: [
                           Text(
                             s.serviceType.toUpperCase().replaceAll('_', ' '),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D9488)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0D9488),
+                            ),
                           ),
-                          Text('₹${s.cost.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                          Text(
+                            '₹${s.cost.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(s.serviceDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      if (s.serviceCenter != null && s.serviceCenter!.isNotEmpty) ...[
+                      Text(
+                        s.serviceDate,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (s.serviceCenter != null &&
+                          s.serviceCenter!.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Text('Center: ${s.serviceCenter}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Center: ${s.serviceCenter}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
-                      if (s.description != null && s.description!.isNotEmpty) ...[
+                      if (s.description != null &&
+                          s.description!.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Text(s.description!, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                        Text(
+                          s.description!,
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
                       ],
                       const Divider(height: 24),
                       Align(
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
                           onTap: () async {
-                            UiUtils.showDeleteBottomSheet(context, 'Service Event', () async {
-                              await Provider.of<FinancialProvider>(context, listen: false).deleteElectronicService(widget.device.id, s.id);
-                              _fetchData();
-                            });
+                            UiUtils.showDeleteBottomSheet(
+                              context,
+                              'Service Event',
+                              () async {
+                                await Provider.of<FinancialProvider>(
+                                  context,
+                                  listen: false,
+                                ).deleteElectronicService(
+                                  widget.device.id,
+                                  s.id,
+                                );
+                                _fetchData();
+                              },
+                            );
                           },
-                          child: const Text('Delete', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -321,7 +490,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
   }
 
   void _showAddServiceDialog() {
-    final dateCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+    final dateCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().substring(0, 10),
+    );
     final costCtrl = TextEditingController();
     final centerCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -338,46 +509,94 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                 TextField(
                   controller: dateCtrl,
                   readOnly: true,
-                  decoration: const InputDecoration(labelText: 'Service Date', suffixIcon: Icon(Icons.calendar_today)),
+                  decoration: const InputDecoration(
+                    labelText: 'Service Date',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
                   onTap: () async {
-                    final d = await showDatePicker(context: ctx, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+                    final d = await showDatePicker(
+                      context: ctx,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
                     if (d != null) {
-                      setDialogState(() => dateCtrl.text = d.toIso8601String().substring(0, 10));
+                      setDialogState(
+                        () => dateCtrl.text = d.toIso8601String().substring(
+                          0,
+                          10,
+                        ),
+                      );
                     }
                   },
                 ),
                 DropdownButtonFormField<String>(
-                  value: serviceType,
+                  initialValue: serviceType,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: const [
-                    DropdownMenuItem(value: 'screen_replacement', child: Text('Screen Replacement')),
-                    DropdownMenuItem(value: 'battery', child: Text('Battery Service')),
-                    DropdownMenuItem(value: 'repair', child: Text('General Repair')),
-                    DropdownMenuItem(value: 'annual_service', child: Text('Annual Service')),
+                    DropdownMenuItem(
+                      value: 'screen_replacement',
+                      child: Text('Screen Replacement'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'battery',
+                      child: Text('Battery Service'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'repair',
+                      child: Text('General Repair'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'annual_service',
+                      child: Text('Annual Service'),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) setDialogState(() => serviceType = val);
                   },
                 ),
-                TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Cost (₹)')),
-                TextField(controller: centerCtrl, decoration: const InputDecoration(labelText: 'Service Center')),
-                TextField(controller: descCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Description')),
+                TextField(
+                  controller: costCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Cost (₹)'),
+                ),
+                TextField(
+                  controller: centerCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Service Center',
+                  ),
+                ),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               final body = {
                 'service_date': dateCtrl.text,
                 'service_type': serviceType,
                 'cost': double.tryParse(costCtrl.text.trim()) ?? 0.0,
-                'service_center': centerCtrl.text.trim().isEmpty ? null : centerCtrl.text.trim(),
-                'description': descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
+                'service_center': centerCtrl.text.trim().isEmpty
+                    ? null
+                    : centerCtrl.text.trim(),
+                'description': descCtrl.text.trim().isEmpty
+                    ? null
+                    : descCtrl.text.trim(),
               };
-              await Provider.of<FinancialProvider>(context, listen: false).addElectronicService(widget.device.id, body);
+              await Provider.of<FinancialProvider>(
+                context,
+                listen: false,
+              ).addElectronicService(widget.device.id, body);
               if (mounted) {
                 Navigator.pop(ctx);
                 _fetchData();
@@ -398,14 +617,26 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.credit_card_outlined, size: 56, color: Colors.grey),
+              const Icon(
+                Icons.credit_card_outlined,
+                size: 56,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 12),
-              const Text('No active EMI on this device.', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'No active EMI on this device.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => _showEmiDialog(null),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488)),
-                child: const Text('Add EMI Schedule', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0D9488),
+                ),
+                child: const Text(
+                  'Add EMI Schedule',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -426,7 +657,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,20 +670,41 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(emi.bankName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.edit_note, color: Colors.blue), onPressed: () => _showEmiDialog(emi)),
+                    Text(
+                      emi.bankName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_note, color: Colors.blue),
+                      onPressed: () => _showEmiDialog(emi),
+                    ),
                   ],
                 ),
                 const Divider(),
-                _buildAdvisoryRow('Monthly EMI', '₹${emi.emiAmount.toStringAsFixed(0)}'),
+                _buildAdvisoryRow(
+                  'Monthly EMI',
+                  '₹${emi.emiAmount.toStringAsFixed(0)}',
+                ),
                 const SizedBox(height: 12),
-                _buildAdvisoryRow('EMIs Paid', '${emi.monthsPaid} / ${emi.totalMonths}'),
+                _buildAdvisoryRow(
+                  'EMIs Paid',
+                  '${emi.monthsPaid} / ${emi.totalMonths}',
+                ),
                 const SizedBox(height: 12),
                 _buildAdvisoryRow('Interest Rate', '${emi.interestRate}%'),
                 const SizedBox(height: 12),
-                _buildAdvisoryRow('Remaining Duration', '$remainingMonths Months'),
+                _buildAdvisoryRow(
+                  'Remaining Duration',
+                  '$remainingMonths Months',
+                ),
                 const SizedBox(height: 12),
-                _buildAdvisoryRow('Remaining Liability', '₹${totalRemainingValue.toStringAsFixed(0)}'),
+                _buildAdvisoryRow(
+                  'Remaining Liability',
+                  '₹${totalRemainingValue.toStringAsFixed(0)}',
+                ),
               ],
             ),
           ),
@@ -456,15 +713,25 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () {
-                UiUtils.showDeleteBottomSheet(context, 'EMI Schedule', () async {
-                  await Provider.of<FinancialProvider>(context, listen: false).deleteElectronicEmi(widget.device.id);
-                  _fetchData();
-                });
+                UiUtils.showDeleteBottomSheet(
+                  context,
+                  'EMI Schedule',
+                  () async {
+                    await Provider.of<FinancialProvider>(
+                      context,
+                      listen: false,
+                    ).deleteElectronicEmi(widget.device.id);
+                    _fetchData();
+                  },
+                );
               },
               icon: const Icon(Icons.delete_outline, color: Colors.red),
-              label: const Text('Delete EMI', style: TextStyle(color: Colors.red)),
+              label: const Text(
+                'Delete EMI',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -472,7 +739,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
 
   void _showEmiDialog(LocalElectronicEmi? emi) {
     final bankCtrl = TextEditingController(text: emi?.bankName);
-    final amtCtrl = TextEditingController(text: emi?.emiAmount.toStringAsFixed(0));
+    final amtCtrl = TextEditingController(
+      text: emi?.emiAmount.toStringAsFixed(0),
+    );
     final rateCtrl = TextEditingController(text: emi?.interestRate.toString());
     final monthsCtrl = TextEditingController(text: emi?.totalMonths.toString());
     final paidCtrl = TextEditingController(text: emi?.monthsPaid.toString());
@@ -484,16 +753,40 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
         content: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: bankCtrl, decoration: const InputDecoration(labelText: 'Bank Name')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'EMI Amount')),
-              TextField(controller: rateCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Interest Rate (%)')),
-              TextField(controller: monthsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Total Months')),
-              TextField(controller: paidCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Months Paid')),
+              TextField(
+                controller: bankCtrl,
+                decoration: const InputDecoration(labelText: 'Bank Name'),
+              ),
+              TextField(
+                controller: amtCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'EMI Amount'),
+              ),
+              TextField(
+                controller: rateCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Interest Rate (%)',
+                ),
+              ),
+              TextField(
+                controller: monthsCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Total Months'),
+              ),
+              TextField(
+                controller: paidCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Months Paid'),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
               final body = {
@@ -504,8 +797,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
                 'months_paid': int.tryParse(paidCtrl.text.trim()) ?? 0,
                 'start_date': DateTime.now().toIso8601String().substring(0, 10),
               };
-              await Provider.of<FinancialProvider>(context, listen: false)
-                  .addOrUpdateElectronicEmi(widget.device.id, body, isUpdate: emi != null);
+              await Provider.of<FinancialProvider>(
+                context,
+                listen: false,
+              ).addOrUpdateElectronicEmi(
+                widget.device.id,
+                body,
+                isUpdate: emi != null,
+              );
               if (mounted) {
                 Navigator.pop(ctx);
                 _fetchData();
@@ -547,7 +846,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> with SingleTick
       ),
       body: Consumer<FinancialProvider>(
         builder: (context, provider, child) {
-          final currentDevice = provider.electronics.firstWhere((x) => x.id == widget.device.id, orElse: () => widget.device);
+          final currentDevice = provider.electronics.firstWhere(
+            (x) => x.id == widget.device.id,
+            orElse: () => widget.device,
+          );
           return TabBarView(
             controller: _tabController,
             children: [

@@ -6,10 +6,7 @@ import '../utils/ui_utils.dart';
 class VehicleServiceForm extends StatefulWidget {
   final String vehicleId;
 
-  const VehicleServiceForm({
-    super.key,
-    required this.vehicleId,
-  });
+  const VehicleServiceForm({super.key, required this.vehicleId});
 
   @override
   State<VehicleServiceForm> createState() => _VehicleServiceFormState();
@@ -31,7 +28,9 @@ class _VehicleServiceFormState extends State<VehicleServiceForm> {
   @override
   void initState() {
     super.initState();
-    _dateCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+    _dateCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().substring(0, 10),
+    );
     _costCtrl = TextEditingController();
     _kmCtrl = TextEditingController();
     _centerCtrl = TextEditingController();
@@ -74,19 +73,31 @@ class _VehicleServiceFormState extends State<VehicleServiceForm> {
       'service_type': _selectedType,
       'cost': double.tryParse(_costCtrl.text.trim()) ?? 0.0,
       'km_at_service': double.tryParse(_kmCtrl.text.trim()),
-      'service_center': _centerCtrl.text.trim().isEmpty ? null : _centerCtrl.text.trim(),
+      'service_center': _centerCtrl.text.trim().isEmpty
+          ? null
+          : _centerCtrl.text.trim(),
       'next_service_km': double.tryParse(_nextKmCtrl.text.trim()),
-      'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+      'description': _descCtrl.text.trim().isEmpty
+          ? null
+          : _descCtrl.text.trim(),
     };
 
     try {
-      await Provider.of<FinancialProvider>(context, listen: false).addServiceRecord(widget.vehicleId, body);
+      await Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      ).addServiceRecord(widget.vehicleId, body);
       if (mounted) {
         UiUtils.showSnack(context, 'Service record added successfully');
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) UiUtils.showSnack(context, 'Failed to add service record: $e', isError: true);
+      if (mounted)
+        UiUtils.showSnack(
+          context,
+          'Failed to add service record: $e',
+          isError: true,
+        );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -102,14 +113,18 @@ class _VehicleServiceFormState extends State<VehicleServiceForm> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _submit,
-            )
+            IconButton(icon: const Icon(Icons.check), onPressed: _submit),
         ],
       ),
       body: SingleChildScrollView(
@@ -122,17 +137,36 @@ class _VehicleServiceFormState extends State<VehicleServiceForm> {
                 controller: _dateCtrl,
                 readOnly: true,
                 onTap: _selectDate,
-                decoration: const InputDecoration(labelText: 'Service Date', suffixIcon: Icon(Icons.calendar_today), border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Service Date',
+                  suffixIcon: Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedType,
-                decoration: const InputDecoration(labelText: 'Service Type', border: OutlineInputBorder()),
+                initialValue: _selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Service Type',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
-                  DropdownMenuItem(value: 'regular', child: Text('Regular Service')),
-                  DropdownMenuItem(value: 'major', child: Text('Major Service')),
-                  DropdownMenuItem(value: 'repair', child: Text('Repair / Parts Replacement')),
-                  DropdownMenuItem(value: 'annual', child: Text('Annual Maintenance')),
+                  DropdownMenuItem(
+                    value: 'regular',
+                    child: Text('Regular Service'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'major',
+                    child: Text('Major Service'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'repair',
+                    child: Text('Repair / Parts Replacement'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'annual',
+                    child: Text('Annual Maintenance'),
+                  ),
                 ],
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedType = val);
@@ -142,31 +176,47 @@ class _VehicleServiceFormState extends State<VehicleServiceForm> {
               TextFormField(
                 controller: _costCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Total Cost (₹)', border: OutlineInputBorder()),
-                validator: (val) => val == null || val.isEmpty ? 'Cost is required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Total Cost (₹)',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Cost is required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _kmCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Odometer Reading (KM)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Odometer Reading (KM)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _centerCtrl,
-                decoration: const InputDecoration(labelText: 'Service Center Name', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Service Center Name',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nextKmCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Next Service Odometer (KM - Optional)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Next Service Odometer (KM - Optional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description / Notes', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Description / Notes',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 40),
             ],
