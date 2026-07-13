@@ -191,7 +191,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen>
             ),
           ),
           child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF0D9488)),
+            child: CircularProgressIndicator(color: Color(0xFF6366F1)),
           ),
         ),
       );
@@ -1194,7 +1194,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen>
                     onSelected: (v) {
                       if (v) setState(() => lockDays = days);
                     },
-                    selectedColor: const Color(0xFF0D9488),
+                    selectedColor: const Color(0xFF6366F1),
                     labelStyle: TextStyle(
                       color: sel ? Colors.white : Colors.grey.shade700,
                       fontWeight: sel ? FontWeight.bold : FontWeight.normal,
@@ -1300,7 +1300,7 @@ class _DisciplineDashboardScreenState extends State<DisciplineDashboardScreen>
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),

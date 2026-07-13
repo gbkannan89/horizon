@@ -84,6 +84,18 @@ class UiUtils {
   }
 
   static Widget buildEmptyState(String title, String desc, IconData icon, Color color) {
+    String? assetPath;
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('gold')) {
+      assetPath = 'assets/leaf.png';
+    } else if (lowerTitle.contains('stock') || lowerTitle.contains('portfolio')) {
+      assetPath = 'assets/camel.png';
+    } else if (lowerTitle.contains('lending') || lowerTitle.contains('liability') || lowerTitle.contains('bill') || lowerTitle.contains('debt')) {
+      assetPath = 'assets/flower-pot-1.png';
+    } else if (lowerTitle.contains('asset') || lowerTitle.contains('device') || lowerTitle.contains('electronic') || lowerTitle.contains('insurance')) {
+      assetPath = 'assets/flower-pot.png';
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(24),
@@ -93,7 +105,25 @@ class UiUtils {
         border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Row(children: [
-        Icon(icon, size: 36, color: color.withValues(alpha: 0.6)),
+        assetPath != null
+            ? Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(6),
+                child: Image.asset(assetPath, fit: BoxFit.contain),
+              )
+            : Icon(icon, size: 36, color: color.withValues(alpha: 0.6)),
         const SizedBox(width: 16),
         Expanded(
           child: Column(

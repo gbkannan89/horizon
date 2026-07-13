@@ -213,7 +213,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       prefixText: '₹ ',
                       prefixStyle: const TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0D9488),
+                        color: Color(0xFF6366F1),
                         fontSize: 16,
                       ),
                       hintText: '500',
@@ -229,7 +229,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(
-                          color: Color(0xFF0D9488),
+                          color: Color(0xFF6366F1),
                           width: 2,
                         ),
                       ),
@@ -268,7 +268,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(
-                          color: Color(0xFF0D9488),
+                          color: Color(0xFF6366F1),
                           width: 2,
                         ),
                       ),
@@ -313,12 +313,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: selected
-                                ? const Color(0xFF0D9488)
+                                ? const Color(0xFF6366F1)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: selected
-                                  ? const Color(0xFF0D9488)
+                                  ? const Color(0xFF6366F1)
                                   : Colors.grey.shade200,
                               width: 1.5,
                             ),
@@ -441,7 +441,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 Icon(
                                   Icons.autorenew_rounded,
                                   color: isRecurring
-                                      ? const Color(0xFF0D9488)
+                                      ? const Color(0xFF6366F1)
                                       : Colors.grey,
                                   size: 20,
                                 ),
@@ -462,7 +462,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               value: isRecurring,
                               onChanged: (val) =>
                                   setState(() => isRecurring = val),
-                              activeThumbColor: const Color(0xFF0D9488),
+                              activeThumbColor: const Color(0xFF6366F1),
                             ),
                           ],
                         ),
@@ -546,7 +546,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               Switch(
                                 value: isEmi,
                                 onChanged: (val) => setState(() => isEmi = val),
-                                activeThumbColor: const Color(0xFF0D9488),
+                                activeThumbColor: const Color(0xFF6366F1),
                               ),
                             ],
                           ),
@@ -660,7 +660,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -990,7 +990,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       width: 70,
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF0D9488) : Colors.white,
+        color: isSelected ? const Color(0xFF6366F1) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: isSelected
             ? null
@@ -1219,7 +1219,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: _showActualSpent
-                                ? const Color(0xFF0D9488)
+                                ? const Color(0xFF6366F1)
                                 : Colors.grey.shade600,
                           ),
                         ),
@@ -1253,7 +1253,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: !_showActualSpent
-                                ? const Color(0xFF0D9488)
+                                ? const Color(0xFF6366F1)
                                 : Colors.grey.shade600,
                           ),
                         ),
@@ -1645,10 +1645,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.link, color: Color(0xFF0D9488)),
+                  child: const Icon(Icons.link, color: Color(0xFF6366F1)),
                 ),
                 title: const Text(
                   'Link to existing Collection',
@@ -1724,12 +1724,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
                       Icons.people_outline,
-                      color: Color(0xFF0D9488),
+                      color: Color(0xFF6366F1),
                       size: 20,
                     ),
                   ),
@@ -1940,7 +1940,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
+                      backgroundColor: const Color(0xFF6366F1),
                     ),
                     child: const Text(
                       'Save',
@@ -2089,7 +2089,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
+                      backgroundColor: const Color(0xFF6366F1),
                     ),
                     child: const Text(
                       'Update',
@@ -2125,7 +2125,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF042F2E), Color(0xFF0D9488)],
+                colors: [Color(0xFF042F2E), Color(0xFF6366F1)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2304,7 +2304,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 12,
@@ -2329,7 +2329,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.autorenew, color: Color(0xFF0D9488)),
+                  icon: const Icon(Icons.autorenew, color: Color(0xFF6366F1)),
                   onPressed: () async {
                     UiUtils.showSnack(
                       context,
@@ -2362,7 +2362,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Item'),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF0D9488),
+                  foregroundColor: const Color(0xFF6366F1),
                 ),
               ),
             ],
@@ -2651,12 +2651,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)],
+              colors: [Color(0xFF6366F1), Color(0xFF2DD4BF)],
             ),
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.25),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -2769,12 +2769,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.analytics_outlined,
-                        color: Color(0xFF0D9488),
+                        color: Color(0xFF6366F1),
                         size: 26,
                       ),
                     ),
@@ -2826,8 +2826,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 });
               },
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF0D9488),
-                side: const BorderSide(color: Color(0xFF0D9488), width: 1.5),
+                foregroundColor: const Color(0xFF6366F1),
+                side: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
@@ -2861,26 +2861,66 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return Consumer<FinancialProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF0FDFA),
-                  Color(0xFFF8FAFC),
-                  Color(0xFFF5F3FF),
-                ],
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFF0FDFA),
+                        Color(0xFFF8FAFC),
+                        Color(0xFFF5F3FF),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: Column(
+              Positioned(
+                top: -80,
+                right: -80,
+                child: Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF6366F1).withValues(alpha: 0.15),
+                        const Color(0xFF6366F1).withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -60,
+                left: -80,
+                child: Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF909AC6).withValues(alpha: 0.12),
+                        const Color(0xFF909AC6).withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(child: CustomPaint(painter: _GridPainter())),
+              SafeArea(
+                child: Column(
                 children: [
                   if (provider.isLoading)
                     LinearProgressIndicator(
                       backgroundColor: Colors.transparent,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        const Color(0xFF0D9488),
+                        const Color(0xFF6366F1),
                       ),
                       minHeight: 4,
                     ),
@@ -2901,7 +2941,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 IconButton(
                                   icon: const Icon(
                                     Icons.chevron_left,
-                                    color: Color(0xFF0D9488),
+                                    color: Color(0xFF6366F1),
                                   ),
                                   onPressed: () => provider.previousMonth(),
                                 ),
@@ -2911,7 +2951,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                         '${provider.selectedMonth}-${provider.selectedYear}',
                                     icon: const Icon(
                                       Icons.arrow_drop_down,
-                                      color: Color(0xFF0D9488),
+                                      color: Color(0xFF6366F1),
                                     ),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
@@ -2993,7 +3033,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 IconButton(
                                   icon: const Icon(
                                     Icons.chevron_right,
-                                    color: Color(0xFF0D9488),
+                                    color: Color(0xFF6366F1),
                                   ),
                                   onPressed: () => provider.nextMonth(),
                                 ),
@@ -3108,7 +3148,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 ],
               ),
             ),
-          ),
+          ],
+        ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               if (_selectedTab == 0) {
@@ -3117,11 +3158,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 _showAddExpenseModal(context);
               }
             },
-            backgroundColor: const Color(0xFF0D9488),
+            backgroundColor: const Color(0xFF6366F1),
             child: const Icon(Icons.add, color: Colors.white),
           ),
         );
       },
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
+      ..strokeWidth = 0.5;
+    const spacing = 40.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

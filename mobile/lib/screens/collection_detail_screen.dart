@@ -233,7 +233,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0D9488), Color(0xFF2DD4BF)],
+                  colors: [Color(0xFF6366F1), Color(0xFF2DD4BF)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -339,27 +339,27 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           icon: Icon(
                             isMatch ? Icons.recommend : Icons.person_outline,
                             size: 16,
-                            color: isMatch ? const Color(0xFF0D9488) : null,
+                            color: isMatch ? const Color(0xFF6366F1) : null,
                           ),
                           label: Text(
                             '${m['name']} — ₹${(m['expected_amount'] ?? 0).toDouble().toStringAsFixed(0)}'
                             '${isMatch ? '  ✓ Best match' : ''}',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isMatch ? const Color(0xFF0D9488) : null,
+                              color: isMatch ? const Color(0xFF6366F1) : null,
                               fontWeight: isMatch ? FontWeight.w700 : null,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: isMatch ? const Color(0xFF0D9488) : const Color(0xFF64748B),
+                            foregroundColor: isMatch ? const Color(0xFF6366F1) : const Color(0xFF64748B),
                             side: BorderSide(
                               color: isMatch
-                                  ? const Color(0xFF0D9488)
+                                  ? const Color(0xFF6366F1)
                                   : const Color(0xFFE2E8F0),
                               width: isMatch ? 2 : 1,
                             ),
                             backgroundColor: isMatch
-                                ? const Color(0xFF0D9488).withValues(alpha: 0.05)
+                                ? const Color(0xFF6366F1).withValues(alpha: 0.05)
                                 : null,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -518,10 +518,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.payments_outlined, color: Color(0xFF0D9488), size: 20),
+                child: const Icon(Icons.payments_outlined, color: Color(0xFF6366F1), size: 20),
               ),
             ),
         ],

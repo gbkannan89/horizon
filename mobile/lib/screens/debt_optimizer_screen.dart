@@ -29,7 +29,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
         builder: (context, fp, _) {
           final data = fp.debtOptimizer;
           if (data == null) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)));
           }
 
           final totalOutstanding = (data['total_outstanding'] ?? 0).toDouble();
@@ -79,9 +79,9 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF0D9488), Color(0xFF312E81)]),
+        gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF312E81)]),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 12))],
+        boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Column(
         children: [
@@ -178,7 +178,7 @@ class _DebtOptimizerScreenState extends State<DebtOptimizerScreen> {
             ? [const Color(0xFFDC2626), const Color(0xFFF87171)]
             : [const Color(0xFF0891B2), const Color(0xFF22D3EE)]),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.1), blurRadius: 24, offset: const Offset(0, 12))],
+        boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withValues(alpha: 0.1), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Column(
         children: [

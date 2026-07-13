@@ -144,6 +144,8 @@ class FamilyMemberCreate(BaseModel):
     is_active: Optional[bool] = True
     earning_status: Optional[bool] = False
     contribution_amount: Optional[float] = 0.0
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
 class FamilyMemberOut(BaseModel):
     id: int
@@ -158,6 +160,8 @@ class FamilyMemberOut(BaseModel):
     is_active: bool
     earning_status: bool = False
     contribution_amount: float = 0.0
+    phone: Optional[str] = None
+    email: Optional[str] = None
     created_at: datetime
     # Nested fields
     schooling: List[SchoolingOut] = []

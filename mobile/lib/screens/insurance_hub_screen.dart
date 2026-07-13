@@ -81,7 +81,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Add Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D9488),
+                  backgroundColor: const Color(0xFF6366F1),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
@@ -273,7 +273,7 @@ class _InsuranceHubScreenState extends State<InsuranceHubScreen> {
                           if (context.mounted) UiUtils.showSnack(context, 'Failed to add policy: $e', isError: true);
                         }
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D9488), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                       child: const Text('Save Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   )

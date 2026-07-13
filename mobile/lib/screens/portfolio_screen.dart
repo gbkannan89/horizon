@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
@@ -20,7 +21,7 @@ class PortfolioScreen extends StatelessWidget {
     prefixText: prefix,
     prefixStyle: const TextStyle(
       fontWeight: FontWeight.w700,
-      color: Color(0xFF0D9488),
+      color: Color(0xFF6366F1),
     ),
     labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
     filled: true,
@@ -31,7 +32,7 @@ class PortfolioScreen extends StatelessWidget {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFF0D9488), width: 2),
+      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
   );
@@ -488,6 +489,11 @@ class PortfolioScreen extends StatelessWidget {
     final rateCtrl = TextEditingController(
       text: asset.interestRate > 0 ? asset.interestRate.toString() : '',
     );
+    final yearsCtrl = TextEditingController(
+      text: asset.yearsOfDeposit != null ? asset.yearsOfDeposit.toString() : '',
+    );
+    DateTime? startDate = asset.startDate != null ? DateTime.tryParse(asset.startDate!) : (asset.purchaseDate != null ? DateTime.tryParse(asset.purchaseDate!) : null);
+    bool isEmergency = asset.isEmergency;
     bool isLoading = false;
 
     showModalBottomSheet(
@@ -537,6 +543,7 @@ class PortfolioScreen extends StatelessWidget {
                   TextField(
                     controller: nameCtrl,
                     decoration: _inputDec('e.g. SBI Savings'),
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -552,6 +559,7 @@ class PortfolioScreen extends StatelessWidget {
                     controller: amountCtrl,
                     keyboardType: TextInputType.number,
                     decoration: _inputDec('Amount', prefix: '₹ '),
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -567,7 +575,139 @@ class PortfolioScreen extends StatelessWidget {
                     controller: rateCtrl,
                     keyboardType: TextInputType.number,
                     decoration: _inputDec('e.g. 7.5'),
+                    onChanged: (_) => setState(() {}),
                   ),
+                  
+                  if (asset.type == 'bank') ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Start Date (FD)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                readOnly: true,
+                                decoration: _inputDec(
+                                  startDate != null
+                                      ? startDate!.toIso8601String().split('T').first
+                                      : 'Select Date',
+                                ),
+                                onTap: () async {
+                                  final d = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: startDate ?? DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime.now(),
+                                  );
+                                  if (d != null) {
+                                    setState(() => startDate = d);
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Years of FD',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: yearsCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: _inputDec('e.g. 5'),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Mark as Emergency Fund',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Switch(
+                          value: isEmergency,
+                          onChanged: (v) => setState(() => isEmergency = v),
+                          activeThumbColor: const Color(0xFF059669),
+                        ),
+                      ],
+                    ),
+                    
+                    // Maturity Amount Projection Card
+                    Builder(
+                      builder: (context) {
+                        final p = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                        final r = double.tryParse(rateCtrl.text.trim()) ?? 0.0;
+                        final y = double.tryParse(yearsCtrl.text.trim()) ?? 0.0;
+                        if (p > 0 && r > 0 && y > 0) {
+                          final maturityVal = p * math.pow((1 + (r / 100)), y);
+                          return Container(
+                            margin: const EdgeInsets.only(top: 20),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Projected Maturity Value:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  '₹ ${maturityVal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF6366F1),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
+                  
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
@@ -589,13 +729,15 @@ class PortfolioScreen extends StatelessWidget {
                                   listen: false,
                                 ).updateAsset(int.parse(asset.id), {
                                   'name': name,
-                                  'type': 'bank',
+                                  'type': asset.type,
                                   'amount': amount,
                                   'interest_rate':
                                       double.tryParse(rateCtrl.text.trim()) ??
                                       0,
-                                  'is_liability': false,
-                                  'is_emergency': false,
+                                  'is_liability': asset.isLiability,
+                                  'is_emergency': isEmergency,
+                                  'start_date': startDate?.toIso8601String().split('T').first,
+                                  'years_of_deposit': int.tryParse(yearsCtrl.text.trim()),
                                 });
                                 if (ctx.mounted) {
                                   Navigator.pop(ctx);
@@ -608,7 +750,7 @@ class PortfolioScreen extends StatelessWidget {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -942,6 +1084,182 @@ class PortfolioScreen extends StatelessWidget {
     );
   }
 
+  void _showEditLiabilityModal(BuildContext context, dynamic liability) {
+    final nameCtrl = TextEditingController(text: liability.name);
+    final outstandingCtrl = TextEditingController(text: liability.amount.toString());
+    final rateCtrl = TextEditingController(
+      text: liability.interestRate > 0 ? liability.interestRate.toString() : '',
+    );
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: _sheetDec(),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _handle(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Edit Liability',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Loan / Debt Name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: _inputDec(
+                      'e.g. SBI Home Loan',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Outstanding Amount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: outstandingCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: _inputDec(
+                      'Total remaining balance',
+                      prefix: '₹ ',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Interest Rate (%)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: rateCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: _inputDec('Rate', hint: '8.5'),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final name = nameCtrl.text.trim();
+                              final outstanding = double.tryParse(
+                                outstandingCtrl.text.trim(),
+                              );
+                              if (name.isEmpty ||
+                                  outstanding == null ||
+                                  outstanding <= 0)
+                                return;
+                              final rate =
+                                  double.tryParse(rateCtrl.text.trim()) ?? 0.0;
+                              setState(() => isLoading = true);
+                              try {
+                                await Provider.of<FinancialProvider>(
+                                  ctx,
+                                  listen: false,
+                                ).updateLiability(liability.id, {
+                                  'name': name,
+                                  'outstanding': outstanding,
+                                  'interest_rate': rate,
+                                });
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                  _showSnack(
+                                    ctx,
+                                    'Liability updated successfully!',
+                                  );
+                                }
+                              } catch (e) {
+                                setState(() => isLoading = false);
+                                if (ctx.mounted)
+                                  _showSnack(
+                                    ctx,
+                                    'Failed to update liability: $e',
+                                    isError: true,
+                                  );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Update Liability',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── ADD LENDING MODAL ──────────────────────────────────────────────────────
   void _showAddLendingModal(BuildContext context) {
     final personCtrl = TextEditingController();
@@ -982,12 +1300,12 @@ class PortfolioScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: direction == 'lent'
-                                  ? const Color(0xFF0D9488)
+                                  ? const Color(0xFF6366F1)
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: direction == 'lent'
-                                    ? const Color(0xFF0D9488)
+                                    ? const Color(0xFF6366F1)
                                     : Colors.grey.shade300,
                               ),
                             ),
@@ -1012,12 +1330,12 @@ class PortfolioScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: direction == 'borrowed'
-                                  ? const Color(0xFF0D9488)
+                                  ? const Color(0xFF6366F1)
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: direction == 'borrowed'
-                                    ? const Color(0xFF0D9488)
+                                    ? const Color(0xFF6366F1)
                                     : Colors.grey.shade300,
                               ),
                             ),
@@ -1225,7 +1543,7 @@ class PortfolioScreen extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
+                      backgroundColor: const Color(0xFF6366F1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1366,7 +1684,7 @@ class PortfolioScreen extends StatelessWidget {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -1395,6 +1713,268 @@ class PortfolioScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── DETAIL SHEETS FOR PORTFOLIO ITEMS ──────────────────────────────────────
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        ],
+      ),
+    );
+  }
+
+  void _showAssetDetailSheet(BuildContext context, dynamic asset) {
+    final double amount = asset.amount;
+    final double rate = asset.interestRate;
+    final double? years = asset.yearsOfDeposit;
+    final bool isEmergency = asset.isEmergency;
+
+    double maturityVal = 0;
+    double interestEarned = 0;
+    if (asset.type == 'fd' && years != null && rate > 0) {
+      maturityVal = amount * math.pow((1 + (rate / 100)), years);
+      interestEarned = maturityVal - amount;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: _sheetDec(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _handle(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    asset.name,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Type', asset.type == 'fd' ? 'Fixed Deposit' : (asset.type == 'bank' ? 'Savings/Bank' : asset.type.toUpperCase())),
+            _buildDetailRow('Balance', '₹${amount.toStringAsFixed(2)}'),
+            if (rate > 0) _buildDetailRow('Interest Rate', '${rate.toStringAsFixed(1)}% p.a.'),
+            if (years != null) _buildDetailRow('Duration', '${years.toStringAsFixed(1)} Years'),
+            if (isEmergency) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This asset is marked as an Emergency Fund. Avoid premature withdrawals unless necessary.',
+                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (asset.type == 'fd' && maturityVal > 0) ...[
+              const SizedBox(height: 20),
+              const Text(
+                'Compound Projection (Maturity)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _buildDetailRow('Projected Maturity Value', '₹${maturityVal.toStringAsFixed(2)}'),
+              _buildDetailRow('Total Interest to be Earned', '₹${interestEarned.toStringAsFixed(2)}'),
+            ],
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGoldDetailSheet(BuildContext context, dynamic gold) {
+    final double grams = gold.grams;
+    final int carat = gold.carat;
+    final double purchasePrice = gold.purchasePricePerGram;
+    final double totalCost = gold.totalPurchaseCost ?? (grams * purchasePrice);
+    final double currentValue = gold.currentValue ?? totalCost;
+    final double returns = currentValue - totalCost;
+    final double returnPct = gold.returnPct ?? (totalCost > 0 ? (returns / totalCost) * 100 : 0.0);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: _sheetDec(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _handle(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Gold Holding (${gold.caratLabel})',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Weight', '$grams grams'),
+            _buildDetailRow('Purity', '${carat}K Gold'),
+            _buildDetailRow('Purchase Rate per Gram', '₹${purchasePrice.toStringAsFixed(2)}'),
+            _buildDetailRow('Total Purchase Cost', '₹${totalCost.toStringAsFixed(2)}'),
+            _buildDetailRow('Current Value', '₹${currentValue.toStringAsFixed(2)}'),
+            const Divider(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Returns (P&L)', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  '${returns >= 0 ? '+' : ''}₹${returns.toStringAsFixed(2)} (${returnPct.toStringAsFixed(1)}%)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: returns >= 0 ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStockDetailSheet(BuildContext context, dynamic stock) {
+    final double qty = stock.quantity;
+    final double avgPrice = stock.avgPurchasePrice;
+    final double totalCost = stock.totalInvested;
+    final double currentValue = stock.currentValue ?? totalCost;
+    final double returns = currentValue - totalCost;
+    final double returnPct = stock.returnPct ?? (totalCost > 0 ? (returns / totalCost) * 100 : 0.0);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: _sheetDec(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _handle(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  stock.ticker,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Quantity', qty.toString()),
+            _buildDetailRow('Average Price', '₹${avgPrice.toStringAsFixed(2)}'),
+            _buildDetailRow('Total Invested', '₹${totalCost.toStringAsFixed(2)}'),
+            _buildDetailRow('Current Value', '₹${currentValue.toStringAsFixed(2)}'),
+            const Divider(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Returns (P&L)', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  '${returns >= 0 ? '+' : ''}₹${returns.toStringAsFixed(2)} (${returnPct.toStringAsFixed(1)}%)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: returns >= 0 ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLiabilityDetailSheet(BuildContext context, dynamic liability) {
+    final double amount = liability.amount;
+    final double interestRate = liability.interestRate;
+    final double annualInterest = amount * (interestRate / 100);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: _sheetDec(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _handle(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  liability.name,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Outstanding Amount', '₹${amount.toStringAsFixed(2)}'),
+            _buildDetailRow('Interest Rate', '${interestRate.toStringAsFixed(1)}% p.a.'),
+            if (interestRate > 0)
+              _buildDetailRow('Estimated Annual Interest', '₹${annualInterest.toStringAsFixed(2)}'),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -1450,14 +2030,14 @@ class PortfolioScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D9488).withValues(alpha: 0.06),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         const Icon(
                           Icons.info_outline,
-                          color: Color(0xFF0D9488),
+                          color: Color(0xFF6366F1),
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -1625,7 +2205,7 @@ class PortfolioScreen extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -2312,7 +2892,7 @@ class PortfolioScreen extends StatelessWidget {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -2350,6 +2930,7 @@ class PortfolioScreen extends StatelessWidget {
   void _showAddGoldModal(BuildContext context) {
     final gramsCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
+    final dateCtrl = TextEditingController();
     int carat = 24;
     DateTime? purchaseDate;
     bool isLoading = false;
@@ -2447,12 +3028,9 @@ class PortfolioScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: dateCtrl,
                     readOnly: true,
-                    decoration: _inputDec(
-                      purchaseDate != null
-                          ? '${purchaseDate!.day}/${purchaseDate!.month}/${purchaseDate!.year}'
-                          : 'Select Date',
-                    ),
+                    decoration: _inputDec('Select Date'),
                     onTap: () async {
                       final d = await showDatePicker(
                         context: ctx,
@@ -2460,7 +3038,12 @@ class PortfolioScreen extends StatelessWidget {
                         firstDate: DateTime(2000),
                         lastDate: DateTime.now(),
                       );
-                      if (d != null) setState(() => purchaseDate = d);
+                      if (d != null) {
+                        setState(() {
+                          purchaseDate = d;
+                          dateCtrl.text = '${d.day}/${d.month}/${d.year}';
+                        });
+                      }
                     },
                   ),
                   const SizedBox(height: 32),
@@ -2778,21 +3361,21 @@ class PortfolioScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.2),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                   width: 1.2,
                 ),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.add_rounded, size: 16, color: Color(0xFF0D9488)),
+                  Icon(Icons.add_rounded, size: 16, color: Color(0xFF6366F1)),
                   SizedBox(width: 4),
                   Text(
                     'Add',
                     style: TextStyle(
-                      color: Color(0xFF0D9488),
+                      color: Color(0xFF6366F1),
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
                     ),
@@ -2854,12 +3437,12 @@ class PortfolioScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.trending_up_rounded,
-                        color: Color(0xFF0D9488),
+                        color: Color(0xFF6366F1),
                         size: 18,
                       ),
                     ),
@@ -3057,13 +3640,13 @@ class PortfolioScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: const Color(
-                                  0xFF0D9488,
+                                  0xFF6366F1,
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
                                 Icons.edit_outlined,
-                                color: Color(0xFF0D9488),
+                                color: Color(0xFF6366F1),
                                 size: 16,
                               ),
                             ),
@@ -3101,7 +3684,6 @@ class PortfolioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FinancialProvider>();
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
@@ -3113,63 +3695,73 @@ class PortfolioScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF0FDFA),
-                    Color(0xFFF8FAFC),
-                    Color(0xFFF5F3FF),
-                  ],
+                  colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
                 ),
               ),
             ),
           ),
-          // ── Accent blobs ────────────────────────────────────────────────
+          // ── Accent blobs ──────────────────────────────────────────────────
           Positioned(
-            top: -size.height * 0.12,
-            right: -size.width * 0.2,
+            top: -80, right: -80,
             child: Container(
-              width: size.width * 0.7,
-              height: size.width * 0.7,
+              width: 300, height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.15),
-                    const Color(0xFF0D9488).withValues(alpha: 0.04),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF6366F1).withValues(alpha: 0.18),
+                  const Color(0xFF6366F1).withValues(alpha: 0.05),
+                  const Color(0xFF6366F1).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
           Positioned(
-            bottom: -size.height * 0.08,
-            left: -size.width * 0.15,
+            bottom: -60, left: -80,
             child: Container(
-              width: size.width * 0.55,
-              height: size.width * 0.55,
+              width: 250, height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF909AC6).withValues(alpha: 0.12),
-                    const Color(0xFF909AC6).withValues(alpha: 0.03),
-                    const Color(0xFF909AC6).withValues(alpha: 0.0),
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF909AC6).withValues(alpha: 0.15),
+                  const Color(0xFF909AC6).withValues(alpha: 0.04),
+                  const Color(0xFF909AC6).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
-          Positioned.fill(child: CustomPaint(painter: _GridPainter())),
+          Positioned(
+            top: 320, left: -40,
+            child: Container(
+              width: 180, height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  const Color(0xFFFBBF24).withValues(alpha: 0.10),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.03),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.0),
+                ]),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: CustomPaint(painter: _GridPainter()),
+          ),
+          // ── Light background overlay ────────────────────────────────────────
+          Positioned.fill(
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
+          ),
 
           // ── Content ─────────────────────────────────────────────────────────
           SafeArea(
             child: provider.isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF0D9488)),
+                    child: CircularProgressIndicator(color: Color(0xFF6366F1)),
                   )
                 : RefreshIndicator(
                     onRefresh: provider.loadAllData,
-                    color: const Color(0xFF0D9488),
+                    color: const Color(0xFF6366F1),
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(
@@ -3196,9 +3788,7 @@ class PortfolioScreen extends StatelessWidget {
                           (a) => _buildListItem(
                             a.name,
                             a.amount,
-                            a.purchasePrice != null
-                                ? 'Invested: ₹${a.purchasePrice!.toStringAsFixed(0)}'
-                                : 'Asset',
+                            '${a.type == 'fd' ? 'Fixed Deposit' : (a.type == 'bank' ? 'Savings/Bank' : a.type.toUpperCase())}${a.interestRate > 0 ? ' • ${a.interestRate}% interest' : ''}${a.yearsOfDeposit != null ? ' • ${a.yearsOfDeposit} years' : ''}${a.isEmergency ? ' • 🚨 Emergency Fund' : ''}',
                             const [Color(0xFF059669), Color(0xFF34D399)],
                             Icons.account_balance_wallet_rounded,
                             () => UiUtils.showDeleteBottomSheet(
@@ -3214,6 +3804,7 @@ class PortfolioScreen extends StatelessWidget {
                               },
                             ),
                             onEdit: () => _showEditAssetModal(context, a),
+                            onTap: () => _showAssetDetailSheet(context, a),
                           ),
                         ),
 
@@ -3248,6 +3839,7 @@ class PortfolioScreen extends StatelessWidget {
                                   _showSnack(context, 'Gold holding removed');
                               },
                             ),
+                            onTap: () => _showGoldDetailSheet(context, g),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -3283,6 +3875,7 @@ class PortfolioScreen extends StatelessWidget {
                                   _showSnack(context, 'Stock holding removed');
                               },
                             ),
+                            onTap: () => _showStockDetailSheet(context, s),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -3356,12 +3949,14 @@ class PortfolioScreen extends StatelessWidget {
                                   _showSnack(context, 'Liability deleted');
                               },
                             ),
+                            onEdit: () => _showEditLiabilityModal(context, l),
+                            onTap: () => _showLiabilityDetailSheet(context, l),
                           ),
                         ),
 
                         // Incomes
                         _buildSectionHeader('Income Sources', const [
-                          Color(0xFF0D9488),
+                          Color(0xFF6366F1),
                           Color(0xFF2DD4BF),
                         ], () => _showAddIncomeModal(context)),
                         if (provider.incomes.isEmpty)
@@ -3379,7 +3974,7 @@ class PortfolioScreen extends StatelessWidget {
                             isSalary
                                 ? 'Salary · Tap for breakup & growth'
                                 : '${i.frequency} income',
-                            const [Color(0xFF0D9488), Color(0xFF2DD4BF)],
+                            const [Color(0xFF6366F1), Color(0xFF2DD4BF)],
                             isSalary
                                 ? Icons.work_outline_rounded
                                 : Icons.trending_up_rounded,
@@ -3420,10 +4015,7 @@ class PortfolioScreen extends StatelessWidget {
                           (v) => _buildListItem(
                             v.makeModel,
                             v.purchaseCost,
-                            v.registrationNumber != null &&
-                                    v.registrationNumber!.isNotEmpty
-                                ? '${v.registrationNumber} • Cost/km: ₹${v.costPerKm.toStringAsFixed(2)}'
-                                : 'Cost/km: ₹${v.costPerKm.toStringAsFixed(2)}',
+                            '${(v.fuelType ?? "unknown").toUpperCase()} • ${v.purchaseYear} • ${v.kmDriven.toStringAsFixed(0)} km • Cost/km: ₹${v.costPerKm.toStringAsFixed(2)} • Reg: ${v.registrationNumber ?? 'N/A'}',
                             const [Color(0xFFE88A1A), Color(0xFFFBBF24)],
                             Icons.directions_car_rounded,
                             () => UiUtils.showDeleteBottomSheet(
@@ -3440,11 +4032,11 @@ class PortfolioScreen extends StatelessWidget {
                             ),
                             onTap: () {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      VehicleDetailScreen(vehicle: v),
-                                ),
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        VehicleDetailScreen(vehicle: v),
+                                  ),
                               );
                             },
                           ),
@@ -3452,7 +4044,7 @@ class PortfolioScreen extends StatelessWidget {
 
                         // Electronics
                         _buildSectionHeader('Electronics', const [
-                          Color(0xFF0D9488),
+                          Color(0xFF6366F1),
                           Color(0xFF2DD4BF),
                         ], () => _showAddElectronicModal(context)),
                         if (provider.electronics.isEmpty)
@@ -3486,7 +4078,7 @@ class PortfolioScreen extends StatelessWidget {
                             e.name,
                             e.currentValue,
                             subtitle,
-                            const [Color(0xFF0D9488), Color(0xFF2DD4BF)],
+                            const [Color(0xFF6366F1), Color(0xFF2DD4BF)],
                             icon,
                             () => UiUtils.showDeleteBottomSheet(
                               context,
@@ -3529,7 +4121,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
     const spacing = 40.0;
     for (double x = 0; x < size.width; x += spacing) {

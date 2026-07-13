@@ -92,6 +92,7 @@ def register(user_in: UserRegister, db = Depends(get_db)):
 
         # Determine household
         household_id = None
+        linked_family_member_id = None
         if user_in.invite_code:
             # User provided an invite code — join existing household
             code = user_in.invite_code.strip().upper()
@@ -107,27 +108,34 @@ def register(user_in: UserRegister, db = Depends(get_db)):
                 )
             household_id = household_row[0]
         else:
-            # No invite code — check if email has a pending family invite
+            # Check if email or phone matches an existing family member profile to auto-join
             cur.execute(
                 """
-                SELECT fi.household_id, fi.invite_code, h.name, fi.name
-                FROM family_invites fi
-                JOIN households h ON h.id = fi.household_id
-                WHERE fi.email = %s
+                SELECT id, household_id FROM family_members 
+                WHERE (email IS NOT NULL AND email = %s) 
+                   OR (phone IS NOT NULL AND phone = %s)
+                ORDER BY id ASC LIMIT 1
                 """,
-                (user_in.email,)
+                (user_in.email, user_in.phone)
             )
-            pending = cur.fetchone()
-            if pending:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail={
-                        "message": f"This email has been invited to join {pending[3] or pending[2]}'s household. Enter the invite code to join or sign up without a code to create a new household.",
-                        "householdName": pending[2],
-                        "invitedBy": pending[3],
-                        "inviteCode": pending[1]
-                    }
+            fam_row = cur.fetchone()
+            if fam_row:
+                linked_family_member_id = fam_row[0]
+                household_id = fam_row[1]
+            else:
+                # No matching family profile — check if email has a pending family invite
+                cur.execute(
+                    """
+                    SELECT fi.household_id, fi.invite_code, h.name, fi.name
+                    FROM family_invites fi
+                    JOIN households h ON h.id = fi.household_id
+                    WHERE fi.email = %s
+                    """,
+                    (user_in.email,)
                 )
+                pending = cur.fetchone()
+                if pending:
+                    household_id = pending[0]
         
         try:
             if household_id:
@@ -161,12 +169,18 @@ def register(user_in: UserRegister, db = Depends(get_db)):
             )
             user_row = cur.fetchone()
 
-            # If they joined via invite code, remove the pending invite
-            if user_in.invite_code:
+            # If we matched a family member, link it
+            if linked_family_member_id:
                 cur.execute(
-                    "DELETE FROM family_invites WHERE email = %s",
-                    (user_in.email,)
+                    "UPDATE family_members SET user_id = %s WHERE id = %s",
+                    (user_row[0], linked_family_member_id)
                 )
+
+            # If they joined via invite code or had a pending invite, remove the pending invite
+            cur.execute(
+                "DELETE FROM family_invites WHERE email = %s",
+                (user_in.email,)
+            )
 
             db.commit()
         except Exception as e:

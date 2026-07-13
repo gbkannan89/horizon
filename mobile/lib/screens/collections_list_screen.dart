@@ -116,7 +116,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createCollection(context),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF6366F1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -160,12 +160,12 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
-                ? const Color(0xFF0D9488).withValues(alpha: 0.1)
+                ? const Color(0xFF6366F1).withValues(alpha: 0.1)
                 : const Color(0xFF94A3B8).withValues(alpha: 0.2),
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.05),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.05),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -180,13 +180,13 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFF0D9488).withValues(alpha: 0.1)
+                        ? const Color(0xFF6366F1).withValues(alpha: 0.1)
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.people_alt_outlined,
-                    color: isActive ? const Color(0xFF0D9488) : Colors.grey,
+                    color: isActive ? const Color(0xFF6366F1) : Colors.grey,
                     size: 22,
                   ),
                 ),
@@ -252,7 +252,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF0D9488),
+                          color: Color(0xFF6366F1),
                         ),
                       ),
                       Text(
@@ -273,7 +273,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                   decoration: BoxDecoration(
                     color: pct >= 1.0
                         ? Colors.green.shade50
-                        : const Color(0xFF0D9488).withValues(alpha: 0.05),
+                        : const Color(0xFF6366F1).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -283,7 +283,7 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                       fontWeight: FontWeight.w800,
                       color: pct >= 1.0
                           ? Colors.green
-                          : const Color(0xFF0D9488),
+                          : const Color(0xFF6366F1),
                     ),
                   ),
                 ),
@@ -297,9 +297,9 @@ class _CollectionsListScreenState extends State<CollectionsListScreen> {
                 percent: pct,
                 progressColor: pct >= 1.0
                     ? const Color(0xFF059669)
-                    : const Color(0xFF0D9488),
+                    : const Color(0xFF6366F1),
                 backgroundColor: const Color(
-                  0xFF0D9488,
+                  0xFF6366F1,
                 ).withValues(alpha: 0.08),
                 barRadius: const Radius.circular(6),
                 padding: EdgeInsets.zero,

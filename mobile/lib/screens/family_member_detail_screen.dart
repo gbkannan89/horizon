@@ -16,7 +16,7 @@ class FamilyMemberDetailScreen extends StatefulWidget {
 
 class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
   late LocalFamilyMember _member;
-  bool _schoolingExpanded = true;
+  bool _schoolingExpanded = false;
   bool _healthExpanded = false;
   bool _medicineExpanded = false;
   bool _vaccinationExpanded = false;
@@ -27,13 +27,14 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
   void initState() {
     super.initState();
     _member = widget.member;
+    _schoolingExpanded = _member.relationship == 'child' || _member.schooling.isNotEmpty;
   }
 
   Color _avatarColor() {
     try {
       return Color(int.parse(_member.avatarColor!.replaceFirst('#', '0xFF')));
     } catch (_) {
-      return const Color(0xFF0D9488);
+      return const Color(0xFF6366F1);
     }
   }
 
@@ -78,6 +79,8 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
 
   void _showEditMemberModal() {
     final nameCtrl = TextEditingController(text: _member.name);
+    final phoneCtrl = TextEditingController(text: _member.phone ?? '');
+    final emailCtrl = TextEditingController(text: _member.email ?? '');
     String rel = _member.relationship;
     String? bg = _member.bloodGroup;
     DateTime? dob;
@@ -196,6 +199,24 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     ),
                     onChanged: (v) => contribution = double.tryParse(v) ?? 0,
                   ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -215,13 +236,15 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                             _member.dob,
                         'earning_status': earningStatus,
                         'contribution_amount': contribution,
+                        'phone': phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                        'email': emailCtrl.text.trim().isEmpty ? null : emailCtrl.text.trim(),
                       });
                       if (ctx.mounted) Navigator.pop(ctx);
                       if (mounted)
                         UiUtils.showSnack(context, 'Profile updated');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
+                      backgroundColor: const Color(0xFF6366F1),
                     ),
                     child: const Text(
                       'Save',
@@ -272,8 +295,8 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.12),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
+                    const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    const Color(0xFF6366F1).withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -362,7 +385,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                       _infoChip(
                         _member.relationship[0].toUpperCase() +
                             _member.relationship.substring(1),
-                        const Color(0xFF0D9488),
+                        const Color(0xFF6366F1),
                       ),
                     if (_member.bloodGroup != null) ...[
                       const SizedBox(width: 6),
@@ -374,7 +397,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Color(0xFF0D9488)),
+            icon: const Icon(Icons.edit_outlined, color: Color(0xFF6366F1)),
             onPressed: _showEditMemberModal,
           ),
           IconButton(
@@ -411,7 +434,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
         _buildSection(
           title: 'Schooling',
           icon: Icons.school_rounded,
-          color: const Color(0xFF0D9488),
+          color: const Color(0xFF6366F1),
           expanded: _schoolingExpanded,
           onToggle: (v) => setState(() => _schoolingExpanded = v),
           child: _member.schooling.isEmpty
@@ -431,7 +454,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                         style: TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0D9488),
+                        foregroundColor: const Color(0xFF6366F1),
                       ),
                     ),
                   ],
@@ -608,7 +631,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Add', style: TextStyle(fontSize: 13)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0D9488),
+            backgroundColor: const Color(0xFF6366F1),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
@@ -624,7 +647,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D9488).withValues(alpha: 0.06),
+        color: const Color(0xFF6366F1).withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -748,7 +771,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -840,7 +863,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                             dense: true,
                             leading: const Icon(
                               Icons.payment_rounded,
-                              color: Color(0xFF0D9488),
+                              color: Color(0xFF6366F1),
                               size: 20,
                             ),
                             title: Text(
@@ -964,7 +987,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     onDone();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Record',
@@ -1108,7 +1131,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -1239,7 +1262,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -1394,7 +1417,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -1560,7 +1583,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -1698,7 +1721,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D9488),
+                    backgroundColor: const Color(0xFF6366F1),
                   ),
                   child: const Text(
                     'Save',
@@ -1718,7 +1741,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
     const spacing = 40.0;
     for (double x = 0; x < size.width; x += spacing) {

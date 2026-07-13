@@ -60,9 +60,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  const Color(0xFF0D9488).withValues(alpha: 0.18),
-                  const Color(0xFF0D9488).withValues(alpha: 0.05),
-                  const Color(0xFF0D9488).withValues(alpha: 0.0),
+                  const Color(0xFF6366F1).withValues(alpha: 0.18),
+                  const Color(0xFF6366F1).withValues(alpha: 0.05),
+                  const Color(0xFF6366F1).withValues(alpha: 0.0),
                 ]),
               ),
             ),
@@ -98,24 +98,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Positioned.fill(
             child: CustomPaint(painter: _GridPainter()),
           ),
-          // ── Frosted glass backdrop ────────────────────────────────────────
+          // ── Light background overlay ────────────────────────────────────────
           Positioned.fill(
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  foregroundDecoration: BoxDecoration(
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
-                  ),
-                ),
-              ),
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.15),
             ),
           ),
           // ── Content ──────────────────────────────────────────────────────
           RefreshIndicator(
             onRefresh: provider.loadAllData,
-            color: const Color(0xFF0D9488),
+            color: const Color(0xFF6366F1),
             child: CustomScrollView(
               slivers: [
                 // ── Glass hero header ─────────────────────────────────────────
@@ -168,83 +160,207 @@ class _DashboardScreenState extends State<DashboardScreen> {
         offset: Offset(0, -20 * (1 - value)),
         child: Opacity(
           opacity: value,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.55),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1)),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
-            ),
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.fromLTRB(24, 56, 24, 32),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Good to see you!', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 2),
-                  Text('$userName 👋', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 22, fontWeight: FontWeight.w800)),
-                ]),
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NudgeCenterScreen())),
-                  child: Stack(children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: const Color(0xFF0D9488).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
-                      child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0D9488), size: 22),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── User Greeting Header ─────────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Good morning,',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$userName 👋',
+                          style: const TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    if (loaded && p.nudges.isNotEmpty)
-                      Positioned(right: 4, top: 4, child: Container(
-                        padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                        child: Text('${p.nudges.length > 9 ? '9+' : p.nudges.length}',
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, height: 1)),
-                      )),
-                  ]),
-                ),
-              ]),
-              const SizedBox(height: 28),
-              Row(children: [
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancialScoreScreen())),
-                  child: Stack(alignment: Alignment.center, children: [
-                    CircularPercentIndicator(
-                      radius: 52, lineWidth: 7,
-                      percent: loaded ? (p.finScoreVal / 100.0).clamp(0.0, 1.0) : 0.0,
-                      progressColor: const Color(0xFF34D399),
-                      backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                      circularStrokeCap: CircularStrokeCap.round,
-                      center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Text(loaded ? '${p.finScoreVal}' : '--',
-                          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                        const Text('/100', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                      ]),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NudgeCenterScreen(),
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.grey.shade100,
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: Color(0xFF0F172A),
+                              size: 22,
+                            ),
+                          ),
+                          if (loaded && p.nudges.isNotEmpty)
+                            Positioned(
+                              right: 4,
+                              top: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '${p.nudges.length > 9 ? '9+' : p.nudges.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ]),
-                ),
-                const SizedBox(width: 20),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Financial Score', style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 4),
-                  Text(loaded && p.finScoreVal >= 80 ? '🌟 Excellent' : loaded && p.finScoreVal >= 60 ? '👍 Good' : '⚡ Improving',
-                    style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 15)),
-                  const SizedBox(height: 16),
-                  const Text('Net Worth', style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 2),
-                  Text(loaded ? '₹${_formatNum(p.netWorth)}' : '₹--',
-                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                  if (loaded && p.netWorthChange != 0) ...[
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Icon(p.netWorthChange > 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                        color: p.netWorthChange > 0 ? const Color(0xFF059669) : const Color(0xFFEF4444), size: 14),
-                      const SizedBox(width: 4),
-                      Text('${p.netWorthChange > 0 ? '+' : '-'}₹${_formatNum(p.netWorthChange.abs())} ${p.netWorthChangePeriod}',
-                        style: TextStyle(color: p.netWorthChange > 0 ? const Color(0xFF059669) : const Color(0xFFEF4444),
-                          fontSize: 12, fontWeight: FontWeight.w600)),
-                    ]),
                   ],
-                ])),
-              ]),
-            ]),
+                ),
+                const SizedBox(height: 24),
+
+                // ── Lavender-Indigo Hero Card ─────────────────────────────────
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FinancialScoreScreen(),
+                    ),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF818CF8), // Indigo 400
+                          Color(0xFFC7D2FE), // Indigo 200
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF818CF8).withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Financial Score',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    loaded ? '${p.finScoreVal}' : '--',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -1,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' /100',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                loaded && p.finScoreVal >= 80
+                                    ? 'You are doing great! Keep it up.'
+                                    : loaded && p.finScoreVal >= 60
+                                        ? 'Good progress. Improve your score.'
+                                        : 'Focus on lowering your debts.',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircularPercentIndicator(
+                              radius: 54,
+                              lineWidth: 7.5,
+                              percent: loaded ? (p.finScoreVal / 100.0).clamp(0.0, 1.0) : 0.0,
+                              progressColor: Colors.white,
+                              backgroundColor: Colors.white.withValues(alpha: 0.25),
+                              circularStrokeCap: CircularStrokeCap.round,
+                              center: const Icon(
+                                Icons.sentiment_very_satisfied_rounded,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -257,31 +373,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SizedBox(width: 10),
       _miniCard('Spent',   loaded ? '₹${_formatNum(p.totalSpent)}'    : '--', const Color(0xFFE88A1A), Icons.shopping_cart_outlined),
       const SizedBox(width: 10),
-      _miniCard('Left',    loaded ? '₹${_formatNum(p.totalLeft)}'     : '--', const Color(0xFF0D9488), Icons.savings_outlined),
+      _miniCard('Left',    loaded ? '₹${_formatNum(p.totalLeft)}'     : '--', const Color(0xFF6366F1), Icons.savings_outlined),
     ]);
   }
 
   Widget _miniCard(String label, String value, Color color, IconData icon) {
-    return Expanded(child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.55),
+    return Expanded(
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 15, offset: const Offset(0, 3))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 16),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 15,
+                  offset: const Offset(0, 3),
+                )
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 2),
-            Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
-          ]),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const SizedBox(height: 10),
+              Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
+            ]),
+          ),
         ),
+      ),
     );
   }
 
@@ -743,16 +872,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── Shared helpers ─────────────────────────────────────────────────────────
-  Widget _card({required Widget child}) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.55),
+  Widget _card({required Widget child}) {
+    return ClipRRect(
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 4))],
-    ),
-    child: child,
-  );
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 
   Widget _cardHeader(String title, IconData icon, Color color) => Row(children: [
     Container(
@@ -814,7 +957,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
     const spacing = 40.0;
     for (double x = 0; x < size.width; x += spacing) {

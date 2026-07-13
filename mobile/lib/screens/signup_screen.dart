@@ -35,7 +35,7 @@ class _SignupScreenState extends State<SignupScreen>
   static const _textDark = Color(0xFF0F172A);
   static const _textMuted = Color(0xFF64748B);
   static const _textHint = Color(0xFF94A3B8);
-  static const _accent = Color(0xFF0D9488);
+  static const _accent = Color(0xFF6366F1);
   static const _violet = Color(0xFF909AC6);
 
   @override
@@ -261,18 +261,37 @@ class _SignupScreenState extends State<SignupScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFF0FDFA),
-                    Color(0xFFF8FAFC),
-                    Color(0xFFF5F3FF),
+                    Color(0xFFE2FDF8), // teal-100 (more vibrant teal)
+                    Color(0xFFF1F5F9), // slate-100
+                    Color(0xFFE0E7FF), // indigo-100 (more vibrant purple/indigo)
                   ],
                 ),
               ),
             ),
           ),
 
+          // ── Decorative Blobs ─────────────────────────────────────────────
           Positioned(
             top: -size.height * 0.1,
-            right: -size.width * 0.18,
+            right: -size.width * 0.2,
+            child: Container(
+              width: size.width * 0.75,
+              height: size.width * 0.75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF6366F1).withValues(alpha: 0.35),
+                    const Color(0xFF6366F1).withValues(alpha: 0.15),
+                    const Color(0xFF6366F1).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -size.height * 0.08,
+            left: -size.width * 0.15,
             child: Container(
               width: size.width * 0.65,
               height: size.width * 0.65,
@@ -280,44 +299,44 @@ class _SignupScreenState extends State<SignupScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.18),
-                    const Color(0xFF0D9488).withValues(alpha: 0.06),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
+                    const Color(0xFF6366F1).withValues(alpha: 0.30),
+                    const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    const Color(0xFF6366F1).withValues(alpha: 0.0),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            bottom: -size.height * 0.1,
-            left: -size.width * 0.15,
+            top: size.height * 0.4,
+            left: -size.width * 0.1,
             child: Container(
-              width: size.width * 0.55,
-              height: size.width * 0.55,
+              width: size.width * 0.5,
+              height: size.width * 0.5,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF909AC6).withValues(alpha: 0.16),
-                    const Color(0xFF909AC6).withValues(alpha: 0.05),
-                    const Color(0xFF909AC6).withValues(alpha: 0.0),
+                    const Color(0xFFEC4899).withValues(alpha: 0.22),
+                    const Color(0xFFEC4899).withValues(alpha: 0.08),
+                    const Color(0xFFEC4899).withValues(alpha: 0.0),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: size.height * 0.35,
-            right: -size.width * 0.08,
+            top: size.height * 0.22,
+            right: -size.width * 0.1,
             child: Container(
-              width: size.width * 0.3,
-              height: size.width * 0.3,
+              width: size.width * 0.4,
+              height: size.width * 0.4,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
+                    const Color(0xFFFBBF24).withValues(alpha: 0.25),
                     const Color(0xFFFBBF24).withValues(alpha: 0.10),
-                    const Color(0xFFFBBF24).withValues(alpha: 0.03),
                     const Color(0xFFFBBF24).withValues(alpha: 0.0),
                   ],
                 ),
@@ -389,10 +408,10 @@ class _SignupScreenState extends State<SignupScreen>
                           child: Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.60),
+                              color: Colors.white.withValues(alpha: 0.40),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                width: 1.5,
+                                color: Colors.white.withValues(alpha: 0.6),
+                                width: 1.2,
                               ),
                               borderRadius: BorderRadius.circular(28),
                               boxShadow: [
@@ -657,7 +676,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
 
     const spacing = 40.0;

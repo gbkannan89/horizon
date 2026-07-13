@@ -372,7 +372,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen>
             ),
           ).then((_) => _fetchData());
         },
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF6366F1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: services.isEmpty
@@ -405,7 +405,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen>
                             s.serviceType.toUpperCase(),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0D9488),
+                              color: Color(0xFF6366F1),
                             ),
                           ),
                           Text(
@@ -521,7 +521,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen>
             ),
           ).then((_) => _fetchData());
         },
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF6366F1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: fuels.isEmpty
@@ -651,7 +651,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen>
               ElevatedButton(
                 onPressed: () => _showLoanDialog(null),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D9488),
+                  backgroundColor: const Color(0xFF6366F1),
                 ),
                 child: const Text(
                   'Add Vehicle Loan',
@@ -871,9 +871,9 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen>
         title: Text(widget.vehicle.makeModel),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF0D9488),
+          labelColor: const Color(0xFF6366F1),
           unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF0D9488),
+          indicatorColor: const Color(0xFF6366F1),
           tabs: const [
             Tab(text: 'Overview'),
             Tab(text: 'Service'),

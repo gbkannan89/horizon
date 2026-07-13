@@ -102,7 +102,7 @@ def list_family_members(current_user: UserOut = Depends(get_current_user), db = 
     with db.cursor() as cur:
         cur.execute(
             """
-            SELECT id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, created_at
+            SELECT id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, phone, email, created_at
             FROM family_members WHERE user_id = %s ORDER BY is_self DESC, id ASC
             """,
             (current_user.id,)
@@ -144,13 +144,13 @@ def list_family_members(current_user: UserOut = Depends(get_current_user), db = 
             ]
             
             cur.execute("SELECT id, member_id, vaccine_name, frequency, recurring_cost, last_vaccination_date, next_due_date, notes, created_at FROM member_vaccinations WHERE member_id = %s", (mid,))
-            vac_rows = cur.fetchall()
+            vacc_rows = cur.fetchall()
             vaccinations_list = [
                 VaccinationOut(
                     id=vr[0], member_id=vr[1], vaccine_name=vr[2], frequency=vr[3], recurring_cost=float(vr[4]),
                     last_vaccination_date=vr[5], next_due_date=vr[6], notes=vr[7], created_at=vr[8]
                 )
-                for vr in vac_rows
+                for vr in vacc_rows
             ]
             
             cur.execute("SELECT id, member_id, monthly_income, contribution_to_household, occupation, created_at FROM member_earnings WHERE member_id = %s", (mid,))
@@ -176,7 +176,8 @@ def list_family_members(current_user: UserOut = Depends(get_current_user), db = 
                 FamilyMemberOut(
                     id=r[0], household_id=r[1], user_id=r[2], name=r[3], dob=r[4], blood_group=r[5],
                     relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9],
-                    earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0, created_at=r[12],
+                    earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0,
+                    phone=r[12], email=r[13], created_at=r[14],
                     schooling=schooling_list, checkups=checkups_list, medicines=medicines_list,
                     vaccinations=vaccinations_list, earnings=earnings_out, insurances=insurances_list
                 )
@@ -199,14 +200,14 @@ def add_family_member(payload: FamilyMemberCreate, current_user: UserOut = Depen
                 
             cur.execute(
                 """
-                INSERT INTO family_members (household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, created_at
+                INSERT INTO family_members (household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, phone, email)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, phone, email, created_at
                 """,
                 (
                     house_id, current_user.id, payload.name, payload.dob, payload.blood_group,
                     payload.relationship, payload.avatar_color or "#0D9488", payload.is_self, payload.is_active,
-                    payload.earning_status or False, payload.contribution_amount or 0.0
+                    payload.earning_status or False, payload.contribution_amount or 0.0, payload.phone, payload.email
                 )
             )
             r = cur.fetchone()
@@ -214,7 +215,8 @@ def add_family_member(payload: FamilyMemberCreate, current_user: UserOut = Depen
             return FamilyMemberOut(
                 id=r[0], household_id=r[1], user_id=r[2], name=r[3], dob=r[4], blood_group=r[5],
                 relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9],
-                earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0, created_at=r[12]
+                earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0,
+                phone=r[12], email=r[13], created_at=r[14]
             )
         except Exception as e:
             db.rollback()
@@ -235,20 +237,23 @@ def update_family_member(member_id: int, payload: FamilyMemberCreate, current_us
             cur.execute(
                 """
                 UPDATE family_members
-                SET name = %s, dob = %s, blood_group = %s, relationship = %s, avatar_color = %s, is_self = %s, is_active = %s
+                SET name = %s, dob = %s, blood_group = %s, relationship = %s, avatar_color = %s, is_self = %s, is_active = %s, phone = %s, email = %s
                 WHERE id = %s
-                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, created_at
+                RETURNING id, household_id, user_id, name, dob, blood_group, relationship, avatar_color, is_self, is_active, earning_status, contribution_amount, phone, email, created_at
                 """,
                 (
                     payload.name, payload.dob, payload.blood_group, payload.relationship,
-                    payload.avatar_color or "#0D9488", payload.is_self, payload.is_active, member_id
+                    payload.avatar_color or "#0D9488", payload.is_self, payload.is_active,
+                    payload.phone, payload.email, member_id
                 )
             )
             r = cur.fetchone()
             db.commit()
             return FamilyMemberOut(
                 id=r[0], household_id=r[1], user_id=r[2], name=r[3], dob=r[4], blood_group=r[5],
-                relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9], created_at=r[10]
+                relationship=r[6], avatar_color=r[7], is_self=r[8], is_active=r[9],
+                earning_status=r[10], contribution_amount=float(r[11]) if r[11] else 0.0,
+                phone=r[12], email=r[13], created_at=r[14]
             )
         except Exception as e:
             db.rollback()

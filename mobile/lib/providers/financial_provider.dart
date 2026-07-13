@@ -154,6 +154,12 @@ class FinancialProvider extends ChangeNotifier {
                 generatesIncome: a['generates_income'] ?? false,
                 purchasePrice: a['purchase_price']?.toDouble(),
                 purchaseDate: a['purchase_date'],
+                type: a['type'] ?? 'bank',
+                subtype: a['subtype'],
+                startDate: a['start_date'],
+                yearsOfDeposit: a['years_of_deposit'],
+                isEmergency: a['is_emergency'] ?? false,
+                incomeFrequency: a['income_frequency'],
               ),
             )
             .toList();
@@ -345,6 +351,7 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   Map<String, dynamic>? _householdSummary;
+  Map<String, dynamic>? get householdSummary => _householdSummary;
 
   Future<void> _reloadHousehold() async {
     try {
@@ -916,6 +923,12 @@ class FinancialProvider extends ChangeNotifier {
         generatesIncome: created['generates_income'] ?? generatesIncome,
         purchasePrice: created['purchase_price']?.toDouble(),
         purchaseDate: created['purchase_date'],
+        type: created['type'] ?? type,
+        subtype: created['subtype'],
+        startDate: created['start_date'],
+        yearsOfDeposit: created['years_of_deposit'],
+        isEmergency: created['is_emergency'] ?? isEmergency,
+        incomeFrequency: created['income_frequency'] ?? incomeFrequency,
       ),
     );
     notifyListeners();
@@ -998,6 +1011,12 @@ class FinancialProvider extends ChangeNotifier {
         generatesIncome: updated['generates_income'] ?? false,
         purchasePrice: updated['purchase_price']?.toDouble(),
         purchaseDate: updated['purchase_date'],
+        type: updated['type'] ?? assets[idx].type,
+        subtype: updated['subtype'] ?? assets[idx].subtype,
+        startDate: updated['start_date'] ?? assets[idx].startDate,
+        yearsOfDeposit: updated['years_of_deposit'] ?? assets[idx].yearsOfDeposit,
+        isEmergency: updated['is_emergency'] ?? assets[idx].isEmergency,
+        incomeFrequency: updated['income_frequency'] ?? assets[idx].incomeFrequency,
       );
     }
     notifyListeners();
@@ -1044,6 +1063,21 @@ class FinancialProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<void> updateLiability(String id, Map<String, dynamic> body) async {
+    final updated = await _apiService.put('/api/liabilities/$id', body);
+    final idx = liabilities.indexWhere((l) => l.id == id);
+    if (idx >= 0) {
+      liabilities[idx] = LocalLiability(
+        id: updated['id'].toString(),
+        name: updated['name'] ?? liabilities[idx].name,
+        amount: (updated['outstanding'] ?? liabilities[idx].amount).toDouble(),
+        interestRate: (updated['interest_rate'] ?? liabilities[idx].interestRate).toDouble(),
+      );
+    }
+    notifyListeners();
+    _reloadDashboard();
   }
 
   // ── HOUSEHOLD MEMBERS ──────────────────────────────────────────────────────

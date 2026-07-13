@@ -110,13 +110,13 @@ class _SalaryHistoryScreenState extends State<SalaryHistoryScreen> {
             LineChartBarData(
               spots: spots,
               isCurved: true,
-              color: const Color(0xFF0D9488),
+              color: const Color(0xFF6366F1),
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
               ),
             ),
           ],
@@ -213,8 +213,8 @@ class _SalaryHistoryScreenState extends State<SalaryHistoryScreen> {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.add, size: 18, color: Color(0xFF0D9488)),
-                        label: const Text('Add Entry', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold)),
+                        icon: const Icon(Icons.add, size: 18, color: Color(0xFF6366F1)),
+                        label: const Text('Add Entry', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -257,7 +257,7 @@ class _SalaryHistoryScreenState extends State<SalaryHistoryScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: sd.isCurrent ? Border.all(color: const Color(0xFF0D9488), width: 1.5) : null,
+                          border: sd.isCurrent ? Border.all(color: const Color(0xFF6366F1), width: 1.5) : null,
                           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
                         ),
                         child: Material(
@@ -285,10 +285,10 @@ class _SalaryHistoryScreenState extends State<SalaryHistoryScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
-                                          child: const Text('Current', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold, fontSize: 10)),
+                                          child: const Text('Current', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold, fontSize: 10)),
                                         )
                                       else
                                         GestureDetector(

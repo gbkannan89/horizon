@@ -43,7 +43,7 @@ class FinancialScoreScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: loading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF0D9488)))
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
         : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -56,10 +56,10 @@ class FinancialScoreScreen extends StatelessWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF042F2E), Color(0xFF0D9488)]
+                  colors: [Color(0xFF042F2E), Color(0xFF6366F1)]
                 ),
                 borderRadius: BorderRadius.circular(28),
-                boxShadow: [BoxShadow(color: const Color(0xFF0D9488).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
+                boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
               ),
               child: Column(
                 children: [

@@ -30,6 +30,12 @@ class LocalAsset {
   final bool generatesIncome;
   final double? purchasePrice;
   final String? purchaseDate;
+  final String type;
+  final String? subtype;
+  final String? startDate;
+  final int? yearsOfDeposit;
+  final bool isEmergency;
+  final String? incomeFrequency;
 
   LocalAsset({
     required this.id, 
@@ -40,6 +46,12 @@ class LocalAsset {
     this.generatesIncome = false,
     this.purchasePrice,
     this.purchaseDate,
+    this.type = 'bank',
+    this.subtype,
+    this.startDate,
+    this.yearsOfDeposit,
+    this.isEmergency = false,
+    this.incomeFrequency,
   });
 }
 
@@ -373,6 +385,8 @@ class LocalFamilyMember {
   final bool isActive;
   final bool earningStatus;
   final double contributionAmount;
+  final String? phone;
+  final String? email;
   final List<LocalSchooling> schooling;
   final List<LocalCheckup> checkups;
   final List<LocalMedicine> medicines;
@@ -393,6 +407,8 @@ class LocalFamilyMember {
     required this.isActive,
     this.earningStatus = false,
     this.contributionAmount = 0,
+    this.phone,
+    this.email,
     required this.schooling,
     required this.checkups,
     required this.medicines,
@@ -405,7 +421,7 @@ class LocalFamilyMember {
   factory LocalFamilyMember.fromJson(Map<String, dynamic> json) {
     return LocalFamilyMember(
       id: json['id'],
-      householdId: json['household_id'],
+      householdId: json['household_id'] ?? 0,
       name: json['name'] ?? '',
       dob: json['dob'],
       bloodGroup: json['blood_group'],
@@ -415,6 +431,8 @@ class LocalFamilyMember {
       isActive: json['is_active'] ?? true,
       earningStatus: json['earning_status'] ?? false,
       contributionAmount: (json['contribution_amount'] ?? 0).toDouble(),
+      phone: json['phone'],
+      email: json['email'],
       schooling: json['schooling'] != null
               ? (json['schooling'] as List).map((e) => LocalSchooling.fromJson(e as Map<String, dynamic>)).toList()
               : [],

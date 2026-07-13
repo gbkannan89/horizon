@@ -88,13 +88,14 @@ def add_vehicle(payload: VehicleCreate, current_user: UserOut = Depends(get_curr
             r = cur.fetchone()
             db.commit()
             
-            stats = compute_vehicle_stats(r[0], float(r[3]), r[6], r[5], float(r[10]), float(r[9]), cur)
+            stats = compute_vehicle_stats(r[0], float(r[3]), r[6], r[5], float(r[10]) if r[10] is not None else 0.0, float(r[9]) if r[9] is not None else 0.0, cur)
             
             return VehicleOut(
                 id=r[0], user_id=r[1], make_model=r[2], purchase_cost=float(r[3]), insurance_renewal_date=r[4],
-                model_year=r[5], purchase_year=r[6], fuel_type=r[7], mileage_kmpl=float(r[8]) if r[8] else None,
-                fuel_cost_total=float(r[9]), km_driven=float(r[10]), insurance_idv=float(r[11]) if r[11] else None,
-                insurance_renewal_amount=float(r[12]) if r[12] else None, registration_number=r[13], created_at=r[14],
+                model_year=r[5], purchase_year=r[6], fuel_type=r[7], mileage_kmpl=float(r[8]) if r[8] is not None else None,
+                fuel_cost_total=float(r[9]) if r[9] is not None else 0.0, km_driven=float(r[10]) if r[10] is not None else 0.0,
+                insurance_idv=float(r[11]) if r[11] is not None else None,
+                insurance_renewal_amount=float(r[12]) if r[12] is not None else None, registration_number=r[13], created_at=r[14],
                 **stats
             )
         except Exception as e:
@@ -117,13 +118,14 @@ def list_vehicles(current_user: UserOut = Depends(get_current_user), db = Depend
         rows = cur.fetchall()
         result = []
         for r in rows:
-            stats = compute_vehicle_stats(r[0], float(r[3]), r[6], r[5], float(r[10]), float(r[9]), cur)
+            stats = compute_vehicle_stats(r[0], float(r[3]), r[6], r[5], float(r[10]) if r[10] is not None else 0.0, float(r[9]) if r[9] is not None else 0.0, cur)
             result.append(
                 VehicleOut(
                     id=r[0], user_id=r[1], make_model=r[2], purchase_cost=float(r[3]), insurance_renewal_date=r[4],
-                    model_year=r[5], purchase_year=r[6], fuel_type=r[7], mileage_kmpl=float(r[8]) if r[8] else None,
-                    fuel_cost_total=float(r[9]), km_driven=float(r[10]), insurance_idv=float(r[11]) if r[11] else None,
-                    insurance_renewal_amount=float(r[12]) if r[12] else None, registration_number=r[13], created_at=r[14],
+                    model_year=r[5], purchase_year=r[6], fuel_type=r[7], mileage_kmpl=float(r[8]) if r[8] is not None else None,
+                    fuel_cost_total=float(r[9]) if r[9] is not None else 0.0, km_driven=float(r[10]) if r[10] is not None else 0.0,
+                    insurance_idv=float(r[11]) if r[11] is not None else None,
+                    insurance_renewal_amount=float(r[12]) if r[12] is not None else None, registration_number=r[13], created_at=r[14],
                     **stats
                 )
             )

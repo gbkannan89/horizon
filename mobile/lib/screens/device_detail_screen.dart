@@ -101,13 +101,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(
-                            0xFF0D9488,
+                            0xFF6366F1,
                           ).withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           _getCategoryIcon(d.category),
-                          color: const Color(0xFF0D9488),
+                          color: const Color(0xFF6366F1),
                           size: 28,
                         ),
                       ),
@@ -233,7 +233,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                         '₹${d.currentValue.toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF0D9488),
+                          color: Color(0xFF6366F1),
                           fontSize: 18,
                         ),
                       ),
@@ -376,7 +376,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
       backgroundColor: const Color(0xFFF8F9FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddServiceDialog(),
-        backgroundColor: const Color(0xFF0D9488),
+        backgroundColor: const Color(0xFF6366F1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: services.isEmpty
@@ -409,7 +409,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                             s.serviceType.toUpperCase().replaceAll('_', ' '),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0D9488),
+                              color: Color(0xFF6366F1),
                             ),
                           ),
                           Text(
@@ -631,7 +631,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
               ElevatedButton(
                 onPressed: () => _showEmiDialog(null),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D9488),
+                  backgroundColor: const Color(0xFF6366F1),
                 ),
                 child: const Text(
                   'Add EMI Schedule',
@@ -834,9 +834,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
         title: Text(widget.device.name),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF0D9488),
+          labelColor: const Color(0xFF6366F1),
           unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF0D9488),
+          indicatorColor: const Color(0xFF6366F1),
           tabs: const [
             Tab(text: 'Overview'),
             Tab(text: 'Service History'),

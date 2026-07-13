@@ -135,7 +135,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF0D9488) : Colors.transparent,
+                  color: selected ? const Color(0xFF6366F1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(

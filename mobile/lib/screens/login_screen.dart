@@ -87,9 +87,9 @@ class _LoginScreenState extends State<LoginScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFF0FDFA), // teal-50
-                    Color(0xFFF8FAFC), // slate-50
-                    Color(0xFFF5F3FF), // violet-50
+                    Color(0xFFE2FDF8), // teal-100 (more vibrant teal)
+                    Color(0xFFF1F5F9), // slate-100
+                    Color(0xFFE0E7FF), // indigo-100 (more vibrant purple/indigo)
                   ],
                 ),
               ),
@@ -98,18 +98,18 @@ class _LoginScreenState extends State<LoginScreen>
 
           // ── Decorative Blobs ─────────────────────────────────────────────
           Positioned(
-            top: -size.height * 0.12,
+            top: -size.height * 0.1,
             right: -size.width * 0.2,
             child: Container(
-              width: size.width * 0.7,
-              height: size.width * 0.7,
+              width: size.width * 0.75,
+              height: size.width * 0.75,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.20),
-                    const Color(0xFF0D9488).withValues(alpha: 0.08),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
+                    const Color(0xFF6366F1).withValues(alpha: 0.35),
+                    const Color(0xFF6366F1).withValues(alpha: 0.15),
+                    const Color(0xFF6366F1).withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -119,32 +119,50 @@ class _LoginScreenState extends State<LoginScreen>
             bottom: -size.height * 0.08,
             left: -size.width * 0.15,
             child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
+              width: size.width * 0.65,
+              height: size.width * 0.65,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF909AC6).withValues(alpha: 0.18),
-                    const Color(0xFF909AC6).withValues(alpha: 0.06),
-                    const Color(0xFF909AC6).withValues(alpha: 0.0),
+                    const Color(0xFF6366F1).withValues(alpha: 0.30),
+                    const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    const Color(0xFF6366F1).withValues(alpha: 0.0),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: size.height * 0.25,
-            right: -size.width * 0.1,
+            top: size.height * 0.3,
+            left: -size.width * 0.1,
             child: Container(
-              width: size.width * 0.35,
-              height: size.width * 0.35,
+              width: size.width * 0.5,
+              height: size.width * 0.5,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFFFBBF24).withValues(alpha: 0.12),
-                    const Color(0xFFFBBF24).withValues(alpha: 0.04),
+                    const Color(0xFFEC4899).withValues(alpha: 0.22),
+                    const Color(0xFFEC4899).withValues(alpha: 0.08),
+                    const Color(0xFFEC4899).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: size.height * 0.18,
+            right: -size.width * 0.1,
+            child: Container(
+              width: size.width * 0.4,
+              height: size.width * 0.4,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFBBF24).withValues(alpha: 0.25),
+                    const Color(0xFFFBBF24).withValues(alpha: 0.10),
                     const Color(0xFFFBBF24).withValues(alpha: 0.0),
                   ],
                 ),
@@ -222,11 +240,11 @@ class _LoginScreenState extends State<LoginScreen>
                             child: Container(
                               padding: const EdgeInsets.all(28),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.60),
+                                color: Colors.white.withValues(alpha: 0.40),
                                 borderRadius: BorderRadius.circular(24),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                  width: 1.5,
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  width: 1.2,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -301,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: const BorderSide(
-                                          color: Color(0xFF0D9488),
+                                          color: Color(0xFF6366F1),
                                           width: 1.5,
                                         ),
                                       ),
@@ -366,7 +384,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: const BorderSide(
-                                          color: Color(0xFF0D9488),
+                                          color: Color(0xFF6366F1),
                                           width: 1.5,
                                         ),
                                       ),
@@ -404,7 +422,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           : _handleLogin,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: const Color(
-                                          0xFF0D9488,
+                                          0xFF6366F1,
                                         ),
                                         foregroundColor: Colors.white,
                                         elevation: 0,
@@ -470,7 +488,7 @@ class _LoginScreenState extends State<LoginScreen>
                               child: const Text(
                                 'Sign Up',
                                 style: TextStyle(
-                                  color: Color(0xFF0D9488),
+                                  color: Color(0xFF6366F1),
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -498,7 +516,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
 
     const spacing = 40.0;

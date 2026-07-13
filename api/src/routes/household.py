@@ -21,13 +21,16 @@ def generate_unique_invite_code(db) -> str:
 # GET Household Summary (Protected)
 @router.get("/summary")
 def get_household_summary(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
-    if not current_user.household_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User does not belong to any household"
-        )
-        
     with db.cursor() as cur:
+        if not current_user.household_id:
+            # Auto-create household
+            household_name = f"{current_user.name or current_user.email}'s Household"
+            cur.execute("INSERT INTO households (name) VALUES (%s) RETURNING id", (household_name,))
+            h_id = cur.fetchone()[0]
+            cur.execute("UPDATE users SET household_id = %s WHERE id = %s", (h_id, current_user.id))
+            db.commit()
+            current_user.household_id = h_id
+            
         # Fetch household info
         cur.execute(
             "SELECT id, name, invite_code FROM households WHERE id = %s",
@@ -35,10 +38,18 @@ def get_household_summary(current_user: UserOut = Depends(get_current_user), db 
         )
         household_row = cur.fetchone()
         if not household_row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Household not found"
+            # Try to auto-create in case database has inconsistent data
+            household_name = f"{current_user.name or current_user.email}'s Household"
+            cur.execute("INSERT INTO households (name) VALUES (%s) RETURNING id", (household_name,))
+            h_id = cur.fetchone()[0]
+            cur.execute("UPDATE users SET household_id = %s WHERE id = %s", (h_id, current_user.id))
+            db.commit()
+            current_user.household_id = h_id
+            cur.execute(
+                "SELECT id, name, invite_code FROM households WHERE id = %s",
+                (h_id,)
             )
+            household_row = cur.fetchone()
             
         household_id, household_name, invite_code = household_row
         
@@ -87,13 +98,16 @@ def get_household_summary(current_user: UserOut = Depends(get_current_user), db 
 # POST Create/Get Invite Code (Protected)
 @router.post("/invite")
 def create_invite_code(current_user: UserOut = Depends(get_current_user), db = Depends(get_db)):
-    if not current_user.household_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have a household"
-        )
-        
     with db.cursor() as cur:
+        if not current_user.household_id:
+            # Auto-create household
+            household_name = f"{current_user.name or current_user.email}'s Household"
+            cur.execute("INSERT INTO households (name) VALUES (%s) RETURNING id", (household_name,))
+            h_id = cur.fetchone()[0]
+            cur.execute("UPDATE users SET household_id = %s WHERE id = %s", (h_id, current_user.id))
+            db.commit()
+            current_user.household_id = h_id
+            
         # Check if code already exists
         cur.execute(
             "SELECT invite_code FROM households WHERE id = %s",

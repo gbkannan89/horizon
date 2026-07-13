@@ -219,10 +219,10 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D9488).withValues(alpha: 0.04),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
               ),
             ),
             child: Column(
@@ -232,7 +232,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                   children: [
                     Icon(
                       Icons.group_add,
-                      color: const Color(0xFF0D9488),
+                      color: const Color(0xFF6366F1),
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -279,7 +279,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                           horizontal: 20,
                           vertical: 16,
                         ),
-                        backgroundColor: const Color(0xFF0D9488),
+                        backgroundColor: const Color(0xFF6366F1),
                       ),
                       child: const Text('Add'),
                     ),
@@ -392,8 +392,8 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
             icon: const Icon(Icons.person_add_outlined, size: 18),
             label: const Text('Add Single Member'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF0D9488),
-              side: const BorderSide(color: Color(0xFF0D9488)),
+              foregroundColor: const Color(0xFF6366F1),
+              side: const BorderSide(color: Color(0xFF6366F1)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),

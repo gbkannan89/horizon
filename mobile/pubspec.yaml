@@ -32,4 +32,8 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/camel.png
+    - assets/flower-pot-1.png
+    - assets/flower-pot.png
+    - assets/leaf.png
 

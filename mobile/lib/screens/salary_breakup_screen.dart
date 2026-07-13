@@ -233,10 +233,10 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D9488).withValues(alpha: 0.08),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
                   ),
                 ),
                 child: Column(
@@ -245,7 +245,7 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                     const Text(
                       'Computed Salary Summary',
                       style: TextStyle(
-                        color: Color(0xFF0D9488),
+                        color: Color(0xFF6366F1),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -278,7 +278,7 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                           '₹${_monthlyInHand.toStringAsFixed(0)} /mo',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0D9488),
+                            color: Color(0xFF6366F1),
                             fontSize: 16,
                           ),
                         ),
@@ -342,7 +342,7 @@ class _SalaryBreakupScreenState extends State<SalaryBreakupScreen> {
                 value: _isCurrent,
                 title: const Text('Is Current Salary'),
                 subtitle: const Text('Syncs with primary income list'),
-                activeThumbColor: const Color(0xFF0D9488),
+                activeThumbColor: const Color(0xFF6366F1),
                 onChanged: (val) {
                   setState(() => _isCurrent = val);
                 },

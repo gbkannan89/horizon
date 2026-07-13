@@ -49,9 +49,20 @@ class _MainShellState extends State<MainShell> {
         filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.78),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 1)),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, -4))],
+            color: Colors.white.withValues(alpha: 0.40),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.6),
+                width: 1.2,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
           child: SafeArea(
             child: Padding(
@@ -80,7 +91,7 @@ class _MainShellState extends State<MainShell> {
         width: selected ? 90 : 64,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF0D9488).withValues(alpha: 0.10) : Colors.transparent,
+          color: selected ? const Color(0xFF6366F1).withValues(alpha: 0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -88,7 +99,7 @@ class _MainShellState extends State<MainShell> {
           children: [
             Icon(
               selected ? item.activeIcon : item.icon,
-              color: selected ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+              color: selected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
               size: 22,
             ),
             const SizedBox(height: 2),
@@ -97,7 +108,7 @@ class _MainShellState extends State<MainShell> {
               style: TextStyle(
                 fontSize: selected ? 11 : 10,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
+                color: selected ? const Color(0xFF6366F1) : const Color(0xFF94A3B8),
                 letterSpacing: 0.1,
               ),
             ),

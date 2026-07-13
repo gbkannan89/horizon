@@ -191,7 +191,7 @@ class _VehicleFuelFormState extends State<VehicleFuelForm> {
               const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('Is Full Tank fill?'),
-                activeThumbColor: const Color(0xFF0D9488),
+                activeThumbColor: const Color(0xFF6366F1),
                 value: _isFullTank,
                 onChanged: (val) {
                   setState(() => _isFullTank = val);

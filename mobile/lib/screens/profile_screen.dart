@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/financial_provider.dart';
@@ -8,8 +7,28 @@ import '../screens/login_screen.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/family_member_detail_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Future<Map<String, dynamic>>? _householdFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final fp = Provider.of<FinancialProvider>(context, listen: false);
+        setState(() {
+          _householdFuture = fp.loadHouseholdSummary();
+        });
+      }
+    });
+  }
 
   void _showDeleteConfirmationDialog(BuildContext context) {
     final passwordController = TextEditingController();
@@ -328,7 +347,7 @@ class ProfileScreen extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
+                      backgroundColor: const Color(0xFF6366F1),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -386,7 +405,6 @@ class ProfileScreen extends StatelessWidget {
     final userInitials = userName.isNotEmpty
         ? userName.substring(0, 1).toUpperCase()
         : 'G';
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
@@ -397,69 +415,67 @@ class ProfileScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF0FDFA),
-                    Color(0xFFF8FAFC),
-                    Color(0xFFF5F3FF),
-                  ],
+                  colors: [Color(0xFFF0FDFA), Color(0xFFF8FAFC), Color(0xFFF5F3FF)],
                 ),
+              ),
+            ),
+          ),
+          // ── Accent blobs ──────────────────────────────────────────────────
+          Positioned(
+            top: -80, right: -80,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF6366F1).withValues(alpha: 0.18),
+                  const Color(0xFF6366F1).withValues(alpha: 0.05),
+                  const Color(0xFF6366F1).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
           Positioned(
-            top: -size.height * 0.1,
-            right: -size.width * 0.2,
+            bottom: -60, left: -80,
             child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
+              width: 250, height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF0D9488).withValues(alpha: 0.12),
-                    const Color(0xFF0D9488).withValues(alpha: 0.0),
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF909AC6).withValues(alpha: 0.15),
+                  const Color(0xFF909AC6).withValues(alpha: 0.04),
+                  const Color(0xFF909AC6).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
           Positioned(
-            bottom: -size.height * 0.08,
-            left: -size.width * 0.15,
+            top: 320, left: -40,
             child: Container(
-              width: size.width * 0.5,
-              height: size.width * 0.5,
+              width: 180, height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF909AC6).withValues(alpha: 0.10),
-                    const Color(0xFF909AC6).withValues(alpha: 0.0),
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFFFBBF24).withValues(alpha: 0.10),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.03),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.0),
+                ]),
               ),
             ),
           ),
-          Positioned.fill(child: CustomPaint(painter: _GridPainter())),
           Positioned.fill(
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  foregroundDecoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      width: 1,
-                    ),
-                  ),
-                ),
-              ),
+            child: CustomPaint(painter: _GridPainter()),
+          ),
+          // ── Light background overlay ────────────────────────────────────────
+          Positioned.fill(
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.15),
             ),
           ),
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
+          Positioned.fill(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
                 children: [
                   // ── Glass Header ────────────────────────────────────────
                   Container(
@@ -479,12 +495,12 @@ class ProfileScreen extends StatelessWidget {
                         CircleAvatar(
                           radius: 42,
                           backgroundColor: const Color(
-                            0xFF0D9488,
+                            0xFF6366F1,
                           ).withValues(alpha: 0.15),
                           child: Text(
                             userInitials,
                             style: const TextStyle(
-                              color: Color(0xFF0D9488),
+                              color: Color(0xFF6366F1),
                               fontSize: 30,
                               fontWeight: FontWeight.bold,
                             ),
@@ -542,12 +558,12 @@ class ProfileScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: const Color(
-                                  0xFF0D9488,
+                                  0xFF6366F1,
                                 ).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: const Color(
-                                    0xFF0D9488,
+                                    0xFF6366F1,
                                   ).withValues(alpha: 0.15),
                                 ),
                               ),
@@ -560,13 +576,13 @@ class ProfileScreen extends StatelessWidget {
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: const Color(
-                                            0xFF0D9488,
+                                            0xFF6366F1,
                                           ).withValues(alpha: 0.12),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
                                           Icons.people_alt_rounded,
-                                          color: Color(0xFF0D9488),
+                                          color: Color(0xFF6366F1),
                                           size: 16,
                                         ),
                                       ),
@@ -576,7 +592,7 @@ class ProfileScreen extends StatelessWidget {
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
-                                          color: Color(0xFF0D9488),
+                                          color: Color(0xFF6366F1),
                                         ),
                                       ),
                                     ],
@@ -652,13 +668,13 @@ class ProfileScreen extends StatelessWidget {
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: const Color(
-                                      0xFF0D9488,
+                                      0xFF6366F1,
                                     ).withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
                                     Icons.person_outline,
-                                    color: Color(0xFF0D9488),
+                                    color: Color(0xFF6366F1),
                                     size: 22,
                                   ),
                                 ),
@@ -714,13 +730,13 @@ class ProfileScreen extends StatelessWidget {
                                   _showAddFamilyMemberDetailsModal(context),
                               icon: const Icon(
                                 Icons.add_rounded,
-                                color: Color(0xFF0D9488),
+                                color: Color(0xFF6366F1),
                                 size: 20,
                               ),
                               label: const Text(
                                 'Add Profile',
                                 style: TextStyle(
-                                  color: Color(0xFF0D9488),
+                                  color: Color(0xFF6366F1),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -740,6 +756,7 @@ class ProfileScreen extends StatelessWidget {
                               );
                             }
                             return Container(
+                              width: double.infinity,
                               height: 120,
                               margin: const EdgeInsets.only(bottom: 24),
                               child: ListView.builder(
@@ -758,7 +775,7 @@ class ProfileScreen extends StatelessWidget {
                                       ),
                                     );
                                   } catch (_) {
-                                    avatarColor = const Color(0xFF0D9488);
+                                    avatarColor = const Color(0xFF6366F1);
                                   }
                                   return GestureDetector(
                                     onTap: () {
@@ -858,13 +875,13 @@ class ProfileScreen extends StatelessWidget {
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: const Color(
-                                        0xFF0D9488,
+                                        0xFF6366F1,
                                       ).withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.people_alt_outlined,
-                                      color: Color(0xFF0D9488),
+                                      color: Color(0xFF6366F1),
                                       size: 20,
                                     ),
                                   ),
@@ -894,11 +911,9 @@ class ProfileScreen extends StatelessWidget {
                               Consumer<FinancialProvider>(
                                 builder: (context, fp, _) {
                                   return FutureBuilder<Map<String, dynamic>>(
-                                    future: fp.loadHouseholdSummary(),
+                                    future: _householdFuture,
                                     builder: (context, snapshot) {
-                                      final code =
-                                          snapshot.data?['inviteCode']
-                                              as String?;
+                                      final code = snapshot.data?['inviteCode'] as String? ?? fp.householdSummary?['inviteCode'] as String?;
                                       return Row(
                                         children: [
                                           Expanded(
@@ -914,27 +929,27 @@ class ProfileScreen extends StatelessWidget {
                                                     BorderRadius.circular(10),
                                                 border: Border.all(
                                                   color: const Color(
-                                                    0xFF0D9488,
+                                                    0xFF6366F1,
                                                   ).withValues(alpha: 0.3),
                                                 ),
                                               ),
                                               child: Text(
-                                                code != null
+                                                code != null && code.isNotEmpty
                                                     ? 'Your Code: $code'
                                                     : 'Generating invite...',
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
                                                   letterSpacing: 1,
-                                                  color: code != null
-                                                      ? const Color(0xFF0D9488)
+                                                  color: code != null && code.isNotEmpty
+                                                      ? const Color(0xFF6366F1)
                                                       : const Color(0xFF94A3B8),
                                                 ),
                                               ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          if (code != null)
+                                          if (code != null && code.isNotEmpty)
                                             GestureDetector(
                                               onTap: () => UiUtils.showSnack(
                                                 context,
@@ -946,14 +961,14 @@ class ProfileScreen extends StatelessWidget {
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color: const Color(
-                                                    0xFF0D9488,
+                                                    0xFF6366F1,
                                                   ).withValues(alpha: 0.1),
                                                   borderRadius:
                                                       BorderRadius.circular(10),
                                                 ),
                                                 child: const Icon(
                                                   Icons.copy_rounded,
-                                                  color: Color(0xFF0D9488),
+                                                  color: Color(0xFF6366F1),
                                                   size: 20,
                                                 ),
                                               ),
@@ -1045,7 +1060,7 @@ class ProfileScreen extends StatelessWidget {
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(
-                                            0xFF0D9488,
+                                            0xFF6366F1,
                                           ),
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(
@@ -1197,17 +1212,18 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
 
 class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0D9488).withValues(alpha: 0.035)
+      ..color = const Color(0xFF6366F1).withValues(alpha: 0.035)
       ..strokeWidth = 0.5;
     const spacing = 40.0;
     for (double x = 0; x < size.width; x += spacing) {
